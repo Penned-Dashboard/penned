@@ -1,0 +1,187 @@
+\documentclass[letterpaper,10pt]{article}
+
+\usepackage[empty]{fullpage}
+\usepackage[left=0.42in,right=0.42in,top=0.35in,bottom=0.35in]{geometry}
+\usepackage{titlesec}
+\usepackage[hidelinks]{hyperref}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{fontawesome5}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{ragged2e}
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\tabcolsep}{0pt}
+\setlist[itemize]{leftmargin=1.45em, itemsep=2pt, topsep=3pt, parsep=0pt, partopsep=0pt}
+
+\definecolor{accent}{HTML}{0F4C81}
+\definecolor{textgray}{HTML}{444444}
+
+\titleformat{\section}
+  {\large\bfseries\color{accent}}
+  {}
+  {0pt}
+  {}
+  [\vspace{2pt}\titlerule]
+
+\titlespacing*{\section}{0pt}{10pt}{6pt}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{1pt}
+  \begin{tabularx}{\textwidth}{@{}Xr@{}}
+    \textbf{#1} & \textit{#2} \\
+    \textcolor{textgray}{#3} & \textcolor{textgray}{#4} \\
+  \end{tabularx}
+}
+
+\newcommand{\resumeProjectHeading}[3]{
+  \vspace{1pt}
+  \begin{tabularx}{\textwidth}{@{}Xr@{}}
+    \textbf{#1} & \href{#3}{\textcolor{accent}{#3}} \\
+    \textcolor{textgray}{#2} & \\
+  \end{tabularx}
+}
+
+\newcommand{\resumeSkill}[2]{
+  \textbf{#1}: #2 \\
+}
+
+\newcommand{\certlink}[2]{\href{#1}{\textcolor{accent}{#2}}}
+
+\begin{document}
+
+\begin{center}
+  {\fontsize{22}{24}\selectfont \textbf{Dinal Dholiya}} \\
+  \vspace{6pt}
+  Chicago, IL \textbar{} Open to Relocate \textbar{}
+  \href{mailto:dinaldholiya@gmail.com}{dinaldholiya@gmail.com} \textbar{}
+  917-348-4579 \\
+  \vspace{4pt}
+  \faLinkedin\ \href{https://linkedin.com/in/dinal-dholiya}{linkedin.com/in/dinal-dholiya}
+  \hspace{10pt}
+  \faGithub\ \href{https://github.com/DINAL11}{github.com/DINAL11}
+  \hspace{10pt}
+  \faGlobe\ \href{https://dinal.site}{dinal.site}
+\end{center}
+
+\section{Professional Summary}
+\RaggedRight
+\textbf{Software engineer} with experience building \textbf{full-stack}, \textbf{distributed}, and \textbf{cloud-based systems} across web platforms, internal tooling, and research environments. Strong foundation in \textbf{data structures, algorithms, databases, and system design}, with hands-on experience in \textbf{TypeScript, Python, Java, Go, AWS, Docker, and CI/CD}. Proven ability to \textbf{ship production features}, \textbf{improve performance}, and \textbf{automate engineering workflows}.
+
+\section{Technical Skills}
+\resumeSkill{Languages}{JavaScript, TypeScript, Python, Java, Go, C++, SQL, PHP}
+\resumeSkill{Frontend}{React, Next.js, HTML5, CSS3, Tailwind CSS, Bootstrap, jQuery}
+\resumeSkill{Backend}{Node.js, NestJS, Express.js, REST APIs, WebSockets, Socket.IO, Prisma}
+\resumeSkill{Databases}{PostgreSQL, MySQL, Redis, ScyllaDB, CockroachDB}
+\resumeSkill{Cloud and DevOps}{AWS (EC2, ECS, S3, Cognito), Docker, GitHub Actions, Linux, CI/CD}
+\resumeSkill{Engineering}{Distributed Systems, Microservices, API Design, Caching, Pub/Sub, Performance Benchmarking}
+\resumeSkill{Data and ML}{Pandas, NumPy, scikit-learn, ARIMA, Matplotlib, Data Analysis}
+\resumeSkill{Tools}{Git, Postman, Jira, Agile/Scrum, Copilot, Cursor, Claude, Codex}
+
+\section{Experience}
+\resumeSubheading
+  {Software Engineer}{Aug 2025 -- Present}
+  {Zentrais LLC}{Remote}
+\begin{itemize}
+  \item Built modular full-stack applications using Next.js 14, TypeScript, and NestJS with dependency injection and layered architecture patterns.
+  \item Developed real-time collaboration features including live editing, cursor presence, and event synchronization using WebSockets, Socket.IO, and Redis Pub/Sub.
+  \item Implemented authentication and authorization flows with AWS Cognito, JWT, OAuth2, and role-based access controls.
+  \item Designed scalable backend APIs with NestJS, PostgreSQL, and Prisma, improving maintainability through migrations, transactions, and query optimization.
+  \item Deployed containerized services to AWS ECS and automated delivery pipelines with GitHub Actions and Docker.
+\end{itemize}
+
+\resumeSubheading
+  {Systems Performance Analyst}{Jan 2024 -- Aug 2025}
+  {CPI-NS Research Lab, University at Buffalo}{Buffalo, NY}
+\begin{itemize}
+  \item Built Python benchmarking pipelines to evaluate latency, throughput, tail latency, and recovery behavior for distributed databases under varying workloads.
+  \item Analyzed large-scale experiment output with Pandas and NumPy and visualized results with Matplotlib to identify performance trends and bottlenecks.
+  \item Wrote SQL-based analysis workflows to measure replication lag, consistency behavior, and cross-region query performance.
+  \item Evaluated ScyllaDB and CockroachDB under replication and quorum scenarios, contributing to research on consistency and fault tolerance.
+  \item Investigated storage and scheduling bottlenecks across C++, Go, and Java codebases to explain observed performance behavior.
+  \item Automated cluster setup, workload orchestration, and metrics collection using Python and Bash, reducing manual experiment overhead.
+\end{itemize}
+
+\resumeSubheading
+  {Software Developer, IT and Web Systems}{Jan 2023 -- Jun 2025}
+  {Office of International Education, University at Buffalo}{Buffalo, NY}
+\begin{itemize}
+  \item Maintained and enhanced internal web applications using HTML, CSS, JavaScript, PHP, MySQL, and Python.
+  \item Automated ETL and reporting workflows with Python, improving operational efficiency and reducing manual reporting effort.
+  \item Built optimized SQL queries and backend data pipelines to support dashboards, reporting, and administrative workflows.
+  \item Improved UI usability and accessibility with JavaScript, jQuery, and Bootstrap across multiple browser environments.
+  \item Wrote scripts for backups, log cleanup, and monitoring to improve reliability of internal systems.
+\end{itemize}
+
+\resumeSubheading
+  {Software Development Intern}{May 2022 -- Aug 2022}
+  {Kyros Infotech}{India}
+\begin{itemize}
+  \item Built full-stack features for an attendance and leave management system using Node.js, Express, MySQL, HTML, CSS, and JavaScript.
+  \item Developed REST APIs for employee logging, request workflows, and approval processes with role-based access controls.
+  \item Created responsive dashboard views and improved usability with Bootstrap-based interfaces.
+  \item Designed SQL schemas and optimized queries for employee and transaction data.
+  \item Supported debugging, testing, and release validation to improve API stability and team delivery speed.
+\end{itemize}
+
+\section{Projects}
+\resumeProjectHeading
+  {Distributed Systems Performance Benchmarking Platform}
+  {Python, Pandas, NumPy, Matplotlib, SQL, AWS EC2}
+  {https://dinal.site/project2.html}
+\begin{itemize}
+  \item Developed a benchmarking platform to evaluate distributed databases under different workloads, deployment patterns, and failure scenarios.
+  \item Automated data collection, aggregation, and SQL-based analysis of latency and throughput metrics across experiments.
+  \item Simulated multi-region deployments on AWS EC2 and visualized performance trends to support research conclusions.
+\end{itemize}
+
+\resumeProjectHeading
+  {Machine Learning for River Forecasting}
+  {Python, Pandas, NumPy, scikit-learn, ARIMA, Matplotlib, Flask}
+  {https://dinal.site/project1.html}
+\begin{itemize}
+  \item Built a forecasting system using ARIMA and time-series modeling to predict river water levels up to 7 days in advance.
+  \item Processed hydrological and weather datasets with Pandas and NumPy to improve model reliability and data quality.
+  \item Evaluated model performance using RMSE, MAE, and R\textsuperscript{2} and exposed results through a Flask dashboard for non-technical users.
+\end{itemize}
+
+\resumeProjectHeading
+  {Lost and Found Portal}
+  {PHP, MySQL, JavaScript, Bootstrap, Docker, GitHub Actions, Linux}
+  {https://dinal.site/project3.html}
+\begin{itemize}
+  \item Led end-to-end development of a campus Lost and Found portal from requirements through production deployment.
+  \item Built secure backend workflows with PHP and MySQL, including authentication, session management, role-based access, and search over indexed data.
+  \item Deployed the application with Docker and CI/CD automation to support reliable releases and faster iteration.
+\end{itemize}
+
+\section{Education}
+\resumeSubheading
+  {University at Buffalo, State University of New York}{Graduated 2025}
+  {B.S. in Computer Science, Minor in Data-Intensive Computing}{Buffalo, NY}
+\begin{itemize}
+  \item GPA: 3.5 \textbar{} Dean's List \textbar{} International Merit Scholarship Awardee
+  \item Coursework: Distributed Systems, Operating Systems, Algorithms and Data Structures, Software Engineering, Database Systems, Computer Networks, Cloud Computing
+  \item Teaching Assistant, CSE486 Distributed Systems \textbar{} SEAS Peer Mentor \textbar{} Publicity Lead, UB Hacking Club
+\end{itemize}
+
+\section{Certifications and Leadership}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{@{}X X@{}}
+  \textbf{AWS Introduction to Generative AI} (\certlink{https://www.credly.com/badges/47f3a260-e4dc-4d2b-bb43-c2749359c380/public_url}{Link}) &
+  \textbf{AWS Certified Cloud Practitioner} (In Progress) \\
+  \textbf{Google and IBM Data Analytics Certificates} (\certlink{https://drive.google.com/file/d/1V8FuMvg9YzHbUcEcirdtS7yF-NweLESt/view?usp=sharing}{Link}) &
+  \textbf{Google BI} (\certlink{https://drive.google.com/file/d/1q_xcODSaHcPsoNt8K2GCaBEV5mQ-tfuw/view?usp=sharing}{Link}) \\
+  \multicolumn{2}{@{}l@{}}{\textbf{J.P. Morgan Chase and Walmart Global Tech Software Engineering Virtual Experience} (\certlink{https://drive.google.com/file/d/1i3DCdfQmrdEY7eDRg8znD6WLUfAIGW4o/view?usp=sharing}{Link})} \\
+  \textbf{Teaching Assistant}, CSE486 Distributed Systems &
+  \textbf{SEAS Peer Mentor}, UB CSE \\
+  \textbf{Publicity Lead}, UB Hacking Club &
+  \textbf{National-Level Athlete}, Rugby and Roller Skating \\
+\end{tabularx}
+\renewcommand{\arraystretch}{1}
+
+\end{document}
