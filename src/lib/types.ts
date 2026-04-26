@@ -2,7 +2,7 @@ export const roles = ["client", "writer", "admin"] as const;
 
 export type Role = (typeof roles)[number];
 
-export function isRole(value: string | null): value is Role {
+export function isRole(value: string | null | undefined): value is Role {
   return roles.includes(value as Role);
 }
 

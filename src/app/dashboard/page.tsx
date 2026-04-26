@@ -1,10 +1,9 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { isRole } from "@/lib/types";
+import { getCurrentAppUser } from "@/lib/auth";
 
 export default async function DashboardRouterPage() {
-  const roleCookie = (await cookies()).get("penned-role")?.value ?? "client";
-  const role = isRole(roleCookie) ? roleCookie : "client";
+  const user = await getCurrentAppUser();
+  const role = user?.role ?? "client";
 
   redirect(`/${role}`);
 }

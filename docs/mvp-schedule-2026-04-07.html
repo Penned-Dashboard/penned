@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Penned MVP Schedule - April 7, 2026</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.5;
+        margin: 40px;
+        color: #111827;
+      }
+
+      h1,
+      h2,
+      h3 {
+        color: #111827;
+      }
+
+      h1 {
+        font-size: 28px;
+        margin-bottom: 8px;
+      }
+
+      h2 {
+        font-size: 20px;
+        margin-top: 28px;
+        margin-bottom: 10px;
+      }
+
+      h3 {
+        font-size: 16px;
+        margin-top: 20px;
+        margin-bottom: 8px;
+      }
+
+      p {
+        margin: 8px 0;
+      }
+
+      ul {
+        margin: 6px 0 14px 20px;
+      }
+
+      li {
+        margin: 4px 0;
+      }
+
+      .meta {
+        color: #4b5563;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Penned MVP Schedule</h1>
+    <p class="meta">Date: April 7, 2026</p>
+    <p class="meta">Target: MVP complete by April 30, 2026</p>
+
+    <h2>Done So Far</h2>
+    <ul>
+      <li>Next.js app scaffolded and build/lint are passing.</li>
+      <li>Landing page is built.</li>
+      <li>Client dashboard is built.</li>
+      <li>Writer dashboard is built.</li>
+      <li>Admin dashboard is built.</li>
+      <li>Shared dashboard shell and layout are built.</li>
+      <li>Role-based route structure exists.</li>
+      <li>Client order form UI exists.</li>
+      <li>Writer marketplace UI exists.</li>
+      <li>Wallet, rankings, billing, payout, and admin queue UIs exist.</li>
+      <li>Supabase schema and seed drafts exist.</li>
+      <li>Clerk auth scaffolding exists.</li>
+      <li>Client order detail page exists.</li>
+      <li>Project status and deployment docs exist.</li>
+    </ul>
+
+    <h2>Done This Week</h2>
+    <p>Week of April 6 to April 12, 2026</p>
+    <ul>
+      <li>Auth structure was prepared so Clerk can be connected quickly.</li>
+      <li>Internal role and user flow were cleaned up so the app is ready for real users.</li>
+      <li>Order creation path was prepared for real persistence.</li>
+      <li>Client order detail flow was added.</li>
+      <li>Repo and docs were updated so the MVP path is clearer.</li>
+    </ul>
+
+    <h2>This Week Remaining</h2>
+    <p>Focus: finish frontend and UX work that does not depend on live credentials.</p>
+    <ul>
+      <li>Finalize client dashboard UX.</li>
+      <li>Finalize writer dashboard UX.</li>
+      <li>Finalize admin dashboard UX.</li>
+      <li>Add missing empty states, loading states, and error states.</li>
+      <li>Add order list and order detail polish.</li>
+      <li>Add writer job cards and action UI.</li>
+      <li>Add submission form UI.</li>
+      <li>Add revision and comments UI.</li>
+      <li>Add billing and invoice screen UI polish.</li>
+      <li>Add payout request UI polish.</li>
+      <li>Add navigation cleanup and responsive fixes.</li>
+      <li>Remove or reduce demo-only behavior once real environment values arrive.</li>
+    </ul>
+
+    <h2>Next Week</h2>
+    <p>Week of April 13 to April 19, 2026</p>
+    <p>Focus: connect real product flows once Supabase, Clerk, Vercel, and Stripe values are available.</p>
+    <ul>
+      <li>Connect Clerk auth fully.</li>
+      <li>Replace demo role flow with real authenticated role flow.</li>
+      <li>Connect Supabase.</li>
+      <li>Seed content types and core profiles.</li>
+      <li>Enable real client order creation.</li>
+      <li>Enable real client order listing.</li>
+      <li>Enable real admin order visibility.</li>
+      <li>Enable writer jobs board from real orders.</li>
+      <li>Add basic row-level access approach.</li>
+      <li>Deploy staging and development environment.</li>
+    </ul>
+
+    <h2>Week After</h2>
+    <p>Week of April 20 to April 26, 2026</p>
+    <p>Focus: finish the actual MVP workflow loop.</p>
+    <ul>
+      <li>Writer claim job flow.</li>
+      <li>Submission creation flow.</li>
+      <li>Submission status updates.</li>
+      <li>Client review actions: accept, request revision.</li>
+      <li>Revision resubmission flow.</li>
+      <li>Google Doc link support.</li>
+      <li>Wallet transaction logic.</li>
+      <li>Basic ranking update logic.</li>
+      <li>Admin payout approval flow.</li>
+      <li>Billing and invoice integration structure.</li>
+    </ul>
+
+    <h2>Final MVP Week</h2>
+    <p>Week of April 27 to April 30, 2026</p>
+    <p>Focus: stabilization and launch readiness.</p>
+    <ul>
+      <li>Stripe subscriptions wiring.</li>
+      <li>Billing dashboard final integration.</li>
+      <li>Payout flow verification.</li>
+      <li>Role and permission edge case fixes.</li>
+      <li>QA pass on all three dashboards.</li>
+      <li>Mobile and responsive cleanup.</li>
+      <li>Copy and content cleanup.</li>
+      <li>Bug fixing.</li>
+      <li>Beta-ready deployment checklist.</li>
+      <li>Final MVP signoff.</li>
+    </ul>
+
+    <h2>Priority Order</h2>
+    <ol>
+      <li>Frontend completion this week.</li>
+      <li>Auth and Supabase next week.</li>
+      <li>Core workflow loop the following week.</li>
+      <li>Billing, payouts, QA, and release in the final week.</li>
+    </ol>
+
+    <h2>On Hold Until Credentials Arrive</h2>
+    <ul>
+      <li>Supabase URL and key wiring.</li>
+      <li>Clerk keys.</li>
+      <li>Stripe keys and webhooks.</li>
+      <li>Vercel environment setup.</li>
+      <li>Production and staging domain wiring.</li>
+    </ul>
+  </body>
+  </html>

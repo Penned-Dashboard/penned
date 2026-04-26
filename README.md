@@ -11,7 +11,7 @@ Penned is a dashboard-first publishing operations app for three audiences:
 - Next.js App Router
 - Tailwind CSS v4
 - Supabase schema scaffold in `supabase/schema.sql`
-- Clerk, Stripe, and Resend environment placeholders in `.env.example`
+- Stripe environment placeholders in `.env.example`
 
 ## Local development
 
@@ -22,21 +22,29 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-The app runs in demo mode by default. Use the role switch links on the landing page to move between dashboards.
-
 ## Current scope
 
 This repo is intentionally scoped to an MVP foundation:
 
-- Marketing page and role-aware dashboard routing
-- Client dashboard with order form contract, review queue, and billing snapshot
-- Writer dashboard with marketplace, submissions, wallet, and rankings
-- Admin dashboard with operations, catalog, payouts, and ranking controls
-- Initial Supabase schema for profiles, orders, submissions, wallets, subscriptions, rankings, disputes, and notifications
+- Marketing page and branded auth flow
+- Session-backed role-aware dashboard routing for clients, writers, and admins
+- Client dashboard with live order intake, review queue, order detail, and billing workspace
+- Writer dashboard with marketplace, claim flow, submission flow, payouts, and rankings
+- Admin dashboard with operations, catalog, payouts, and order oversight
+- Supabase schema for profiles, orders, submissions, wallets, subscriptions, rankings, disputes, notifications, and payout requests
+- Stripe checkout and webhook routes for subscription setup
+- Shared UI system aligned to the Penned marketing surface
+
+## Project status
+
+For the current implementation audit, deployment recommendation, and short-term delivery timeline, see [docs/project-status-2026-04-03.md](/Users/dinaldholiya/All Projects/penned/docs/project-status-2026-04-03.md).
+
+For environment setup and deployment steps, see [DEPLOYMENT.md](/Users/dinaldholiya/All Projects/penned/DEPLOYMENT.md).
 
 ## Recommended next build steps
 
-1. Connect Clerk and replace the demo role cookie with authenticated user roles.
-2. Add Supabase clients, row-level security, and server actions for real order creation.
-3. Add Stripe Billing and Connect webhooks for subscriptions and payouts.
-4. Replace seeded mock data with queries and analytics snapshots.
+1. Run the latest Supabase upgrade SQL and seed data against the active project.
+2. Add Supabase row-level security and replace service-role reads/writes with session-aware access.
+3. Add Stripe product price IDs and the webhook signing secret.
+4. Connect Stripe payout rails or Stripe Connect for real writer disbursements.
+5. Add deeper analytics and notification delivery once the core workflow is stable.

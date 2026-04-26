@@ -1,225 +1,359 @@
 import Link from "next/link";
-import {
-  adminHighlights,
-  clientHighlights,
-  executionRoadmap,
-  writerHighlights,
-} from "@/lib/mock-data";
+import { AppAuthBar } from "@/components/app-auth-bar";
+import { getCurrentAppUser } from "@/lib/auth";
 
-const architecture = [
-  "Next.js App Router for product surfaces, marketing, and internal tools.",
-  "Supabase Postgres for orders, submissions, rankings, payouts, and analytics snapshots.",
-  "Clerk for authentication when ready; demo mode uses role cookies so the app runs today.",
-  "Stripe Billing plus Connect for subscriptions, invoices, and writer payouts.",
+const features = [
+  {
+    title: "Client ordering",
+    body: "Submit briefs, track revisions, review drafts, and keep every content request moving in one workspace.",
+  },
+  {
+    title: "Writer marketplace",
+    body: "Let vetted writers claim work, submit Google Docs, and respond to revision feedback without inbox chaos.",
+  },
+  {
+    title: "Operations control",
+    body: "Approve payouts, monitor ranking signals, manage content types, and keep order flow healthy from one admin hub.",
+  },
 ];
 
-const repoIncludes = [
-  "Landing page with a product narrative and delivery roadmap.",
-  "Client, writer, and admin dashboards with realistic seeded data.",
-  "Role-based dashboard routing via a lightweight middleware and demo role switcher.",
-  "Supabase schema v1 and environment template for the production integrations.",
+const writerBenefits = [
+  "Claim open assignments from a live marketplace.",
+  "Submit drafts with Google Docs and revision notes.",
+  "Track active jobs, payouts, wallet activity, and rank.",
 ];
 
-export default function Home() {
+const pricing = [
+  {
+    name: "Starter",
+    price: "$0/mo",
+    detail: "Create your workspace, explore the dashboard, and get set up before you start paying.",
+  },
+  {
+    name: "Basic",
+    price: "$499/mo",
+    detail: "For teams that need dependable ordering, review, and delivery workflows.",
+  },
+  {
+    name: "Pro",
+    price: "$999/mo",
+    detail: "Adds premium support, preferred-writer workflow, and deeper operational visibility.",
+  },
+];
+
+export default async function Home() {
+  const user = await getCurrentAppUser();
+  const primaryHeroHref = !user
+    ? "/sign-up?role=client"
+    : user.role === "client"
+      ? "/client"
+      : user.role === "admin"
+        ? "/admin"
+        : "/#features";
+  const primaryHeroLabel = !user
+    ? "Start Ordering Content"
+    : user.role === "client"
+      ? "Open Client Workspace"
+      : user.role === "admin"
+        ? "Open Admin Console"
+        : "See Platform Features";
+  const secondaryHeroHref = !user
+    ? "/sign-up?role=writer"
+    : user.role === "writer"
+      ? "/writer"
+      : user.role === "admin"
+        ? "/admin"
+        : "/#writers";
+  const secondaryHeroLabel = !user
+    ? "Join as Writer"
+    : user.role === "writer"
+      ? "Open Writer Workspace"
+      : user.role === "admin"
+        ? "Open Admin Console"
+        : "See Writer Workflow";
+  const writerHref = !user
+    ? "/sign-up?role=writer"
+    : user.role === "writer"
+      ? "/writer"
+      : "/#writers";
+  const writerSecondaryHref =
+    user?.role === "client" ? "/client" : user?.role === "writer" ? "/writer" : "/#features";
+  const writerSecondaryLabel =
+    user?.role === "client"
+      ? "Open Client Workspace"
+      : user?.role === "writer"
+        ? "Back to Your Workspace"
+        : "See Platform Features";
+  const workspaceLinks = user
+    ? user.role === "client"
+      ? [
+          { label: "Client Workspace", href: "/client" },
+          { label: "New Order", href: "/client/new-order" },
+          { label: "Billing", href: "/client/billing" },
+        ]
+      : user.role === "writer"
+        ? [
+            { label: "Writer Workspace", href: "/writer" },
+            { label: "Job Marketplace", href: "/writer#job-marketplace" },
+            { label: "Earnings", href: "/writer#earnings" },
+          ]
+        : [
+            { label: "Admin Console", href: "/admin" },
+            { label: "Orders", href: "/admin#operations" },
+            { label: "Payouts", href: "/admin#payouts" },
+          ]
+    : [
+        { label: "Client Sign Up", href: "/sign-up?role=client" },
+        { label: "Writer Sign Up", href: "/sign-up?role=writer" },
+        { label: "Admin Sign In", href: "/sign-in" },
+      ];
+
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#ffd8bf_0%,#fff6ef_42%,#f4efe8_100%)] text-slate-900">
-      <section className="mx-auto flex w-full max-w-7xl flex-col gap-16 px-6 py-8 lg:px-10">
-        <header className="flex flex-col gap-8 rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-[0_30px_80px_rgba(49,32,20,0.08)] backdrop-blur md:p-8">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-orange-700">
-                Penned dashboard MVP
-              </p>
-              <h1 className="mt-4 max-w-4xl text-5xl font-semibold tracking-[-0.04em] text-balance sm:text-6xl">
-                A publishing ops dashboard for clients, writers, and admins.
-              </h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
-                I narrowed your roadmap into a launchable core: ordering,
-                claiming, submissions, revisions, billing, payouts, rankings,
-                and admin oversight. The repo is scaffolded to run in demo mode
-                now and slot into Clerk, Supabase, and Stripe later.
-              </p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Link className="button-primary" href="/switch-role?role=client&next=/client">
-                Open client dashboard
-              </Link>
-              <Link className="button-secondary" href="/switch-role?role=writer&next=/writer">
-                Open writer dashboard
-              </Link>
-              <Link className="button-secondary sm:col-span-2" href="/switch-role?role=admin&next=/admin">
-                Open admin dashboard
-              </Link>
-            </div>
-          </div>
-          <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
-            <div className="rounded-[1.75rem] border border-slate-200/70 bg-slate-950 p-6 text-slate-50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm uppercase tracking-[0.25em] text-orange-300">
-                    Launch boundary
-                  </p>
-                  <h2 className="mt-2 text-2xl font-semibold">
-                    What ships in MVP
-                  </h2>
-                </div>
-                <span className="rounded-full border border-orange-300/30 bg-orange-400/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-orange-200">
-                  Beta ready
-                </span>
-              </div>
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
-                <FeaturePanel
-                  title="Client flow"
-                  items={clientHighlights}
-                  accent="text-orange-200"
-                />
-                <FeaturePanel
-                  title="Writer flow"
-                  items={writerHighlights}
-                  accent="text-emerald-200"
-                />
-                <FeaturePanel
-                  title="Admin flow"
-                  items={adminHighlights}
-                  accent="text-sky-200"
-                />
-                <FeaturePanel
-                  title="Repo foundation"
-                  items={repoIncludes}
-                  accent="text-violet-200"
-                />
-              </div>
-            </div>
-            <aside className="grid gap-4">
-              <InfoCard
-                eyebrow="Architecture"
-                title="Suggested stack"
-                items={architecture}
-              />
-              <InfoCard
-                eyebrow="Build sequence"
-                title="12-week roadmap"
-                items={executionRoadmap.map(
-                  (phase) => `${phase.weeks}: ${phase.title} - ${phase.goal}`,
-                )}
-              />
-            </aside>
-          </div>
-        </header>
+    <main className="min-h-screen overflow-x-hidden bg-[#f7f9fd] text-slate-900">
+      <AppAuthBar />
+      <div className="absolute inset-x-0 top-0 -z-10 h-[46rem] bg-[radial-gradient(circle_at_15%_20%,rgba(255,210,182,0.35),transparent_18%),radial-gradient(circle_at_75%_18%,rgba(131,216,255,0.22),transparent_24%),radial-gradient(circle_at_85%_40%,rgba(81,187,176,0.14),transparent_20%),linear-gradient(180deg,#f6f8fc_0%,#eef3f8_100%)]" />
+      <div className="absolute inset-x-0 top-0 -z-10 h-[46rem] opacity-35 [background-image:radial-gradient(circle_at_center,rgba(255,255,255,0.9)_0,rgba(255,255,255,0)_58%),linear-gradient(rgba(255,255,255,0.45)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.45)_1px,transparent_1px)] [background-size:auto,140px_140px,140px_140px]" />
 
-        <section className="grid gap-5 lg:grid-cols-3">
-          <ExperienceCard
-            title="Client workspace"
-            stat="14 active orders"
-            description="Clients can create orders, review submissions, request revisions, and track billing."
-            href="/switch-role?role=client&next=/client"
-            tone="from-orange-200 via-amber-100 to-white"
-          />
-          <ExperienceCard
-            title="Writer workspace"
-            stat="$4,860 queued earnings"
-            description="Writers can claim jobs, submit drafts, monitor rank, and request payouts."
-            href="/switch-role?role=writer&next=/writer"
-            tone="from-emerald-200 via-teal-100 to-white"
-          />
-          <ExperienceCard
-            title="Admin workspace"
-            stat="$48.2k monthly revenue"
-            description="Admins oversee operations, ranking inputs, payouts, disputes, and catalog controls."
-            href="/switch-role?role=admin&next=/admin"
-            tone="from-sky-200 via-cyan-100 to-white"
-          />
-        </section>
+      <section className="mx-auto max-w-7xl px-6 pb-6 pt-12 lg:px-10">
+        <div className="flex min-h-[52rem] flex-col items-center justify-center text-center">
+          <div className="rounded-full border border-white/80 bg-white/85 px-4 py-2 text-sm font-medium text-slate-600 shadow-[0_16px_40px_rgba(25,38,63,0.06)]">
+            Trusted by 500+ brands worldwide
+          </div>
+          <h1 className="mt-10 max-w-5xl text-6xl font-semibold leading-[0.95] tracking-[-0.06em] text-slate-950 md:text-7xl">
+            Premium Content,
+            <span className="block bg-[linear-gradient(135deg,#2563eb_0%,#2bb6a8_100%)] bg-clip-text text-transparent">
+              Delivered Fast
+            </span>
+          </h1>
+          <p className="mt-8 max-w-3xl text-2xl leading-10 text-slate-500">
+            Connect with expert writers. Order blog posts, articles, web copy,
+            and more. Review, approve, and publish from one smooth platform.
+          </p>
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+            <Link className="inline-flex min-w-64 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#2563eb_0%,#2bb6a8_100%)] px-7 py-5 text-lg font-semibold text-white shadow-[0_24px_40px_rgba(37,99,235,0.25)] transition-transform duration-200 hover:-translate-y-0.5" href={primaryHeroHref}>
+              {primaryHeroLabel}
+            </Link>
+            <Link className="inline-flex min-w-56 items-center justify-center rounded-2xl border border-slate-200 bg-white px-7 py-5 text-lg font-semibold text-slate-800 shadow-[0_20px_35px_rgba(25,38,63,0.06)] transition-transform duration-200 hover:-translate-y-0.5" href={secondaryHeroHref}>
+              {secondaryHeroLabel}
+            </Link>
+          </div>
+          <div className="mt-16 grid gap-10 text-center sm:grid-cols-3">
+            <Stat value="2,400+" label="Active Writers" />
+            <Stat value="50K+" label="Content Delivered" />
+            <Stat value="4.8★" label="Avg. Rating" />
+          </div>
+        </div>
       </section>
+
+      <section id="features" className="mx-auto max-w-6xl px-6 py-24 lg:px-10">
+        <p className="text-center text-sm font-semibold uppercase tracking-[0.3em] text-teal-500">
+          Features
+        </p>
+        <div className="mt-12 grid gap-6 md:grid-cols-3">
+          {features.map((feature) => (
+            <article
+              key={feature.title}
+              className="rounded-[2rem] border border-white/80 bg-white/85 p-8 shadow-[0_24px_60px_rgba(25,38,63,0.06)]"
+            >
+              <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">
+                {feature.title}
+              </h2>
+              <p className="mt-4 text-base leading-8 text-slate-500">
+                {feature.body}
+              </p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="writers" className="mx-auto max-w-6xl px-6 py-16 lg:px-10">
+        <div className="rounded-[2.5rem] border border-white/80 bg-[linear-gradient(135deg,rgba(37,99,235,0.08),rgba(43,182,168,0.08))] p-10 shadow-[0_30px_70px_rgba(25,38,63,0.06)]">
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-teal-500">
+            For Writers
+          </p>
+          <div className="mt-6 grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+            <div>
+              <h2 className="text-5xl font-semibold tracking-[-0.05em] text-slate-950">
+                A cleaner workflow for great writers.
+              </h2>
+              <p className="mt-6 max-w-2xl text-xl leading-9 text-slate-500">
+                Penned gives writers a live marketplace, structured briefs,
+                faster approvals, and clear payout visibility without juggling
+                fragmented tools.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link className="button-primary rounded-2xl px-6 py-4 text-base" href={writerHref}>
+                  {user?.role === "writer" ? "Open Writer Workspace" : "Explore Writer Workflow"}
+                </Link>
+                <Link className="button-secondary rounded-2xl px-6 py-4 text-base" href={writerSecondaryHref}>
+                  {writerSecondaryLabel}
+                </Link>
+              </div>
+            </div>
+            <div className="grid gap-4">
+              {writerBenefits.map((item) => (
+                <div
+                  key={item}
+                  className="rounded-[1.5rem] border border-white/80 bg-white/90 p-5 text-base leading-7 text-slate-600 shadow-[0_20px_45px_rgba(25,38,63,0.05)]"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="pricing" className="bg-[#f3f7fb] px-6 py-28 lg:px-10">
+        <div className="mx-auto max-w-5xl text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-teal-500">
+            Pricing
+          </p>
+          <h2 className="mt-6 text-6xl font-semibold tracking-[-0.05em] text-slate-950">
+            Simple, Transparent Pricing
+          </h2>
+          <p className="mt-5 text-2xl leading-9 text-slate-500">
+            Scale your content production without scaling your headcount.
+          </p>
+          <div className="mt-16 grid gap-6 md:grid-cols-3">
+            {pricing.map((plan) => (
+              <div
+                key={plan.name}
+                className="rounded-[2rem] border border-white/80 bg-white/90 p-8 text-left shadow-[0_24px_60px_rgba(25,38,63,0.05)]"
+              >
+                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">
+                  {plan.name}
+                </p>
+                <h3 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-slate-950">
+                  {plan.price}
+                </h3>
+                <p className="mt-4 text-base leading-8 text-slate-500">
+                  {plan.detail}
+                </p>
+                <Link
+                  className="button-primary mt-6 rounded-2xl px-5 py-3 text-sm"
+                  href={resolvePlanHref(plan.name, user?.role)}
+                >
+                  {resolvePlanLabel(plan.name, user?.role)}
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <footer id="about" className="border-t border-slate-200 bg-white px-6 py-16 lg:px-10">
+        <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[linear-gradient(135deg,#2563eb_0%,#2bb6a8_100%)] text-sm font-semibold text-white">
+                P
+              </span>
+              <span className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">
+                Penned
+              </span>
+            </div>
+            <p className="mt-5 max-w-xs text-lg leading-8 text-slate-500">
+              Premium content at scale. Connect with expert writers and grow
+              your publishing engine.
+            </p>
+          </div>
+          <FooterColumn
+            title="Platform"
+            links={[
+              { label: "Features", href: "#features" },
+              { label: "Pricing", href: "#pricing" },
+              { label: "For Writers", href: "#writers" },
+              { label: "About", href: "/about" },
+            ]}
+          />
+          <FooterColumn
+            title={user ? "Workspace" : "Get Started"}
+            links={workspaceLinks}
+          />
+          <FooterColumn
+            title="Company"
+            links={[
+              { label: "Contact", href: "/contact" },
+            ]}
+          />
+          <FooterColumn
+            title="Legal"
+            links={[
+              { label: "Privacy", href: "/privacy" },
+              { label: "Terms", href: "/terms" },
+              { label: "Security", href: "/security" },
+            ]}
+          />
+        </div>
+        <div className="mx-auto mt-14 max-w-7xl border-t border-slate-200 pt-8 text-center text-sm text-slate-500">
+          © 2026 Penned. All rights reserved.
+        </div>
+      </footer>
     </main>
   );
 }
 
-function FeaturePanel({
-  title,
-  items,
-  accent,
-}: {
-  title: string;
-  items: string[];
-  accent: string;
-}) {
+function resolvePlanHref(planName: string, role?: "client" | "writer" | "admin") {
+  if (!role) {
+    return planName === "Starter" ? "/sign-up?role=client" : "/sign-up?role=client";
+  }
+
+  if (role === "client") {
+    return planName === "Starter" ? "/client" : "/client/billing";
+  }
+
+  if (role === "writer") {
+    return planName === "Starter" ? "/writer" : "/contact";
+  }
+
+  return planName === "Starter" ? "/admin" : "/contact";
+}
+
+function resolvePlanLabel(planName: string, role?: "client" | "writer" | "admin") {
+  if (!role) {
+    return planName === "Starter" ? "Get Started Free" : "Create Client Account";
+  }
+
+  if (role === "client") {
+    return planName === "Starter" ? "Open Workspace" : "View Billing";
+  }
+
+  if (role === "writer") {
+    return planName === "Starter" ? "Open Workspace" : "Talk to Team";
+  }
+
+  return planName === "Starter" ? "Open Console" : "Talk to Team";
+}
+
+function Stat({ value, label }: { value: string; label: string }) {
   return (
-    <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
-      <h3 className={`text-sm font-semibold uppercase tracking-[0.25em] ${accent}`}>
-        {title}
-      </h3>
-      <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-200">
-        {items.map((item) => (
-          <li key={item} className="flex gap-3">
-            <span className="mt-2 h-1.5 w-1.5 rounded-full bg-current" />
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
+    <div>
+      <p className="text-5xl font-semibold tracking-[-0.05em] text-slate-700">
+        {value}
+      </p>
+      <p className="mt-3 text-xl text-slate-400">{label}</p>
     </div>
   );
 }
 
-function InfoCard({
-  eyebrow,
+function FooterColumn({
   title,
-  items,
+  links,
 }: {
-  eyebrow: string;
   title: string;
-  items: string[];
+  links: { label: string; href: string }[];
 }) {
   return (
-    <div className="rounded-[1.75rem] border border-slate-200/70 bg-white/80 p-6 shadow-[0_16px_40px_rgba(50,31,20,0.06)]">
-      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-        {eyebrow}
-      </p>
-      <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
-        {title}
-      </h2>
-      <ul className="mt-5 space-y-3 text-sm leading-6 text-slate-600">
-        {items.map((item) => (
-          <li key={item}>{item}</li>
+    <div>
+      <p className="text-lg font-semibold text-slate-950">{title}</p>
+      <div className="mt-5 flex flex-col gap-4 text-lg text-slate-500">
+        {links.map((link) => (
+          <Link key={link.label} href={link.href}>
+            {link.label}
+          </Link>
         ))}
-      </ul>
-    </div>
-  );
-}
-
-function ExperienceCard({
-  title,
-  stat,
-  description,
-  href,
-  tone,
-}: {
-  title: string;
-  stat: string;
-  description: string;
-  href: string;
-  tone: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`group rounded-[1.75rem] border border-white/70 bg-gradient-to-br ${tone} p-6 shadow-[0_24px_48px_rgba(49,32,20,0.08)] transition-transform duration-200 hover:-translate-y-1`}
-    >
-      <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-500">
-        Dashboard
-      </p>
-      <h2 className="mt-4 text-3xl font-semibold tracking-[-0.03em] text-slate-950">
-        {title}
-      </h2>
-      <p className="mt-3 text-sm text-slate-600">{description}</p>
-      <div className="mt-8 flex items-end justify-between">
-        <span className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">
-          {stat}
-        </span>
-        <span className="text-sm font-medium text-slate-700 transition-transform duration-200 group-hover:translate-x-1">
-          Explore
-        </span>
       </div>
-    </Link>
+    </div>
   );
 }

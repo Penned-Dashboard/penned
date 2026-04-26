@@ -26,8 +26,10 @@ create type public.transaction_type as enum (
 );
 
 create table if not exists public.profiles (
-  id uuid primary key,
+  id uuid primary key default gen_random_uuid(),
+  external_auth_id text unique,
   email text unique not null,
+  password_hash text,
   full_name text not null,
   role public.app_role not null default 'client',
   company_name text,
@@ -55,7 +57,10 @@ create table if not exists public.orders (
   primary_cta text,
   reference_links text[] not null default '{}',
   target_audience text,
+  tone_of_voice text,
   target_keywords text[] not null default '{}',
+  word_count integer,
+  priority text not null default 'standard',
   due_date date,
   status public.order_status not null default 'draft',
   budget_cents integer not null default 0,
@@ -98,6 +103,16 @@ create table if not exists public.transactions (
   amount_cents integer not null,
   stripe_reference text,
   created_at timestamptz not null default now()
+);
+
+create table if not exists public.payout_requests (
+  id uuid primary key default gen_random_uuid(),
+  writer_id uuid not null references public.profiles(id),
+  amount_cents integer not null,
+  status text not null default 'pending',
+  requested_at timestamptz not null default now(),
+  approved_at timestamptz,
+  approved_by uuid references public.profiles(id)
 );
 
 create table if not exists public.subscriptions (

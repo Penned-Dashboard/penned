@@ -1,31 +1,43 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { isRole } from "@/lib/types";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
+import { hasClerkEnv } from "@/lib/auth";
+const isProtectedRoute = createRouteMatcher([
+  "/dashboard(.*)",
+  "/client(.*)",
+  "/writer(.*)",
+  "/admin(.*)",
+]);
 
-const protectedPrefixes = ["/client", "/writer", "/admin"];
+const clerkProxy = clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req)) {
+    await auth.protect();
+  }
+});
 
-export function proxy(request: NextRequest) {
+export default function proxy(request: NextRequest, event: NextFetchEvent) {
+  if (hasClerkEnv()) {
+    return clerkProxy(request, event);
+  }
+
   const { pathname } = request.nextUrl;
+  const currentSession = request.cookies.get("penned-session")?.value;
 
-  if (pathname === "/dashboard") {
-    return NextResponse.next();
+  if (
+    (pathname === "/dashboard" ||
+      pathname.startsWith("/client") ||
+      pathname.startsWith("/writer") ||
+      pathname.startsWith("/admin")) &&
+    !currentSession
+  ) {
+    return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 
-  const matchedPrefix = protectedPrefixes.find((prefix) => pathname.startsWith(prefix));
-
-  if (!matchedPrefix) {
-    return NextResponse.next();
-  }
-
-  const expectedRole = matchedPrefix.slice(1);
-  const currentRole = request.cookies.get("penned-role")?.value;
-
-  if (!currentRole || !isRole(currentRole) || currentRole === expectedRole) {
-    return NextResponse.next();
-  }
-
-  return NextResponse.redirect(new URL(`/${currentRole}`, request.url));
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/dashboard", "/client/:path*", "/writer/:path*", "/admin/:path*"],
+  matcher: [
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api|trpc)(.*)",
+  ],
 };
