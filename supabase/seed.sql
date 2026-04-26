@@ -2,7 +2,7 @@ insert into public.profiles (id, external_auth_id, email, full_name, role, compa
 values
   ('11111111-1111-1111-1111-111111111111', 'seed-client', 'client@penned.dev', 'Penned Client Seed', 'client', 'Penned Labs'),
   ('22222222-2222-2222-2222-222222222222', 'seed-writer', 'writer@penned.dev', 'Penned Writer Seed', 'writer', null),
-  ('33333333-3333-3333-3333-333333333333', 'seed-admin', 'admin@penned.dev', 'Penned Admin Seed', 'admin', 'Penned')
+  ('33333333-3333-3333-3333-333333333333', 'seed-admin', 'admin@pen.dev', 'Penned Admin Seed', 'admin', 'Penned')
 on conflict (id) do nothing;
 
 insert into public.content_types (id, name, description, base_price_cents, turnaround_days, active)

@@ -210,16 +210,43 @@ export async function signInWorkspaceUserWithPassword(email: string, password: s
     throw new Error("Incorrect email or password.");
   }
 
+  let activeRole = data.role;
+  const resolvedRole = resolveRole(data.email, data.role);
+
+  if (resolvedRole !== data.role) {
+    const supabase = createServerSupabaseClient();
+
+    if (!supabase) {
+      throw new Error("Supabase must be configured before sign-in.");
+    }
+
+    const { data: updated, error } = await supabase
+      .from("profiles")
+      .update({ role: resolvedRole })
+      .eq("id", data.id)
+      .select("role")
+      .single();
+
+    if (error || !updated) {
+      throw new Error(error?.message ?? "Could not update admin access.");
+    }
+
+    activeRole = updated.role;
+  }
+
   await setWorkspaceSession({
     authId: data.id,
     profileId: data.id,
     email: data.email,
     fullName: data.full_name,
-    role: data.role,
+    role: activeRole,
     source: "workspace",
   });
 
-  return data;
+  return {
+    ...data,
+    role: activeRole,
+  };
 }
 
 export async function signOutWorkspaceUser() {
