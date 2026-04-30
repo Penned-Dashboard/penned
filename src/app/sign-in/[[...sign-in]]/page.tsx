@@ -55,6 +55,8 @@ export default async function SignInPage({
               <p className="text-sm text-rose-600">
                 {params.error === "setup"
                   ? "Password sign-in is not ready yet. Run the latest Supabase upgrade SQL first."
+                  : params.error === "env"
+                    ? "Signin is not configured in this deployment yet. Add the Supabase server env vars to this Vercel environment."
                   : "Incorrect email or password."}
               </p>
             ) : null}

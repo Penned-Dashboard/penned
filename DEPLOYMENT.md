@@ -20,6 +20,7 @@
 - Connect the GitHub repo to Vercel
 - Every feature branch gets a preview deployment URL
 - Use a staging Supabase project and Stripe test mode
+- Add the env vars to the `Preview` environment in Vercel, not only `Production`
 
 ### Production
 
@@ -42,6 +43,14 @@ Copy [.env.example](/Users/dinaldholiya/All Projects/penned/.env.example) into t
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
 - `RESEND_API_KEY`
 
+For the current password-based workspace auth, these are the minimum required vars for signup/signin to work on a preview deployment:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `NEXT_PUBLIC_APP_URL`
+- `ADMIN_EMAILS`
+
 ## Supabase setup
 
 1. Create a Supabase project for staging.
@@ -53,6 +62,7 @@ Copy [.env.example](/Users/dinaldholiya/All Projects/penned/.env.example) into t
 
 - If `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set, the client order form writes to Supabase and the dashboards read live order data.
 - If those variables are missing, the app falls back to demo data so previews still render cleanly.
+- If preview deployments are missing the Supabase server vars, signup/signin will fail. Make sure the Vercel env vars are enabled for `Preview`.
 
 ## Production domain suggestion
 

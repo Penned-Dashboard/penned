@@ -62,6 +62,10 @@ export default async function SignUpPage({
                   ? "That email already has an account. Sign in instead."
                   : params.error === "setup"
                     ? "Run the latest Supabase upgrade SQL before using password-based sign in."
+                    : params.error === "env"
+                      ? "Signup is not configured in this deployment yet. Add the Supabase server env vars to this Vercel environment."
+                      : params.error === "failed"
+                        ? "The account could not be created in this deployment. Check the server env vars and Supabase schema, then try again."
                   : "Please complete all fields and use a password with at least 8 characters."}
               </p>
             ) : null}

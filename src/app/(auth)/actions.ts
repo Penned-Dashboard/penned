@@ -33,10 +33,15 @@ export async function signUpAction(formData: FormData) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
+    console.error("signUpAction failed", error);
     redirect(
-      message.includes("password sign-in")
-        ? "/sign-up?error=setup"
-        : "/sign-up?error=exists",
+      message.includes("already exists")
+        ? "/sign-up?error=exists"
+        : message.includes("password sign-in")
+          ? "/sign-up?error=setup"
+          : message.includes("Supabase must be configured")
+            ? "/sign-up?error=env"
+            : "/sign-up?error=failed",
     );
   }
 
@@ -57,10 +62,13 @@ export async function signInAction(formData: FormData) {
     user = await signInWorkspaceUserWithPassword(email, password);
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
+    console.error("signInAction failed", error);
     redirect(
       message.includes("password sign-in")
         ? "/sign-in?error=setup"
-        : "/sign-in?error=invalid",
+        : message.includes("Supabase must be configured")
+          ? "/sign-in?error=env"
+          : "/sign-in?error=invalid",
     );
   }
 
