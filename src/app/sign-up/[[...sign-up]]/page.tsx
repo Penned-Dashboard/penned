@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { signUpAction } from "@/app/(auth)/actions";
 import { RolePicker } from "@/components/role-picker";
+import { getCurrentAppUser } from "@/lib/auth";
 
 export default async function SignUpPage({
   searchParams,
@@ -8,7 +10,12 @@ export default async function SignUpPage({
   searchParams: Promise<{ role?: string; error?: string }>;
 }) {
   const params = await searchParams;
+  const user = await getCurrentAppUser();
   const defaultRole = params.role === "writer" ? "writer" : "client";
+
+  if (user) {
+    redirect(`/${user.role}`);
+  }
 
   return (
     <main className="min-h-screen bg-[#f7f9fd]">

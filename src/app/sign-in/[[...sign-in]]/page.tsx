@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { signInAction } from "@/app/(auth)/actions";
+import { getCurrentAppUser } from "@/lib/auth";
 
 export default async function SignInPage({
   searchParams,
@@ -7,6 +9,11 @@ export default async function SignInPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const params = await searchParams;
+  const user = await getCurrentAppUser();
+
+  if (user) {
+    redirect(`/${user.role}`);
+  }
 
   return (
     <main className="min-h-screen bg-[#f7f9fd]">

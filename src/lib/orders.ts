@@ -687,9 +687,10 @@ export async function createOrder(values: OrderFormValues) {
 
   if (!parsed.success) {
     const fieldErrors = parsed.error.flatten().fieldErrors;
+    const firstError = Object.values(fieldErrors).flat()[0];
     return {
       ok: false as const,
-      message: "Fix the highlighted fields and submit again.",
+      message: firstError ?? "Fix the highlighted fields and submit again.",
       errors: {
         title: fieldErrors.title?.[0],
         contentTypeId: fieldErrors.contentTypeId?.[0],

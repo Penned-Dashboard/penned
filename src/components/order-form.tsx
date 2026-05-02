@@ -28,6 +28,11 @@ export function OrderForm({
 
   return (
     <form action={formAction} className="grid gap-4 md:grid-cols-2">
+      {state.message && !state.success ? (
+        <div className="md:col-span-2 rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {state.message}
+        </div>
+      ) : null}
       <Field
         label="Content title"
         name="title"
@@ -36,12 +41,15 @@ export function OrderForm({
       />
 
       {hideContentTypeSelect ? (
-        <input name="contentTypeId" type="hidden" value={presetContentTypeId} />
+        <div className="md:col-span-2">
+          <input name="contentTypeId" type="hidden" value={presetContentTypeId} />
+          <FieldError message={state.errors.contentTypeId} />
+        </div>
       ) : (
         <label>
           <span className="dashboard-label">Content type</span>
           <select
-            className="dashboard-input"
+            className={inputClass(Boolean(state.errors.contentTypeId))}
             defaultValue={presetContentTypeId ?? ""}
             name="contentTypeId"
             required
@@ -98,7 +106,12 @@ export function OrderForm({
 
       <label>
         <span className="dashboard-label">Priority</span>
-        <select className="dashboard-input" defaultValue="standard" name="priority" required>
+        <select
+          className={inputClass(Boolean(state.errors.priority))}
+          defaultValue="standard"
+          name="priority"
+          required
+        >
           <option value="standard">Standard</option>
           <option value="priority">Priority</option>
           <option value="rush">Rush</option>
@@ -117,7 +130,7 @@ export function OrderForm({
       <label className="md:col-span-2">
         <span className="dashboard-label">Reference links</span>
         <textarea
-          className="dashboard-input min-h-24"
+          className={`${inputClass(Boolean(state.errors.referenceLinks))} min-h-24`}
           name="referenceLinks"
           placeholder="Paste links, research notes, competitors, or internal docs. Separate with commas or new lines."
           required
@@ -128,7 +141,7 @@ export function OrderForm({
       <label className="md:col-span-2">
         <span className="dashboard-label">Brief</span>
         <textarea
-          className="dashboard-input min-h-32"
+          className={`${inputClass(Boolean(state.errors.brief))} min-h-32`}
           name="brief"
           placeholder="Goals, tone, key points, keywords, structure expectations, and guardrails."
           required
@@ -141,7 +154,7 @@ export function OrderForm({
           <p>
             Orders are written directly to Supabase and pushed into the live writer marketplace.
           </p>
-          {state.message ? (
+          {state.message && state.success ? (
             <p className={state.success ? "text-emerald-700" : "text-orange-900"}>
               {state.message}
             </p>
@@ -174,7 +187,7 @@ function Field({
     <label className={className}>
       <span className="dashboard-label">{label}</span>
       <input
-        className="dashboard-input"
+        className={inputClass(Boolean(error))}
         min={type === "number" ? 0 : undefined}
         name={name}
         placeholder={placeholder}
@@ -192,4 +205,10 @@ function FieldError({ message }: { message?: string }) {
   }
 
   return <p className="mt-2 text-sm text-rose-600">{message}</p>;
+}
+
+function inputClass(hasError: boolean) {
+  return hasError
+    ? "dashboard-input border-rose-300 bg-rose-50/60 focus:border-rose-400 focus:ring-rose-200"
+    : "dashboard-input";
 }
