@@ -122,7 +122,51 @@ export async function createWorkspaceUser({
 
   if (existing) {
     if (existing.password_hash) {
-      throw new Error("An account already exists for that email.");
+      if (!verifyPassword(password, existing.password_hash)) {
+        throw new Error("An account already exists for that email.");
+      }
+
+      const existingRole = resolveRole(existing.email, existing.role);
+
+      if (existingRole !== existing.role) {
+        const { data: promoted, error: promoteError } = await supabase
+          .from("profiles")
+          .update({ role: existingRole })
+          .eq("id", existing.id)
+          .select("id, role, email, full_name")
+          .single();
+
+        if (promoteError || !promoted) {
+          throw new Error(promoteError?.message ?? "Could not promote existing account.");
+        }
+
+        await setWorkspaceSession({
+          authId: promoted.id,
+          profileId: promoted.id,
+          email: promoted.email,
+          fullName: promoted.full_name,
+          role: promoted.role,
+          source: "workspace",
+        });
+
+        return promoted;
+      }
+
+      await setWorkspaceSession({
+        authId: existing.id,
+        profileId: existing.id,
+        email: existing.email,
+        fullName: existing.full_name,
+        role: existing.role,
+        source: "workspace",
+      });
+
+      return {
+        id: existing.id,
+        role: existing.role,
+        email: existing.email,
+        full_name: existing.full_name,
+      };
     }
 
     const { data: updated, error: updateError } = await supabase
