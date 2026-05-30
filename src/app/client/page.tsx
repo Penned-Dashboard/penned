@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { loadSampleClientOrdersAction } from "@/app/client/actions";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { requireRole } from "@/lib/auth";
 import {
@@ -10,11 +11,13 @@ import {
 export default async function ClientDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; sampleState?: string; sampleMessage?: string }>;
 }) {
   const user = await requireRole("client");
   const params = await searchParams;
   const query = params.q?.trim().toLowerCase() ?? "";
+  const sampleState = params.sampleState === "error" ? "error" : params.sampleState === "success" ? "success" : null;
+  const sampleMessage = params.sampleMessage?.trim() ?? "";
   const [liveOrders, reviewQueue, invoices] = await Promise.all([
     getClientOrders(user.profileId),
     getClientReviewQueue(user.profileId),
@@ -90,6 +93,38 @@ export default async function ClientDashboardPage({
             <p className="mt-3 text-sm text-emerald-500">{metric.hint}</p>
           </article>
         ))}
+      </section>
+
+      <section className={`rounded-[1.5rem] border px-5 py-4 ${
+        sampleState === "error"
+          ? "border-rose-200 bg-rose-50"
+          : sampleState === "success"
+            ? "border-emerald-200 bg-emerald-50"
+            : "border-slate-200 bg-white"
+      }`}>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
+              Review Setup
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
+              Load sample orders for stakeholder review
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              Add one completed order and one in-review order so the dashboard, queues, and order detail pages have realistic data to review.
+            </p>
+            {sampleMessage ? (
+              <p className={`mt-3 text-sm font-medium ${sampleState === "error" ? "text-rose-700" : "text-emerald-700"}`}>
+                {sampleMessage}
+              </p>
+            ) : null}
+          </div>
+          <form action={loadSampleClientOrdersAction}>
+            <button className="button-secondary" type="submit">
+              Load sample client orders
+            </button>
+          </form>
+        </div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.4fr_0.7fr]">

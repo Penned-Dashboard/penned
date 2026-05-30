@@ -39,10 +39,26 @@ export default async function ClientNewOrderPage({
               {contentTypes.map((type) => (
                 <Link
                   key={type.id}
-                  className="rounded-[1.15rem] border border-slate-200 bg-white px-5 py-4 text-base font-medium text-slate-900 transition hover:border-blue-400 hover:bg-blue-50"
+                  className="rounded-[1.25rem] border border-slate-200 bg-white px-5 py-5 transition hover:border-blue-400 hover:bg-blue-50"
                   href={`/client/new-order?type=${type.id}`}
                 >
-                  {type.name}
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-slate-950">{type.name}</h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">{type.description}</p>
+                    </div>
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                      {type.turnaroundDays}d
+                    </span>
+                  </div>
+                  <div className="mt-4 flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Suggested turnaround</span>
+                    <span className="font-semibold text-slate-900">{type.turnaroundDays} business days</span>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Starting price</span>
+                    <span className="font-semibold text-slate-900">${(type.basePriceCents / 100).toLocaleString()}</span>
+                  </div>
                 </Link>
               ))}
             </div>

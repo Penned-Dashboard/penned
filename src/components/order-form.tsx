@@ -2,15 +2,12 @@
 
 import { useActionState } from "react";
 import { submitOrderAction } from "@/app/client/actions";
+import type { ContentTypeOption } from "@/lib/orders";
 import {
   initialOrderFormState,
   type OrderFormState,
 } from "@/lib/order-schema";
 
-type ContentTypeOption = {
-  id: string;
-  name: string;
-};
 
 export function OrderForm({
   contentTypes,

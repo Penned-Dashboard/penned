@@ -1,10 +1,12 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import {
   acceptSubmission,
   addSubmissionComment,
   createOrder,
   requestRevision,
+  seedWorkspaceReviewData,
 } from "@/lib/orders";
 import {
   initialOrderFormState,
@@ -67,4 +69,14 @@ export async function addSubmissionCommentAction(formData: FormData) {
   const submissionId = String(formData.get("submissionId") ?? "");
   const body = String(formData.get("body") ?? "");
   await addSubmissionComment(submissionId, body);
+}
+
+export async function loadSampleClientOrdersAction() {
+  const result = await seedWorkspaceReviewData();
+  const params = new URLSearchParams({
+    sampleState: result.ok ? "success" : "error",
+    sampleMessage: result.message,
+  });
+
+  redirect(`/client?${params.toString()}#orders`);
 }

@@ -5,10 +5,14 @@ import {
   type OrderFormValues,
 } from "@/lib/order-schema";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import type { Role } from "@/lib/types";
 
 export type ContentTypeOption = {
   id: string;
   name: string;
+  description: string;
+  turnaroundDays: number;
+  basePriceCents: number;
 };
 
 export type DashboardOrder = {
@@ -167,6 +171,11 @@ export type ContentTypeCatalogItem = {
   status: string;
 };
 
+export type SeedWorkspaceDataResult = {
+  ok: boolean;
+  message: string;
+};
+
 export async function getContentTypeOptions(): Promise<ContentTypeOption[]> {
   const supabase = createServerSupabaseClient();
 
@@ -176,11 +185,19 @@ export async function getContentTypeOptions(): Promise<ContentTypeOption[]> {
 
   const { data, error } = await supabase
     .from("content_types")
-    .select("id, name")
+    .select("id, name, description, turnaround_days, base_price_cents")
     .eq("active", true)
     .order("name", { ascending: true });
 
-  return error || !data?.length ? [] : data;
+  return error || !data?.length
+    ? []
+    : data.map((item) => ({
+        id: item.id,
+        name: item.name,
+        description: item.description ?? "Structured content service.",
+        turnaroundDays: item.turnaround_days,
+        basePriceCents: item.base_price_cents,
+      }));
 }
 
 export async function getClientOrders(clientProfileId: string): Promise<DashboardOrder[]> {
@@ -766,6 +783,472 @@ export async function createOrder(values: OrderFormValues) {
     message: "Order created and added to the writer marketplace.",
     errors: {},
   };
+}
+
+const CLIENT_SAMPLE_TITLES = [
+  "Review Sample — Operations case study",
+  "Review Sample — Workflow blog draft",
+] as const;
+
+const WRITER_SAMPLE_TITLES = [
+  "Review Sample — Accepted feature article",
+  "Review Sample — Claimed landing page refresh",
+  "Review Sample — Open newsletter brief",
+] as const;
+
+export async function seedWorkspaceReviewData(): Promise<SeedWorkspaceDataResult> {
+  const supabase = createServerSupabaseClient();
+  const user = await getCurrentAppUser();
+
+  if (!supabase || !user) {
+    return { ok: false, message: "Sign in before loading review data." };
+  }
+
+  if (user.role === "client") {
+    return seedClientReviewData(user.profileId);
+  }
+
+  if (user.role === "writer") {
+    return seedWriterReviewData(user.profileId);
+  }
+
+  return {
+    ok: false,
+    message: "Use a client or writer account to generate review data for that workspace.",
+  };
+}
+
+async function seedClientReviewData(clientProfileId: string): Promise<SeedWorkspaceDataResult> {
+  const supabase = createServerSupabaseClient();
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase is not configured." };
+  }
+
+  const existing = await supabase
+    .from("orders")
+    .select("id")
+    .eq("client_id", clientProfileId)
+    .in("title", [...CLIENT_SAMPLE_TITLES]);
+
+  if ((existing.data ?? []).length >= CLIENT_SAMPLE_TITLES.length) {
+    return { ok: true, message: "Sample client orders are already loaded." };
+  }
+
+  const writer = await ensureSupportProfile("writer", "Review Writer", "review-writer@penned.local");
+  const contentTypes = await getContentTypeOptions();
+  const primaryType = contentTypes[0];
+  const secondaryType = contentTypes[1] ?? contentTypes[0];
+
+  if (!writer || !primaryType || !secondaryType) {
+    return { ok: false, message: "Create at least two active content types before loading sample data." };
+  }
+
+  const acceptedOrder = await createSampleOrder({
+    clientId: clientProfileId,
+    writerId: writer.id,
+    contentTypeId: primaryType.id,
+    budgetCents: primaryType.basePriceCents,
+    title: CLIENT_SAMPLE_TITLES[0],
+    brief: "Reference sample for client review: completed case study with proof points and a final approval state.",
+    primaryCta: "Book a strategy call",
+    targetAudience: "Operations leaders evaluating content systems",
+    toneOfVoice: "Clear and strategic",
+    targetKeywords: ["content operations", "editorial workflow"],
+    priority: "standard",
+    referenceLinks: ["https://example.com/case-study"],
+    wordCount: 1400,
+    dueDateOffsetDays: -3,
+    status: "accepted",
+  });
+
+  const reviewOrder = await createSampleOrder({
+    clientId: clientProfileId,
+    writerId: writer.id,
+    contentTypeId: secondaryType.id,
+    budgetCents: secondaryType.basePriceCents,
+    title: CLIENT_SAMPLE_TITLES[1],
+    brief: "Reference sample for client review: in-progress blog draft waiting in the review queue.",
+    primaryCta: "Download the playbook",
+    targetAudience: "B2B marketing teams",
+    toneOfVoice: "Confident and practical",
+    targetKeywords: ["workflow automation", "content systems"],
+    priority: "priority",
+    referenceLinks: ["https://example.com/blog-brief"],
+    wordCount: 1200,
+    dueDateOffsetDays: 4,
+    status: "in_review",
+  });
+
+  if (!acceptedOrder || !reviewOrder) {
+    return { ok: false, message: "Could not create sample client orders." };
+  }
+
+  await ensureSubmissionTree({
+    orderId: acceptedOrder.id,
+    writerId: writer.id,
+    status: "accepted",
+    notes: "Final draft approved and archived for reference.",
+    googleDocUrl: "https://docs.google.com/document/d/sample-client-accepted",
+    comments: [{ authorId: clientProfileId, body: "Looks great. Approved for publication." }],
+  });
+
+  await ensureSubmissionTree({
+    orderId: reviewOrder.id,
+    writerId: writer.id,
+    status: "submitted",
+    notes: "Draft one delivered and waiting on client feedback.",
+    googleDocUrl: "https://docs.google.com/document/d/sample-client-review",
+    comments: [{ authorId: writer.id, body: "Draft one is ready for review." }],
+  });
+
+  const wallet = await ensureWallet(writer.id);
+  const ranking = await ensureRanking(writer.id);
+
+  if (wallet && ranking) {
+    await ensureAcceptedOrderCredit({
+      walletId: wallet.id,
+      walletAvailableCents: wallet.available_cents,
+      rankingId: ranking.id,
+      rankingScore: ranking.score,
+      rankingCompletedJobs: ranking.completed_jobs,
+      orderId: acceptedOrder.id,
+      amountCents: acceptedOrder.budget_cents,
+    });
+  }
+
+  revalidateApp();
+  return { ok: true, message: "Two sample client orders are ready: one completed and one in review." };
+}
+
+async function seedWriterReviewData(writerProfileId: string): Promise<SeedWorkspaceDataResult> {
+  const supabase = createServerSupabaseClient();
+
+  if (!supabase) {
+    return { ok: false, message: "Supabase is not configured." };
+  }
+
+  const existing = await supabase
+    .from("orders")
+    .select("id, title")
+    .eq("writer_id", writerProfileId);
+
+  const existingTitles = new Set((existing.data ?? []).map((item) => item.title));
+  if (WRITER_SAMPLE_TITLES.slice(0, 2).every((title) => existingTitles.has(title))) {
+    return { ok: true, message: "Sample writer orders are already loaded." };
+  }
+
+  const client = await ensureSupportProfile("client", "Review Client", "review-client@penned.local", "Review Workspace");
+  const contentTypes = await getContentTypeOptions();
+  const primaryType = contentTypes[0];
+  const secondaryType = contentTypes[1] ?? contentTypes[0];
+  const tertiaryType = contentTypes[2] ?? contentTypes[0];
+
+  if (!client || !primaryType || !secondaryType || !tertiaryType) {
+    return { ok: false, message: "Create active content types before loading writer review data." };
+  }
+
+  const completedOrder = await createSampleOrder({
+    clientId: client.id,
+    writerId: writerProfileId,
+    contentTypeId: primaryType.id,
+    budgetCents: primaryType.basePriceCents,
+    title: WRITER_SAMPLE_TITLES[0],
+    brief: "Completed writer sample used to show accepted work and wallet earnings.",
+    primaryCta: "Schedule a walkthrough",
+    targetAudience: "SaaS operations teams",
+    toneOfVoice: "Polished and trustworthy",
+    targetKeywords: ["ai operations", "content workflow"],
+    priority: "standard",
+    referenceLinks: ["https://example.com/writer-complete"],
+    wordCount: 1500,
+    dueDateOffsetDays: -5,
+    status: "accepted",
+  });
+
+  const inProgressOrder = await createSampleOrder({
+    clientId: client.id,
+    writerId: writerProfileId,
+    contentTypeId: secondaryType.id,
+    budgetCents: secondaryType.basePriceCents,
+    title: WRITER_SAMPLE_TITLES[1],
+    brief: "In-progress writer sample that appears in active assignments.",
+    primaryCta: "Book a demo",
+    targetAudience: "Demand gen leads",
+    toneOfVoice: "Sharp and conversion-minded",
+    targetKeywords: ["campaign messaging", "landing page strategy"],
+    priority: "priority",
+    referenceLinks: ["https://example.com/writer-progress"],
+    wordCount: 1100,
+    dueDateOffsetDays: 3,
+    status: "claimed",
+  });
+
+  await createSampleOrder({
+    clientId: client.id,
+    writerId: null,
+    contentTypeId: tertiaryType.id,
+    budgetCents: tertiaryType.basePriceCents,
+    title: WRITER_SAMPLE_TITLES[2],
+    brief: "Open marketplace sample to show how claimable jobs appear.",
+    primaryCta: "Download the report",
+    targetAudience: "RevOps teams",
+    toneOfVoice: "Practical and concise",
+    targetKeywords: ["revops automation", "reporting workflows"],
+    priority: "rush",
+    referenceLinks: ["https://example.com/writer-open"],
+    wordCount: 900,
+    dueDateOffsetDays: 5,
+    status: "open",
+  });
+
+  if (!completedOrder || !inProgressOrder) {
+    return { ok: false, message: "Could not create sample writer orders." };
+  }
+
+  await ensureSubmissionTree({
+    orderId: completedOrder.id,
+    writerId: writerProfileId,
+    status: "accepted",
+    notes: "Completed sample draft approved by the client.",
+    googleDocUrl: "https://docs.google.com/document/d/sample-writer-accepted",
+    comments: [{ authorId: client.id, body: "Approved. Great work on the final delivery." }],
+  });
+
+  const wallet = await ensureWallet(writerProfileId);
+  const ranking = await ensureRanking(writerProfileId);
+
+  if (wallet && ranking) {
+    await ensureAcceptedOrderCredit({
+      walletId: wallet.id,
+      walletAvailableCents: wallet.available_cents,
+      rankingId: ranking.id,
+      rankingScore: ranking.score,
+      rankingCompletedJobs: ranking.completed_jobs,
+      orderId: completedOrder.id,
+      amountCents: completedOrder.budget_cents,
+    });
+  }
+
+  revalidateApp();
+  return {
+    ok: true,
+    message: "Writer review data is ready with one completed order, one active assignment, and one open marketplace job.",
+  };
+}
+
+async function ensureSupportProfile(role: Role, fullName: string, email: string, companyName?: string) {
+  const supabase = createServerSupabaseClient();
+
+  if (!supabase) return null;
+
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, role, company_name")
+    .eq("email", email)
+    .maybeSingle();
+
+  if (existing) return existing;
+
+  const { data } = await supabase
+    .from("profiles")
+    .insert({
+      email,
+      full_name: fullName,
+      role,
+      company_name: companyName ?? null,
+    })
+    .select("id, full_name, email, role, company_name")
+    .single();
+
+  return data;
+}
+
+async function createSampleOrder({
+  clientId,
+  writerId,
+  contentTypeId,
+  budgetCents,
+  title,
+  brief,
+  primaryCta,
+  targetAudience,
+  toneOfVoice,
+  targetKeywords,
+  priority,
+  referenceLinks,
+  wordCount,
+  dueDateOffsetDays,
+  status,
+}: {
+  clientId: string;
+  writerId: string | null;
+  contentTypeId: string;
+  budgetCents: number;
+  title: string;
+  brief: string;
+  primaryCta: string;
+  targetAudience: string;
+  toneOfVoice: string;
+  targetKeywords: string[];
+  priority: string;
+  referenceLinks: string[];
+  wordCount: number;
+  dueDateOffsetDays: number;
+  status: string;
+}) {
+  const supabase = createServerSupabaseClient();
+
+  if (!supabase) return null;
+
+  const { data: existing } = await supabase
+    .from("orders")
+    .select("id, budget_cents")
+    .eq("title", title)
+    .eq("client_id", clientId)
+    .maybeSingle();
+
+  if (existing) {
+    return existing;
+  }
+
+  const dueDate = new Date();
+  dueDate.setDate(dueDate.getDate() + dueDateOffsetDays);
+
+  const { data } = await supabase
+    .from("orders")
+    .insert({
+      client_id: clientId,
+      writer_id: writerId,
+      content_type_id: contentTypeId,
+      title,
+      brief,
+      primary_cta: primaryCta,
+      reference_links: referenceLinks,
+      target_audience: targetAudience,
+      tone_of_voice: toneOfVoice,
+      target_keywords: targetKeywords,
+      word_count: wordCount,
+      priority,
+      due_date: dueDate.toISOString().slice(0, 10),
+      budget_cents: budgetCents,
+      status,
+    })
+    .select("id, budget_cents")
+    .single();
+
+  return data;
+}
+
+async function ensureSubmissionTree({
+  orderId,
+  writerId,
+  status,
+  notes,
+  googleDocUrl,
+  comments,
+}: {
+  orderId: string;
+  writerId: string;
+  status: string;
+  notes: string;
+  googleDocUrl: string;
+  comments: { authorId: string; body: string }[];
+}) {
+  const supabase = createServerSupabaseClient();
+
+  if (!supabase) return;
+
+  const { data: existing } = await supabase
+    .from("submissions")
+    .select("id")
+    .eq("order_id", orderId)
+    .maybeSingle();
+
+  const inserted = existing ?? (await supabase
+    .from("submissions")
+    .insert({
+      order_id: orderId,
+      writer_id: writerId,
+      version: 1,
+      google_doc_url: googleDocUrl,
+      notes,
+      status,
+    })
+    .select("id")
+    .single()).data;
+
+  if (!inserted?.id) return;
+
+  const { data: existingComments } = await supabase
+    .from("submission_comments")
+    .select("id")
+    .eq("submission_id", inserted.id);
+
+  if ((existingComments ?? []).length === 0 && comments.length) {
+    await supabase.from("submission_comments").insert(
+      comments.map((comment) => ({
+        submission_id: inserted.id,
+        author_id: comment.authorId,
+        body: comment.body,
+      })),
+    );
+  }
+}
+
+async function ensureAcceptedOrderCredit({
+  walletId,
+  walletAvailableCents,
+  rankingId,
+  rankingScore,
+  rankingCompletedJobs,
+  orderId,
+  amountCents,
+}: {
+  walletId: string;
+  walletAvailableCents: number;
+  rankingId: string;
+  rankingScore: number;
+  rankingCompletedJobs: number;
+  orderId: string;
+  amountCents: number;
+}) {
+  const supabase = createServerSupabaseClient();
+
+  if (!supabase) return;
+
+  const { data: existingTransaction } = await supabase
+    .from("transactions")
+    .select("id")
+    .eq("order_id", orderId)
+    .eq("type", "earning")
+    .maybeSingle();
+
+  if (!existingTransaction) {
+    await supabase.from("transactions").insert({
+      wallet_id: walletId,
+      order_id: orderId,
+      type: "earning",
+      amount_cents: amountCents,
+    });
+
+    await supabase
+      .from("wallets")
+      .update({
+        available_cents: walletAvailableCents + amountCents,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", walletId);
+
+    await supabase
+      .from("rankings")
+      .update({
+        score: rankingScore + 10,
+        completed_jobs: rankingCompletedJobs + 1,
+        recalculated_at: new Date().toISOString(),
+      })
+      .eq("id", rankingId);
+  }
 }
 
 export async function claimOrder(orderId: string) {

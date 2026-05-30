@@ -7,16 +7,18 @@ import {
   getWriterMarketplace,
   getWriterWallet,
 } from "@/lib/orders";
-import { claimOrderAction, requestPayoutAction } from "@/app/writer/actions";
+import { claimOrderAction, loadSampleWriterOrdersAction, requestPayoutAction } from "@/app/writer/actions";
 
 export default async function WriterDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; sampleState?: string; sampleMessage?: string }>;
 }) {
   const user = await requireRole("writer");
   const params = await searchParams;
   const query = params.q?.trim().toLowerCase() ?? "";
+  const sampleState = params.sampleState === "error" ? "error" : params.sampleState === "success" ? "success" : null;
+  const sampleMessage = params.sampleMessage?.trim() ?? "";
   const [liveJobs, assignments, wallet, rankings] = await Promise.all([
     getWriterMarketplace(),
     getWriterAssignments(user.profileId),
@@ -99,6 +101,38 @@ export default async function WriterDashboardPage({
             <p className="mt-3 text-sm text-slate-500">{metric.hint}</p>
           </article>
         ))}
+      </section>
+
+      <section className={`rounded-[1.5rem] border px-5 py-4 ${
+        sampleState === "error"
+          ? "border-rose-200 bg-rose-50"
+          : sampleState === "success"
+            ? "border-emerald-200 bg-emerald-50"
+            : "border-slate-200 bg-white"
+      }`}>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
+              Review Setup
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
+              Load sample jobs for stakeholder review
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+              Add one completed assignment, one active assignment, and one open marketplace job so the writer flow is ready for feedback immediately.
+            </p>
+            {sampleMessage ? (
+              <p className={`mt-3 text-sm font-medium ${sampleState === "error" ? "text-rose-700" : "text-emerald-700"}`}>
+                {sampleMessage}
+              </p>
+            ) : null}
+          </div>
+          <form action={loadSampleWriterOrdersAction}>
+            <button className="button-secondary" type="submit">
+              Load sample writer jobs
+            </button>
+          </form>
+        </div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">

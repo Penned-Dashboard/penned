@@ -1,6 +1,7 @@
 "use server";
 
-import { claimOrder, requestPayout, submitDraft } from "@/lib/orders";
+import { redirect } from "next/navigation";
+import { claimOrder, requestPayout, seedWorkspaceReviewData, submitDraft } from "@/lib/orders";
 
 export async function claimOrderAction(formData: FormData) {
   const orderId = String(formData.get("orderId") ?? "");
@@ -17,4 +18,14 @@ export async function submitDraftAction(formData: FormData) {
 export async function requestPayoutAction(formData: FormData) {
   const amount = Number(formData.get("amount") ?? "0");
   await requestPayout(amount);
+}
+
+export async function loadSampleWriterOrdersAction() {
+  const result = await seedWorkspaceReviewData();
+  const params = new URLSearchParams({
+    sampleState: result.ok ? "success" : "error",
+    sampleMessage: result.message,
+  });
+
+  redirect(`/writer?${params.toString()}#job-marketplace`);
 }
