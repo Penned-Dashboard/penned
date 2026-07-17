@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import {
   acceptSubmission,
   addSubmissionComment,
+  createClientFolder,
   createOrder,
   requestRevision,
   seedWorkspaceReviewData,
@@ -25,8 +26,11 @@ export async function submitOrderAction(
 
   const result = await createOrder({
     clientLabel: String(formData.get("clientLabel") ?? ""),
+    clientFolderId: String(formData.get("clientFolderId") ?? ""),
     title: String(formData.get("title") ?? ""),
     contentTypeId: String(formData.get("contentTypeId") ?? ""),
+    serviceTier: String(formData.get("serviceTier") ?? "") === "rank" ? "rank" : "on-demand",
+    language: String(formData.get("language") ?? ""),
     targetAudience: String(formData.get("targetAudience") ?? ""),
     toneOfVoice: String(formData.get("toneOfVoice") ?? ""),
     targetKeywords: String(formData.get("targetKeywords") ?? ""),
@@ -36,6 +40,7 @@ export async function submitOrderAction(
     primaryCta: String(formData.get("primaryCta") ?? ""),
     referenceLinks: String(formData.get("referenceLinks") ?? ""),
     brief: String(formData.get("brief") ?? ""),
+    serviceFields: collectServiceFields(formData),
   });
 
   if (!result.ok) {
@@ -80,4 +85,46 @@ export async function loadSampleClientOrdersAction() {
   });
 
   redirect(`/client?${params.toString()}#orders`);
+}
+
+export async function createClientFolderAction(formData: FormData) {
+  const result = await createClientFolder({
+    name: String(formData.get("name") ?? ""),
+    briefTemplateUrl: String(formData.get("briefTemplateUrl") ?? ""),
+    brandNotes: String(formData.get("brandNotes") ?? ""),
+    toneGuide: String(formData.get("toneGuide") ?? ""),
+    preferredContentTypes: formData
+      .getAll("preferredContentTypes")
+      .map((value) => String(value).trim())
+      .filter(Boolean),
+    defaultWordCount: String(formData.get("defaultWordCount") ?? ""),
+    targetAudience: String(formData.get("targetAudience") ?? ""),
+    complianceNotes: String(formData.get("complianceNotes") ?? ""),
+    deliveryPreference: String(formData.get("deliveryPreference") ?? ""),
+    contentCalendarNotes: String(formData.get("contentCalendarNotes") ?? ""),
+  });
+
+  const params = new URLSearchParams({
+    folderState: result.ok ? "success" : "error",
+    folderMessage: result.message,
+  });
+  redirect(`/client/folders?${params.toString()}`);
+}
+
+function collectServiceFields(formData: FormData) {
+  const fields: Record<string, string> = {};
+
+  for (const [key, value] of formData.entries()) {
+    if (!key.startsWith("serviceField__")) {
+      continue;
+    }
+
+    const normalizedKey = key.replace("serviceField__", "");
+    const nextValue = String(value ?? "");
+    fields[normalizedKey] = fields[normalizedKey]
+      ? `${fields[normalizedKey]}, ${nextValue}`
+      : nextValue;
+  }
+
+  return fields;
 }

@@ -47,11 +47,29 @@ create table if not exists public.content_types (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.client_folders (
+  id uuid primary key default gen_random_uuid(),
+  client_id uuid not null references public.profiles(id) on delete cascade,
+  name text not null,
+  brief_template_url text,
+  brand_notes text,
+  tone_guide text,
+  preferred_content_types text[] not null default '{}',
+  default_word_count integer,
+  target_audience text,
+  compliance_notes text,
+  delivery_preference text,
+  content_calendar_notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),
   client_id uuid not null references public.profiles(id),
   writer_id uuid references public.profiles(id),
   content_type_id uuid references public.content_types(id),
+  client_folder_id uuid references public.client_folders(id),
   client_label text,
   title text not null,
   brief text not null,
@@ -60,6 +78,9 @@ create table if not exists public.orders (
   target_audience text,
   tone_of_voice text,
   target_keywords text[] not null default '{}',
+  language text not null default 'English',
+  service_tier text not null default 'on-demand',
+  intake_details jsonb not null default '{}'::jsonb,
   word_count integer,
   priority text not null default 'standard',
   due_date date,

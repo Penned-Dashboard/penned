@@ -3,7 +3,7 @@ import { loadSampleClientOrdersAction } from "@/app/client/actions";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { WorkspaceAutoRefresh } from "@/components/workspace-auto-refresh";
 import { requireRole } from "@/lib/auth";
-import { getClientOrders, getClientReviewQueue, getInvoices } from "@/lib/orders";
+import { getClientFolders, getClientOrders, getClientReviewQueue, getInvoices } from "@/lib/orders";
 
 export default async function ClientDashboardPage({
   searchParams,
@@ -21,10 +21,11 @@ export default async function ClientDashboardPage({
         : null;
   const sampleMessage = params.sampleMessage?.trim() ?? "";
 
-  const [liveOrders, reviewQueue, invoices] = await Promise.all([
+  const [liveOrders, reviewQueue, invoices, folders] = await Promise.all([
     getClientOrders(user.profileId),
     getClientReviewQueue(user.profileId),
     getInvoices(user.profileId),
+    getClientFolders(user.profileId),
   ]);
 
   const workspaceTitle = `${user.fullName}'s Content Ops Engine`;
@@ -35,7 +36,9 @@ export default async function ClientDashboardPage({
   );
   const recentOrders = allOrders.slice(0, 6);
   const completedOrders = allOrders.filter((order) => order.status === "Accepted");
-  const clientFolders = Array.from(new Set(allOrders.map((order) => order.clientLabel))).filter(Boolean);
+  const clientFolders = folders.length
+    ? folders.map((folder) => folder.name)
+    : Array.from(new Set(allOrders.map((order) => order.clientLabel))).filter(Boolean);
   const filteredReviewQueue = filterByQuery(
     reviewQueue,
     query,

@@ -1,6 +1,10 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentAppUser } from "@/lib/auth";
 import {
+  getServiceByName,
+  type ServiceDefinition,
+} from "@/lib/content-catalog";
+import {
   orderSchema,
   type OrderFormValues,
 } from "@/lib/order-schema";
@@ -9,10 +13,32 @@ import type { Role } from "@/lib/types";
 
 export type ContentTypeOption = {
   id: string;
+  key: string;
   name: string;
   description: string;
+  whatYouGet: string;
+  perfectFor: string;
+  priceLabel: string;
   turnaroundDays: number;
   basePriceCents: number;
+  isOrderable: boolean;
+  orderIndex: number;
+  fields: ServiceDefinition["fields"];
+};
+
+export type ClientFolder = {
+  id: string;
+  name: string;
+  briefTemplateUrl: string;
+  brandNotes: string;
+  toneGuide: string;
+  preferredContentTypes: string[];
+  defaultWordCount: string;
+  targetAudience: string;
+  complianceNotes: string;
+  deliveryPreference: string;
+  contentCalendarNotes: string;
+  orderCount: number;
 };
 
 export type DashboardOrder = {
@@ -179,28 +205,168 @@ export type SeedWorkspaceDataResult = {
   message: string;
 };
 
-export async function getContentTypeOptions(): Promise<ContentTypeOption[]> {
+export async function getContentTypeOptions({
+  includeInactive = false,
+}: {
+  includeInactive?: boolean;
+} = {}): Promise<ContentTypeOption[]> {
   const supabase = createServerSupabaseClient();
 
   if (!supabase) {
     return [];
   }
 
-  const { data, error } = await supabase
+  const query = supabase
     .from("content_types")
-    .select("id, name, description, turnaround_days, base_price_cents")
-    .eq("active", true)
-    .order("name", { ascending: true });
+    .select("id, name, description, turnaround_days, base_price_cents, active");
 
-  return error || !data?.length
-    ? []
-    : data.map((item) => ({
+  if (!includeInactive) {
+    query.eq("active", true);
+  }
+
+  const { data, error } = await query;
+
+  if (error || !data?.length) {
+    return [];
+  }
+
+  return data
+    .map((item) => {
+      const service = getServiceByName(item.name);
+
+      if (!service) {
+        return {
+          id: item.id,
+          key: item.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+          name: item.name,
+          description: item.description ?? "Structured content service.",
+          whatYouGet: item.description ?? "Structured content service.",
+          perfectFor: "General publishing workflows.",
+          priceLabel: item.base_price_cents >= 100 ? formatCurrency(item.base_price_cents) : `$${(item.base_price_cents / 100).toFixed(2)}/word`,
+          turnaroundDays: item.turnaround_days,
+          basePriceCents: item.base_price_cents,
+          isOrderable: item.active,
+          orderIndex: 999,
+          fields: [],
+        } satisfies ContentTypeOption;
+      }
+
+      return {
         id: item.id,
-        name: item.name,
-        description: item.description ?? "Structured content service.",
+        key: service.key,
+        name: service.name,
+        description: service.description,
+        whatYouGet: service.whatYouGet,
+        perfectFor: service.perfectFor,
+        priceLabel: service.priceLabel,
         turnaroundDays: item.turnaround_days,
         basePriceCents: item.base_price_cents,
-      }));
+        isOrderable: item.active && service.isOrderable,
+        orderIndex: service.orderIndex,
+        fields: service.fields,
+      } satisfies ContentTypeOption;
+    })
+    .sort((left, right) => left.orderIndex - right.orderIndex || left.name.localeCompare(right.name));
+}
+
+export async function getClientFolders(clientProfileId: string): Promise<ClientFolder[]> {
+  const supabase = createServerSupabaseClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const [{ data: folders }, { data: orders }] = await Promise.all([
+    supabase
+      .from("client_folders")
+      .select(
+        "id, name, brief_template_url, brand_notes, tone_guide, preferred_content_types, default_word_count, target_audience, compliance_notes, delivery_preference, content_calendar_notes",
+      )
+      .eq("client_id", clientProfileId)
+      .order("name", { ascending: true }),
+    supabase
+      .from("orders")
+      .select("client_folder_id")
+      .eq("client_id", clientProfileId),
+  ]);
+
+  const counts = new Map<string, number>();
+  for (const order of orders ?? []) {
+    if (!order.client_folder_id) continue;
+    counts.set(order.client_folder_id, (counts.get(order.client_folder_id) ?? 0) + 1);
+  }
+
+  return (folders ?? []).map((folder) => ({
+    id: folder.id,
+    name: folder.name,
+    briefTemplateUrl: folder.brief_template_url ?? "",
+    brandNotes: folder.brand_notes ?? "",
+    toneGuide: folder.tone_guide ?? "",
+    preferredContentTypes: folder.preferred_content_types ?? [],
+    defaultWordCount: folder.default_word_count ? String(folder.default_word_count) : "",
+    targetAudience: folder.target_audience ?? "",
+    complianceNotes: folder.compliance_notes ?? "",
+    deliveryPreference: folder.delivery_preference ?? "",
+    contentCalendarNotes: folder.content_calendar_notes ?? "",
+    orderCount: counts.get(folder.id) ?? 0,
+  }));
+}
+
+export async function createClientFolder({
+  name,
+  briefTemplateUrl,
+  brandNotes,
+  toneGuide,
+  preferredContentTypes,
+  defaultWordCount,
+  targetAudience,
+  complianceNotes,
+  deliveryPreference,
+  contentCalendarNotes,
+}: {
+  name: string;
+  briefTemplateUrl: string;
+  brandNotes: string;
+  toneGuide: string;
+  preferredContentTypes: string[];
+  defaultWordCount: string;
+  targetAudience: string;
+  complianceNotes: string;
+  deliveryPreference: string;
+  contentCalendarNotes: string;
+}) {
+  const user = await getCurrentAppUser();
+  const supabase = createServerSupabaseClient();
+
+  if (!user || user.role !== "client" || !supabase) {
+    return { ok: false as const, message: "Sign in as a client before creating folders." };
+  }
+
+  const folderName = name.trim();
+  if (folderName.length < 2) {
+    return { ok: false as const, message: "Folder name must be at least 2 characters." };
+  }
+
+  const { error } = await supabase.from("client_folders").insert({
+    client_id: user.profileId,
+    name: folderName,
+    brief_template_url: briefTemplateUrl.trim() || null,
+    brand_notes: brandNotes.trim() || null,
+    tone_guide: toneGuide.trim() || null,
+    preferred_content_types: preferredContentTypes,
+    default_word_count: defaultWordCount ? Number(defaultWordCount) : null,
+    target_audience: targetAudience.trim() || null,
+    compliance_notes: complianceNotes.trim() || null,
+    delivery_preference: deliveryPreference.trim() || null,
+    content_calendar_notes: contentCalendarNotes.trim() || null,
+  });
+
+  if (error) {
+    return { ok: false as const, message: error.message };
+  }
+
+  revalidateApp();
+  return { ok: true as const, message: "Client folder created." };
 }
 
 export async function getClientOrders(clientProfileId: string): Promise<DashboardOrder[]> {
@@ -637,23 +803,14 @@ export async function getAdminOrderDetail(orderId: string): Promise<AdminOrderDe
 }
 
 export async function getContentTypeCatalog(): Promise<ContentTypeCatalogItem[]> {
-  const supabase = createServerSupabaseClient();
+  const options = await getContentTypeOptions({ includeInactive: true });
 
-  if (!supabase) {
-    return [];
-  }
-
-  const { data } = await supabase
-    .from("content_types")
-    .select("id, name, base_price_cents, turnaround_days, active")
-    .order("name", { ascending: true });
-
-  return (data ?? []).map((item) => ({
+  return options.map((item) => ({
     id: item.id,
     name: item.name,
-    turnaround: `${item.turnaround_days} business days`,
-    price: formatCurrency(item.base_price_cents),
-    status: item.active ? "Active" : "Inactive",
+    turnaround: `${item.turnaroundDays} business days`,
+    price: item.priceLabel,
+    status: item.isOrderable ? "Active" : "Coming soon",
   }));
 }
 
@@ -722,8 +879,11 @@ export async function createOrder(values: OrderFormValues) {
       message: firstError ?? "Fix the highlighted fields and submit again.",
       errors: {
         clientLabel: fieldErrors.clientLabel?.[0],
+        clientFolderId: fieldErrors.clientFolderId?.[0],
         title: fieldErrors.title?.[0],
         contentTypeId: fieldErrors.contentTypeId?.[0],
+        serviceTier: fieldErrors.serviceTier?.[0],
+        language: fieldErrors.language?.[0],
         targetAudience: fieldErrors.targetAudience?.[0],
         toneOfVoice: fieldErrors.toneOfVoice?.[0],
         targetKeywords: fieldErrors.targetKeywords?.[0],
@@ -760,13 +920,40 @@ export async function createOrder(values: OrderFormValues) {
   const payload = parsed.data;
   const { data: contentType } = await supabase
     .from("content_types")
-    .select("base_price_cents")
+    .select("id, name, base_price_cents, active")
     .eq("id", payload.contentTypeId)
     .maybeSingle();
+
+  const service = getServiceByName(contentType?.name);
+
+  if (!contentType || !service || !contentType.active || !service.isOrderable) {
+    return {
+      ok: false as const,
+      message: "That content type is not available for ordering yet.",
+      errors: {
+        contentTypeId: "Choose an active content type.",
+      },
+    };
+  }
+
+  const serviceFieldErrors = validateServiceFields(service, payload.serviceFields);
+  if (serviceFieldErrors.length) {
+    return {
+      ok: false as const,
+      message: serviceFieldErrors[0],
+      errors: {},
+    };
+  }
+
+  const wordCount = payload.wordCount;
+  const baseRate = contentType.base_price_cents;
+  const tierMarkup = payload.serviceTier === "rank" ? 10 : 0;
+  const budgetCents = wordCount * (baseRate + tierMarkup);
 
   const { error } = await supabase.from("orders").insert({
     client_id: user.profileId,
     client_label: payload.clientLabel,
+    client_folder_id: payload.clientFolderId || null,
     content_type_id: payload.contentTypeId,
     title: payload.title,
     brief: payload.brief,
@@ -777,8 +964,11 @@ export async function createOrder(values: OrderFormValues) {
     target_keywords: splitLinesAndCommas(payload.targetKeywords),
     word_count: payload.wordCount,
     priority: payload.priority,
-    due_date: payload.dueDate,
-    budget_cents: contentType?.base_price_cents ?? 0,
+    due_date: payload.dueDate || null,
+    budget_cents: budgetCents,
+    language: payload.language,
+    service_tier: payload.serviceTier,
+    intake_details: payload.serviceFields,
     status: "open",
   });
 
@@ -1677,6 +1867,23 @@ function splitLinesAndCommas(value: string) {
     .split(/[\n,]/)
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function validateServiceFields(service: ServiceDefinition, fields: Record<string, string>) {
+  const errors: string[] = [];
+
+  for (const field of service.fields) {
+    if (!field.required) {
+      continue;
+    }
+
+    const value = fields[field.id]?.trim() ?? "";
+    if (!value) {
+      errors.push(`${field.label} is required for ${service.name}.`);
+    }
+  }
+
+  return errors;
 }
 
 function formatOrderStatus(status: string) {
