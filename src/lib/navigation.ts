@@ -11,13 +11,15 @@ export const roleMeta: Record<
 > = {
   client: {
     portalTitle: "Penned",
-    portalSubtitle: "Client Portal",
+    portalSubtitle: "Content Ops Engine",
     accentClass: "from-blue-600 to-cyan-400",
     nav: [
       { label: "Dashboard", href: "/client" },
       { label: "New Order", href: "/client/new-order" },
-      { label: "Active Orders", href: "/client#orders" },
-      { label: "Review Queue", href: "/client#review-queue" },
+      { label: "Bulk Orders", href: "/client/bulk-orders" },
+      { label: "All Orders", href: "/client/orders" },
+      { label: "Completed Orders", href: "/client/orders?view=completed" },
+      { label: "Client Folders", href: "/client/folders" },
       { label: "Billing", href: "/client/billing" },
       { label: "Settings", href: "/client/settings" },
     ],

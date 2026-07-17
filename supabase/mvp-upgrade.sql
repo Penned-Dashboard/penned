@@ -9,6 +9,7 @@ create table if not exists public.payout_requests (
 );
 
 alter table public.orders
+  add column if not exists client_label text,
   add column if not exists tone_of_voice text,
   add column if not exists word_count integer,
   add column if not exists priority text not null default 'standard',

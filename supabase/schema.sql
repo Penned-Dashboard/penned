@@ -52,6 +52,7 @@ create table if not exists public.orders (
   client_id uuid not null references public.profiles(id),
   writer_id uuid references public.profiles(id),
   content_type_id uuid references public.content_types(id),
+  client_label text,
   title text not null,
   brief text not null,
   primary_cta text,
@@ -150,6 +151,7 @@ create table if not exists public.disputes (
 create table if not exists public.notifications (
   id uuid primary key default gen_random_uuid(),
   profile_id uuid not null references public.profiles(id),
+  client_label text,
   title text not null,
   body text not null,
   read_at timestamptz,

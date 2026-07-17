@@ -18,6 +18,7 @@ export type ContentTypeOption = {
 export type DashboardOrder = {
   id: string;
   name: string;
+  clientLabel: string;
   contentType: string;
   writer: string;
   status: string;
@@ -28,6 +29,7 @@ export type ReviewQueueItem = {
   orderId: string;
   submissionId: string;
   title: string;
+  clientLabel: string;
   writer: string;
   due: string;
   status: string;
@@ -71,6 +73,7 @@ export type SubmissionVersion = {
 export type ClientOrderDetail = {
   id: string;
   title: string;
+  clientLabel: string;
   status: string;
   deadline: string;
   contentType: string;
@@ -213,6 +216,7 @@ export async function getClientOrders(clientProfileId: string): Promise<Dashboar
       `
         id,
         title,
+        client_label,
         due_date,
         status,
         content_types(name),
@@ -229,6 +233,7 @@ export async function getClientOrders(clientProfileId: string): Promise<Dashboar
   return data.map((order) => ({
     id: order.id,
     name: order.title,
+    clientLabel: order.client_label ?? "General client",
     contentType: readSingleRelation(order.content_types)?.name ?? "Unassigned type",
     writer: readSingleRelation(order.writer)?.full_name ?? "Unassigned",
     status: formatOrderStatus(order.status),
@@ -252,7 +257,7 @@ export async function getClientReviewQueue(
         id,
         submitted_at,
         status,
-        order:orders!submissions_order_id_fkey(id, title, client_id),
+        order:orders!submissions_order_id_fkey(id, title, client_id, client_label),
         writer:profiles!submissions_writer_id_fkey(full_name)
       `,
     )
@@ -267,6 +272,7 @@ export async function getClientReviewQueue(
     orderId: readSingleRelation(item.order)?.id ?? item.id,
     submissionId: item.id,
     title: readSingleRelation(item.order)?.title ?? "Submission",
+    clientLabel: readSingleRelation(item.order)?.client_label ?? "General client",
     writer: readSingleRelation(item.writer)?.full_name ?? "Writer",
     due: formatRelativeDate(item.submitted_at),
     status: formatOrderStatus(item.status),
@@ -289,6 +295,7 @@ export async function getClientOrderDetail(
       `
         id,
         title,
+        client_label,
         status,
         due_date,
         brief,
@@ -316,6 +323,7 @@ export async function getClientOrderDetail(
   return {
     id: order.id,
     title: order.title,
+    clientLabel: order.client_label ?? "General client",
     status: formatOrderStatus(order.status),
     deadline: formatDeadline(order.due_date),
     contentType: readSingleRelation(order.content_types)?.name ?? "Unassigned type",
@@ -385,6 +393,7 @@ export async function getWriterAssignments(
       `
         id,
         title,
+        client_label,
         status,
         due_date,
         client:profiles!orders_client_id_fkey(company_name, full_name)
@@ -422,6 +431,7 @@ export async function getWriterOrderDetail(
       `
         id,
         title,
+        client_label,
         status,
         due_date,
         brief,
@@ -549,6 +559,7 @@ export async function getAdminOrderQueue(): Promise<AdminQueueOrder[]> {
       `
         id,
         title,
+        client_label,
         status,
         due_date,
         client:profiles!orders_client_id_fkey(company_name, full_name)
@@ -582,6 +593,7 @@ export async function getAdminOrderDetail(orderId: string): Promise<AdminOrderDe
       `
         id,
         title,
+        client_label,
         status,
         due_date,
         brief,
@@ -709,6 +721,7 @@ export async function createOrder(values: OrderFormValues) {
       ok: false as const,
       message: firstError ?? "Fix the highlighted fields and submit again.",
       errors: {
+        clientLabel: fieldErrors.clientLabel?.[0],
         title: fieldErrors.title?.[0],
         contentTypeId: fieldErrors.contentTypeId?.[0],
         targetAudience: fieldErrors.targetAudience?.[0],
@@ -753,6 +766,7 @@ export async function createOrder(values: OrderFormValues) {
 
   const { error } = await supabase.from("orders").insert({
     client_id: user.profileId,
+    client_label: payload.clientLabel,
     content_type_id: payload.contentTypeId,
     title: payload.title,
     brief: payload.brief,
@@ -846,6 +860,7 @@ async function seedClientReviewData(clientProfileId: string): Promise<SeedWorksp
 
   const acceptedOrder = await createSampleOrder({
     clientId: clientProfileId,
+    clientLabel: "Acme Robotics",
     writerId: writer.id,
     contentTypeId: primaryType.id,
     budgetCents: primaryType.basePriceCents,
@@ -864,6 +879,7 @@ async function seedClientReviewData(clientProfileId: string): Promise<SeedWorksp
 
   const reviewOrder = await createSampleOrder({
     clientId: clientProfileId,
+    clientLabel: "Northstar Growth",
     writerId: writer.id,
     contentTypeId: secondaryType.id,
     budgetCents: secondaryType.basePriceCents,
@@ -950,6 +966,7 @@ async function seedWriterReviewData(writerProfileId: string): Promise<SeedWorksp
 
   const completedOrder = await createSampleOrder({
     clientId: client.id,
+    clientLabel: "Verity Health",
     writerId: writerProfileId,
     contentTypeId: primaryType.id,
     budgetCents: primaryType.basePriceCents,
@@ -968,6 +985,7 @@ async function seedWriterReviewData(writerProfileId: string): Promise<SeedWorksp
 
   const inProgressOrder = await createSampleOrder({
     clientId: client.id,
+    clientLabel: "Atlas Security",
     writerId: writerProfileId,
     contentTypeId: secondaryType.id,
     budgetCents: secondaryType.basePriceCents,
@@ -986,6 +1004,7 @@ async function seedWriterReviewData(writerProfileId: string): Promise<SeedWorksp
 
   await createSampleOrder({
     clientId: client.id,
+    clientLabel: "Bluepeak Media",
     writerId: null,
     contentTypeId: tertiaryType.id,
     budgetCents: tertiaryType.basePriceCents,
@@ -1066,6 +1085,7 @@ async function ensureSupportProfile(role: Role, fullName: string, email: string,
 
 async function createSampleOrder({
   clientId,
+  clientLabel,
   writerId,
   contentTypeId,
   budgetCents,
@@ -1082,6 +1102,7 @@ async function createSampleOrder({
   status,
 }: {
   clientId: string;
+  clientLabel: string;
   writerId: string | null;
   contentTypeId: string;
   budgetCents: number;
@@ -1119,6 +1140,7 @@ async function createSampleOrder({
     .from("orders")
     .insert({
       client_id: clientId,
+      client_label: clientLabel,
       writer_id: writerId,
       content_type_id: contentTypeId,
       title,

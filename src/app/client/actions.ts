@@ -24,6 +24,7 @@ export async function submitOrderAction(
       : "standard";
 
   const result = await createOrder({
+    clientLabel: String(formData.get("clientLabel") ?? ""),
     title: String(formData.get("title") ?? ""),
     contentTypeId: String(formData.get("contentTypeId") ?? ""),
     targetAudience: String(formData.get("targetAudience") ?? ""),

@@ -1,6 +1,11 @@
 import { z } from "zod";
 
 export const orderSchema = z.object({
+  clientLabel: z
+    .string()
+    .trim()
+    .min(2, "Client name is required.")
+    .max(120, "Client name is too long."),
   title: z.string().trim().min(5, "Title must be at least 5 characters."),
   contentTypeId: z.string().uuid("Choose a valid content type."),
   targetAudience: z

@@ -31,6 +31,13 @@ export function OrderForm({
         </div>
       ) : null}
       <Field
+        label="Client"
+        name="clientLabel"
+        placeholder="Acme Agency / End client"
+        error={state.errors.clientLabel}
+      />
+
+      <Field
         label="Content title"
         name="title"
         placeholder="AI workflow guide for operations leaders"

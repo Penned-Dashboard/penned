@@ -1,12 +1,9 @@
 import Link from "next/link";
 import { loadSampleClientOrdersAction } from "@/app/client/actions";
 import { DashboardShell } from "@/components/dashboard-shell";
+import { WorkspaceAutoRefresh } from "@/components/workspace-auto-refresh";
 import { requireRole } from "@/lib/auth";
-import {
-  getClientOrders,
-  getClientReviewQueue,
-  getInvoices,
-} from "@/lib/orders";
+import { getClientOrders, getClientReviewQueue, getInvoices } from "@/lib/orders";
 
 export default async function ClientDashboardPage({
   searchParams,
@@ -16,51 +13,68 @@ export default async function ClientDashboardPage({
   const user = await requireRole("client");
   const params = await searchParams;
   const query = params.q?.trim().toLowerCase() ?? "";
-  const sampleState = params.sampleState === "error" ? "error" : params.sampleState === "success" ? "success" : null;
+  const sampleState =
+    params.sampleState === "error"
+      ? "error"
+      : params.sampleState === "success"
+        ? "success"
+        : null;
   const sampleMessage = params.sampleMessage?.trim() ?? "";
+
   const [liveOrders, reviewQueue, invoices] = await Promise.all([
     getClientOrders(user.profileId),
     getClientReviewQueue(user.profileId),
     getInvoices(user.profileId),
   ]);
-  const activeOrders = filterByQuery(
+
+  const workspaceTitle = `${user.fullName}'s Content Ops Engine`;
+  const allOrders = filterByQuery(
     liveOrders,
     query,
-    (order) => `${order.name} ${order.contentType} ${order.writer} ${order.status}`,
+    (order) => `${order.clientLabel} ${order.name} ${order.contentType} ${order.writer} ${order.status}`,
   );
+  const recentOrders = allOrders.slice(0, 6);
+  const completedOrders = allOrders.filter((order) => order.status === "Accepted");
+  const clientFolders = Array.from(new Set(allOrders.map((order) => order.clientLabel))).filter(Boolean);
   const filteredReviewQueue = filterByQuery(
     reviewQueue,
     query,
-    (item) => `${item.title} ${item.writer} ${item.status}`,
+    (item) => `${item.clientLabel} ${item.title} ${item.writer} ${item.status}`,
   );
+
+  const currentPlan = (invoices[0]?.amount ?? "basic").toLowerCase();
+  const estimatedBudget = currentPlan.includes("pro") ? 5000 : currentPlan.includes("basic") ? 2500 : 750;
+  const estimatedRemaining = Math.max(estimatedBudget - allOrders.length * 175, 0);
+  const billingMode = currentPlan.includes("pro") ? "Monthly invoice" : allOrders.length > 2 ? "Prepaid wallet" : "Pay per order";
+
   const metrics = [
     {
       label: "Active orders",
-      value: String(activeOrders.length),
-      hint: "Live content requests currently attached to your workspace.",
+      value: String(allOrders.length),
+      hint: "Live briefs currently attached to your workspace.",
     },
     {
       label: "In review",
       value: String(reviewQueue.length),
-      hint: "Submissions that need your review or revision feedback.",
+      hint: "Submissions that need feedback or approval.",
     },
     {
-      label: "Completed",
-      value: String(activeOrders.filter((order) => order.status === "accepted").length),
-      hint: "Orders that have already been approved and completed.",
+      label: "Completed orders",
+      value: String(completedOrders.length),
+      hint: "Approved work stored in your completed archive.",
     },
     {
-      label: "Plan",
-      value: invoices[0]?.amount ?? "Basic",
-      hint: "Subscription state pulled from your billing records.",
+      label: "Content budget",
+      value: `$${estimatedRemaining.toLocaleString()}`,
+      hint: `${billingMode} · estimated available balance`,
     },
   ];
 
   return (
     <DashboardShell
       role="client"
-      title="Client Dashboard"
-      description="Create content orders, review drafts, and manage your publishing workflow from one place."
+      title={workspaceTitle}
+      description="Run single orders, manage client workspaces, and keep agency content operations organized in one place."
       ctaLabel="Create New Order"
       ctaHref="/client/new-order"
       currentPath="/client"
@@ -68,10 +82,12 @@ export default async function ClientDashboardPage({
       searchQuery={params.q}
       tabs={[
         { label: "Overview", href: "/client", active: true },
-        { label: "Orders", href: "/client#orders", active: false },
-        { label: "Reviews", href: "/client#review-queue", active: false },
+        { label: "All Orders", href: "/client/orders", active: false },
+        { label: "Client Folders", href: "/client/folders", active: false },
       ]}
     >
+      <WorkspaceAutoRefresh />
+
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric, index) => (
           <article
@@ -90,7 +106,7 @@ export default async function ClientDashboardPage({
             <h2 className="mt-4 text-5xl font-semibold tracking-[-0.05em] text-slate-950">
               {metric.value}
             </h2>
-            <p className="mt-3 text-sm text-emerald-500">{metric.hint}</p>
+            <p className="mt-3 text-sm text-slate-500">{metric.hint}</p>
           </article>
         ))}
       </section>
@@ -111,7 +127,7 @@ export default async function ClientDashboardPage({
               Load sample orders for stakeholder review
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              Add one completed order and one in-review order so the dashboard, queues, and order detail pages have realistic data to review.
+              Add one completed order and one in-review order so the dashboard, queues, and archive flows have realistic data to review.
             </p>
             {sampleMessage ? (
               <p className={`mt-3 text-sm font-medium ${sampleState === "error" ? "text-rose-700" : "text-emerald-700"}`}>
@@ -127,38 +143,60 @@ export default async function ClientDashboardPage({
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.4fr_0.7fr]">
-        <div className="rounded-[1.75rem] bg-[linear-gradient(135deg,#2563eb_0%,#2bb6a8_100%)] p-8 text-white">
-          <h2 className="text-4xl font-semibold tracking-[-0.04em]">
-            Ready to create something great?
-          </h2>
-          <p className="mt-4 text-lg text-blue-100">
-            Submit a content brief and get matched with expert writers.
+      <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+            Flexible billing
           </p>
-          <Link className="mt-8 inline-flex rounded-2xl bg-[linear-gradient(135deg,#ff8c1a_0%,#ef4444_100%)] px-6 py-4 text-lg font-semibold text-white shadow-[0_18px_34px_rgba(239,68,68,0.25)]" href="/client/new-order">
-            + Create New Order
-          </Link>
+          <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-slate-950">
+            {billingMode}
+          </h2>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            This workspace is framed around content budget visibility rather than subscription plans. Use billing to review invoices, wallet top-ups, and monthly account limits.
+          </p>
+          <div className="mt-6 grid gap-3 md:grid-cols-2">
+            <div className="rounded-[1.15rem] border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm text-slate-500">Remaining budget</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">
+                ${estimatedRemaining.toLocaleString()}
+              </p>
+            </div>
+            <div className="rounded-[1.15rem] border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm text-slate-500">Agency clients tracked</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">
+                {clientFolders.length || "0"}
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link className="button-primary" href="/client/billing">
+              Manage billing
+            </Link>
+            <Link className="button-secondary" href="/client/folders">
+              Open client folders
+            </Link>
+          </div>
         </div>
 
         <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-slate-500">Current Plan</p>
-              <h3 className="mt-3 text-5xl font-semibold tracking-[-0.05em] text-slate-950">
-                $299<span className="text-2xl text-slate-400">/mo</span>
-              </h3>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                Workflow summary
+              </p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-slate-950">
+                Built for agencies managing multiple clients
+              </h2>
             </div>
-            <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-700">
-              Pro
-            </span>
+            <Link className="text-sm font-medium text-slate-500" href="/client/orders">
+              View all orders
+            </Link>
           </div>
-          <p className="mt-4 text-base text-slate-500">
-            Preferred writers • Slack support
-          </p>
-          <div className="mt-6 h-2 rounded-full bg-slate-100">
-            <div className="h-2 w-4/5 rounded-full bg-gradient-to-r from-blue-600 to-cyan-400" />
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
+            <SummaryItem label="Single orders" value="Live" note="Keep the existing one-off ordering flow for urgent or trial work." />
+            <SummaryItem label="Completed archive" value={String(completedOrders.length)} note="Approved work stays accessible from the completed orders page." />
+            <SummaryItem label="Client folders" value={String(clientFolders.length)} note="Use folders to organize briefs, preferences, and recurring client context." />
           </div>
-          <p className="mt-3 text-sm text-slate-400">18 of 24 orders used this cycle</p>
         </div>
       </section>
 
@@ -167,24 +205,25 @@ export default async function ClientDashboardPage({
           <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">
             Recent Orders
           </h2>
-          <Link className="text-base font-medium text-slate-600" href="/client">
+          <Link className="text-base font-medium text-slate-600" href="/client/orders">
             View all →
           </Link>
         </div>
-        {activeOrders.length ? (
+        {recentOrders.length ? (
           <div className="overflow-hidden rounded-[1.25rem] border border-slate-200">
-            <div className="grid grid-cols-[2.2fr_1fr_1fr_1fr_0.8fr_48px] bg-slate-50 px-4 py-3 text-sm font-medium text-slate-500">
+            <div className="grid grid-cols-[1.6fr_1.2fr_1fr_1fr_1fr_0.8fr_48px] bg-slate-50 px-4 py-3 text-sm font-medium text-slate-500">
               <p>Order</p>
+              <p>Client</p>
               <p>Type</p>
               <p>Writer</p>
               <p>Status</p>
               <p>Date</p>
               <p></p>
             </div>
-            {activeOrders.map((order) => (
+            {recentOrders.map((order) => (
               <div
                 key={order.id}
-                className="grid grid-cols-[2.2fr_1fr_1fr_1fr_0.8fr_48px] items-center border-t border-slate-200 px-4 py-4 text-sm text-slate-700"
+                className="grid grid-cols-[1.6fr_1.2fr_1fr_1fr_1fr_0.8fr_48px] items-center border-t border-slate-200 px-4 py-4 text-sm text-slate-700"
               >
                 <div>
                   <Link className="font-semibold text-slate-950" href={`/client/orders/${order.id}`}>
@@ -192,6 +231,7 @@ export default async function ClientDashboardPage({
                   </Link>
                   <p className="text-xs text-slate-400">{order.id.slice(0, 8).toUpperCase()}</p>
                 </div>
+                <p>{order.clientLabel}</p>
                 <p>{order.contentType}</p>
                 <p>{order.writer}</p>
                 <p>
@@ -214,34 +254,28 @@ export default async function ClientDashboardPage({
         )}
       </section>
 
-      <section
-        id="review-queue"
-        className="rounded-[1.75rem] border border-slate-200 bg-white p-6"
-      >
+      <section id="review-queue" className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
         <div className="mb-5 flex items-center justify-between gap-3">
-          <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">
-            Review Queue
-          </h2>
-          <Link className="text-base font-medium text-slate-600" href="/client#review-queue">
-            Refresh
-          </Link>
+          <div>
+            <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">
+              Review Queue
+            </h2>
+            <p className="mt-2 text-sm text-slate-500">Updates refresh automatically every 30 seconds.</p>
+          </div>
         </div>
         {filteredReviewQueue.length ? (
           <div className="space-y-3">
             {filteredReviewQueue.map((item) => (
               <div key={item.submissionId} className="dashboard-list-row">
                 <div>
-                  <Link
-                    className="font-semibold text-slate-950"
-                    href={`/client/orders/${item.orderId}`}
-                  >
+                  <Link className="font-semibold text-slate-950" href={`/client/orders/${item.orderId}`}>
                     {item.title}
                   </Link>
-                  <p className="text-sm text-slate-500">Writer: {item.writer}</p>
+                  <p className="text-sm text-slate-500">Client: {item.clientLabel}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-slate-700">{item.status}</p>
-                  <p className="text-xs text-slate-500">{item.due}</p>
+                  <p className="text-xs text-slate-500">Updated {item.due}</p>
                 </div>
               </div>
             ))}
@@ -267,6 +301,16 @@ function filterByQuery<T>(items: T[], query: string, readText: (item: T) => stri
   }
 
   return items.filter((item) => readText(item).toLowerCase().includes(query));
+}
+
+function SummaryItem({ label, value, note }: { label: string; value: string; note: string }) {
+  return (
+    <div className="rounded-[1.15rem] border border-slate-200 bg-slate-50 p-4">
+      <p className="text-sm text-slate-500">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
+      <p className="mt-2 text-sm leading-6 text-slate-500">{note}</p>
+    </div>
+  );
 }
 
 function EmptyState({ title, body }: { title: string; body: string }) {
