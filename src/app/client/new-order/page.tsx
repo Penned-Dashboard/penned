@@ -39,38 +39,41 @@ export default async function ClientNewOrderPage({
               Select Content Type
             </h2>
             <div className="mt-8 grid gap-4 md:grid-cols-3">
-              {contentTypes.map((type) => (
-                <Link
-                  key={type.id}
-                  className={`rounded-[1.25rem] border px-5 py-5 transition ${
-                    type.isOrderable
-                      ? "border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50"
-                      : "border-slate-200 bg-slate-50 opacity-75"
-                  }`}
-                  href={type.isOrderable ? `/client/new-order?type=${type.id}` : "/client/new-order"}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-lg font-semibold text-slate-950">{type.name}</h3>
-                      <p className="mt-2 text-sm leading-6 text-slate-500">{type.description}</p>
-                      {!type.isOrderable ? (
-                        <p className="mt-3 text-sm font-semibold text-orange-600">Coming soon</p>
-                      ) : null}
+              {contentTypes.map((type) => {
+                const cardClass = `rounded-[1.25rem] border px-5 py-5 transition ${
+                  type.isOrderable
+                    ? "border-slate-200 bg-white hover:border-blue-400 hover:bg-blue-50"
+                    : "cursor-not-allowed border-slate-200 bg-slate-50 opacity-80"
+                }`;
+                const body = (
+                  <>
+                    <h3 className="text-lg font-semibold text-slate-950">{type.name}</h3>
+                    <p className="mt-3 text-sm leading-6 text-slate-600">
+                      <span className="font-semibold text-slate-900">What you’ll get:</span> {type.whatYouGet}
+                    </p>
+                    <p className="mt-3 text-sm leading-6 text-slate-600">
+                      <span className="font-semibold text-slate-900">Perfect for:</span> {type.perfectFor}
+                    </p>
+                    <div className="mt-4 flex items-center justify-between text-sm">
+                      <span className="text-slate-500">Price</span>
+                      <span className="font-semibold text-slate-900">{type.priceLabel}</span>
                     </div>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                      {type.turnaroundDays}d
-                    </span>
+                    {!type.isOrderable ? (
+                      <p className="mt-3 text-sm font-semibold text-orange-600">Coming soon</p>
+                    ) : null}
+                  </>
+                );
+
+                return type.isOrderable ? (
+                  <Link className={cardClass} href={`/client/new-order?type=${type.id}`} key={type.id}>
+                    {body}
+                  </Link>
+                ) : (
+                  <div className={cardClass} key={type.id}>
+                    {body}
                   </div>
-                  <div className="mt-4 flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Suggested turnaround</span>
-                    <span className="font-semibold text-slate-900">{type.turnaroundDays} business days</span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Starting price</span>
-                    <span className="font-semibold text-slate-900">{type.priceLabel}</span>
-                  </div>
-                </Link>
-              ))}
+                );
+              })}
             </div>
             {contentTypes.some((item) => item.isOrderable) ? (
               <div className="mt-8">

@@ -83,6 +83,9 @@ export default async function ClientOrderDetailPage({
         >
           {order.latestSubmission ? (
             <div className="space-y-4">
+              <div className="rounded-[1.15rem] border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900">
+                Request a revision from this delivered item without starting a new order.
+              </div>
               <div className="rounded-[1.25rem] bg-white p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
@@ -111,7 +114,7 @@ export default async function ClientOrderDetailPage({
                     type="hidden"
                     value={order.latestSubmission.id}
                   />
-                  <button className="button-primary" type="submit">
+                  <button className="button-secondary" type="submit">
                     Accept submission
                   </button>
                 </form>
@@ -128,8 +131,8 @@ export default async function ClientOrderDetailPage({
                     placeholder="Request changes, add direction, or note missing points."
                     required
                   />
-                  <button className="button-secondary self-start" type="submit">
-                    Request revision
+                  <button className="button-primary self-start" type="submit">
+                    Request Revision
                   </button>
                 </form>
               </div>

@@ -56,12 +56,12 @@ export function DashboardShell({
 
           <nav className="mt-8 space-y-2">
             {meta.nav.map((item) => {
-              const isActive =
-                currentPath === item.href ||
-                (!item.href.includes("#") &&
-                  item.href !== "/" &&
-                  currentPath.startsWith(`${item.href}/`)) ||
-                (item.href.includes("#") && currentPath === item.href.split("#")[0]);
+              const workspaceRoot = `/${role}`;
+              const isActive = item.href.includes("#")
+                ? currentPath === item.href.split("#")[0]
+                : item.href === workspaceRoot
+                  ? currentPath === item.href
+                  : currentPath === item.href || currentPath.startsWith(`${item.href}/`);
 
               return (
                 <Link

@@ -4,8 +4,8 @@ export const orderSchema = z.object({
   clientLabel: z
     .string()
     .trim()
-    .min(2, "Client name is required.")
-    .max(120, "Client name is too long."),
+    .max(120, "Client name is too long.")
+    .default(""),
   clientFolderId: z.string().uuid().optional().or(z.literal("")),
   title: z.string().trim().min(5, "Title must be at least 5 characters."),
   contentTypeId: z.string().uuid("Choose a valid content type."),
@@ -30,8 +30,8 @@ export const orderSchema = z.object({
   brief: z
     .string()
     .trim()
-    .min(1, "Add a short brief or note for the production team.")
-    .max(5000, "Brief is too long."),
+    .max(5000, "Brief is too long.")
+    .default(""),
   serviceFields: z.record(z.string(), z.string()).default({}),
 });
 

@@ -3,6 +3,7 @@ import { loadSampleClientOrdersAction } from "@/app/client/actions";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { WorkspaceAutoRefresh } from "@/components/workspace-auto-refresh";
 import { requireRole } from "@/lib/auth";
+import { getContentBudgetSnapshot } from "@/lib/content-budget";
 import { getClientFolders, getClientOrders, getClientReviewQueue, getInvoices } from "@/lib/orders";
 
 export default async function ClientDashboardPage({
@@ -45,10 +46,9 @@ export default async function ClientDashboardPage({
     (item) => `${item.clientLabel} ${item.title} ${item.writer} ${item.status}`,
   );
 
-  const currentPlan = (invoices[0]?.amount ?? "basic").toLowerCase();
-  const estimatedBudget = currentPlan.includes("pro") ? 5000 : currentPlan.includes("basic") ? 2500 : 750;
-  const estimatedRemaining = Math.max(estimatedBudget - allOrders.length * 175, 0);
-  const billingMode = currentPlan.includes("pro") ? "Monthly invoice" : allOrders.length > 2 ? "Prepaid wallet" : "Pay per order";
+  const budget = getContentBudgetSnapshot(liveOrders, invoices);
+  const estimatedRemaining = budget.remaining;
+  const billingMode = budget.billingMode;
 
   const metrics = [
     {
@@ -172,8 +172,11 @@ export default async function ClientDashboardPage({
             </div>
           </div>
           <div className="mt-5 flex flex-wrap gap-3">
-            <Link className="button-primary" href="/client/billing">
-              Manage billing
+            <Link className="button-primary" href="/client/content-budget">
+              View content budget
+            </Link>
+            <Link className="button-secondary" href="/client/billing">
+              Billing records
             </Link>
             <Link className="button-secondary" href="/client/folders">
               Open client folders

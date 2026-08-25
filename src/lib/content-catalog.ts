@@ -1,4 +1,4 @@
-export type ServiceFieldKind = "text" | "textarea" | "select" | "date" | "multiselect";
+export type ServiceFieldKind = "text" | "textarea" | "select" | "date" | "multiselect" | "file";
 
 export type ServiceFieldDefinition = {
   id: string;
@@ -8,6 +8,11 @@ export type ServiceFieldDefinition = {
   placeholder?: string;
   hint?: string;
   options?: string[];
+  accept?: string;
+  showWhen?: {
+    field: string;
+    equals: string;
+  };
 };
 
 export type ServiceDefinition = {
@@ -19,10 +24,29 @@ export type ServiceDefinition = {
   priceLabel: string;
   rateCents: number;
   turnaroundDays: number;
+  rushHours: 24 | 48;
   orderIndex: number;
   isOrderable: boolean;
   fields: ServiceFieldDefinition[];
 };
+
+export const RUSH_RATE_CENTS = 2;
+export const RANK_RATE_CENTS = 10;
+export const FILE_ACCEPT = ".docx,.txt,.md,.mp3,.mp4,.wav";
+export const FORTY_EIGHT_HOUR_RUSH_KEYS = [
+  "technical-article",
+  "thought-leadership",
+  "interview",
+] as const;
+
+export function getRushLabel(serviceKey?: string | null) {
+  const hours = FORTY_EIGHT_HOUR_RUSH_KEYS.includes(
+    (serviceKey ?? "") as (typeof FORTY_EIGHT_HOUR_RUSH_KEYS)[number],
+  )
+    ? 48
+    : 24;
+  return `Rush +$0.02/pw (${hours}hr delivery)`;
+}
 
 export const supportedLanguages = [
   "English",
@@ -83,21 +107,69 @@ export const serviceCatalog: ServiceDefinition[] = [
     priceLabel: "$0.05/word",
     rateCents: 5,
     turnaroundDays: 5,
+    rushHours: 24,
     orderIndex: 1,
     isOrderable: true,
     fields: [
       {
-        id: "publication_route",
-        label: "SEO route",
+        id: "article_topic_direction",
+        label: "Article topic / direction",
+        kind: "textarea",
+        placeholder:
+          "What should the article be about? Add the proposed topic, angle, or any key points you want covered.",
+        hint: "A rough direction is enough — we’ll develop the final publication-fit angle.",
+      },
+      {
+        id: "target_publication",
+        label: "Target publication",
+        kind: "text",
+        required: true,
+        placeholder:
+          "e.g. TechRadar — https://www.techradar.com/ or: UK fintech publication, publication not yet confirmed",
+        hint: "If the exact publication isn’t confirmed, tell us the type of publication you’re targeting.",
+      },
+      {
+        id: "client_anchor_text",
+        label: "Client anchor text",
+        kind: "text",
+        required: true,
+        placeholder: "Paste the anchor text exactly as it should appear.",
+        hint: "We’ll plan the article around a natural placement rather than inserting the anchor after writing.",
+      },
+      {
+        id: "target_url",
+        label: "Target URL",
+        kind: "text",
+        required: true,
+        placeholder: "https://example.com/page",
+        hint: "This is the page the client anchor should link to.",
+      },
+      {
+        id: "anchor_flexibility",
+        label: "Anchor flexibility",
         kind: "select",
-        options: [
-          "Not sure — you decide",
-          "Guest post, external publication",
-          "Linkable asset",
-          "Brand blog, owned channel",
-          "Digital PR support article",
-        ],
-        hint: "Leave it open if you want Penned to recommend the best route.",
+        required: true,
+        options: ["Exact only", "Close variant allowed", "Broad concept allowed"],
+        hint: "Choose Exact only if the wording must appear exactly as supplied.",
+      },
+      {
+        id: "link_or_source_restrictions",
+        label: "Link or source restrictions",
+        kind: "select",
+        required: true,
+        options: ["No additional restrictions", "Yes — I’ll specify below"],
+        hint: "Only add requirements beyond our standard SEO Content linking and sourcing process.",
+      },
+      {
+        id: "link_or_source_restrictions_detail",
+        label: "Specify link or source restrictions",
+        kind: "textarea",
+        showWhen: {
+          field: "link_or_source_restrictions",
+          equals: "Yes — I’ll specify below",
+        },
+        placeholder:
+          "e.g. competitors that must not be linked to, prohibited source types, no links in the opening paragraph, external-link restrictions, sensitive topics, or other placement requirements.",
       },
     ],
   },
@@ -112,6 +184,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     priceLabel: "$0.05/word",
     rateCents: 5,
     turnaroundDays: 5,
+    rushHours: 24,
     orderIndex: 2,
     isOrderable: true,
     fields: [
@@ -148,6 +221,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     priceLabel: "$0.05/word",
     rateCents: 5,
     turnaroundDays: 6,
+    rushHours: 24,
     orderIndex: 3,
     isOrderable: true,
     fields: [
@@ -193,6 +267,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     priceLabel: "$0.07/word",
     rateCents: 7,
     turnaroundDays: 7,
+    rushHours: 48,
     orderIndex: 4,
     isOrderable: true,
     fields: [
@@ -237,6 +312,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     priceLabel: "$0.07/word",
     rateCents: 7,
     turnaroundDays: 7,
+    rushHours: 48,
     orderIndex: 5,
     isOrderable: true,
     fields: [
@@ -276,6 +352,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     priceLabel: "$0.05/word",
     rateCents: 5,
     turnaroundDays: 5,
+    rushHours: 24,
     orderIndex: 6,
     isOrderable: true,
     fields: [
@@ -331,6 +408,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     priceLabel: "$0.05/word",
     rateCents: 5,
     turnaroundDays: 4,
+    rushHours: 24,
     orderIndex: 7,
     isOrderable: true,
     fields: [
@@ -390,6 +468,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     priceLabel: "$0.05/word",
     rateCents: 5,
     turnaroundDays: 5,
+    rushHours: 48,
     orderIndex: 8,
     isOrderable: true,
     fields: [
@@ -401,13 +480,11 @@ export const serviceCatalog: ServiceDefinition[] = [
         placeholder: "Name, title, and company of the person being interviewed.",
       },
       {
-        id: "transcript_links",
-        label: "Upload transcript or recording links",
-        kind: "textarea",
-        placeholder:
-          "Paste Google Drive, Dropbox, or internal links to the transcript or recording.",
-        hint:
-          "Use links for now. Full direct file upload is the next storage integration pass.",
+        id: "transcript_files",
+        label: "Upload transcript or recording",
+        kind: "file",
+        accept: FILE_ACCEPT,
+        hint: "This is the primary source material. Accepted files: .docx, .txt, .mp3, .mp4, .wav. Max 50MB per file.",
       },
       {
         id: "pasted_transcript",
@@ -440,16 +517,16 @@ export const serviceCatalog: ServiceDefinition[] = [
     priceLabel: "$0.05/word",
     rateCents: 5,
     turnaroundDays: 4,
+    rushHours: 24,
     orderIndex: 9,
     isOrderable: true,
     fields: [
       {
-        id: "draft_links",
-        label: "Upload your draft links",
-        kind: "textarea",
-        placeholder: "Paste links to your draft files or working documents.",
-        hint:
-          "Use links for now. Full direct file upload is the next storage integration pass.",
+        id: "draft_files",
+        label: "Upload your draft",
+        kind: "file",
+        accept: ".docx,.txt,.md",
+        hint: "Accepted files: .docx, .txt, .md. Max 50MB per file. Multiple files allowed.",
       },
       {
         id: "editing_type",
@@ -483,16 +560,16 @@ export const serviceCatalog: ServiceDefinition[] = [
     priceLabel: "$0.05/word",
     rateCents: 5,
     turnaroundDays: 4,
+    rushHours: 24,
     orderIndex: 10,
     isOrderable: true,
     fields: [
       {
-        id: "existing_content_links",
-        label: "Upload the existing content links",
-        kind: "textarea",
-        placeholder: "Paste links or URLs to the content that needs rewriting.",
-        hint:
-          "Use links for now. Full direct file upload is the next storage integration pass.",
+        id: "existing_content_files",
+        label: "Upload the existing content",
+        kind: "file",
+        accept: ".docx,.txt,.md",
+        hint: "Accepted files: .docx, .txt, .md, or a URL in notes. Max 50MB per file.",
       },
       {
         id: "rewrite_reason",
@@ -529,6 +606,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     priceLabel: "$0.05/word",
     rateCents: 5,
     turnaroundDays: 5,
+    rushHours: 24,
     orderIndex: 11,
     isOrderable: false,
     fields: [],
@@ -544,6 +622,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     priceLabel: "$0.07/word",
     rateCents: 7,
     turnaroundDays: 7,
+    rushHours: 24,
     orderIndex: 12,
     isOrderable: false,
     fields: [],
@@ -559,6 +638,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     priceLabel: "$0.07/word",
     rateCents: 7,
     turnaroundDays: 3,
+    rushHours: 24,
     orderIndex: 13,
     isOrderable: false,
     fields: [],
@@ -574,6 +654,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     priceLabel: "$100/per email",
     rateCents: 10000,
     turnaroundDays: 4,
+    rushHours: 24,
     orderIndex: 14,
     isOrderable: false,
     fields: [],
@@ -589,6 +670,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     priceLabel: "$100/fixed",
     rateCents: 10000,
     turnaroundDays: 6,
+    rushHours: 24,
     orderIndex: 15,
     isOrderable: false,
     fields: [],

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import {
   acceptSubmission,
   addSubmissionComment,
+  createBulkOrders,
   createClientFolder,
   createOrder,
   requestRevision,
@@ -87,6 +88,22 @@ export async function loadSampleClientOrdersAction() {
   redirect(`/client?${params.toString()}#orders`);
 }
 
+export async function submitBulkOrdersAction(payload: {
+  paymentSource: string;
+  rows: {
+    client: string;
+    contentType: string;
+    tier: "on-demand" | "rank";
+    title: string;
+    wordCount: number;
+    language: string;
+    keywords: string;
+    folderId: string;
+  }[];
+}) {
+  return createBulkOrders(payload.rows, payload.paymentSource);
+}
+
 export async function createClientFolderAction(formData: FormData) {
   const result = await createClientFolder({
     name: String(formData.get("name") ?? ""),
@@ -120,11 +137,31 @@ function collectServiceFields(formData: FormData) {
     }
 
     const normalizedKey = key.replace("serviceField__", "");
-    const nextValue = String(value ?? "");
+    const nextValue = stringifyFormValue(value);
+    if (!nextValue) {
+      continue;
+    }
     fields[normalizedKey] = fields[normalizedKey]
       ? `${fields[normalizedKey]}, ${nextValue}`
       : nextValue;
   }
 
+  const supportingFiles = formData
+    .getAll("supportingFiles")
+    .map(stringifyFormValue)
+    .filter(Boolean);
+  if (supportingFiles.length) {
+    fields.supporting_files = supportingFiles.join(", ");
+  }
+
   return fields;
+}
+
+function stringifyFormValue(value: FormDataEntryValue) {
+  if (value instanceof File) {
+    return value.name.trim();
+  }
+
+  const text = String(value ?? "").trim();
+  return text === "[object File]" ? "" : text;
 }

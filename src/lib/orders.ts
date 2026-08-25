@@ -948,11 +948,16 @@ export async function createOrder(values: OrderFormValues) {
   const wordCount = payload.wordCount;
   const baseRate = contentType.base_price_cents;
   const tierMarkup = payload.serviceTier === "rank" ? 10 : 0;
-  const budgetCents = wordCount * (baseRate + tierMarkup);
+  const rushMarkup = payload.priority === "rush" ? 2 : 0;
+  const budgetCents = wordCount * (baseRate + tierMarkup + rushMarkup);
+  const folderName = payload.clientFolderId
+    ? (await getClientFolders(user.profileId)).find((folder) => folder.id === payload.clientFolderId)?.name
+    : "";
+  const clientLabel = payload.clientLabel.trim() || folderName || "Unnamed client";
 
   const { error } = await supabase.from("orders").insert({
     client_id: user.profileId,
-    client_label: payload.clientLabel,
+    client_label: clientLabel,
     client_folder_id: payload.clientFolderId || null,
     content_type_id: payload.contentTypeId,
     title: payload.title,
@@ -1869,11 +1874,93 @@ function splitLinesAndCommas(value: string) {
     .filter(Boolean);
 }
 
+export async function createBulkOrders(
+  rows: {
+    client: string;
+    contentType: string;
+    tier: "on-demand" | "rank";
+    title: string;
+    wordCount: number;
+    language: string;
+    keywords: string;
+    folderId: string;
+  }[],
+  paymentSource: string,
+) {
+  const supabase = createServerSupabaseClient();
+  const user = await getCurrentAppUser();
+
+  if (!supabase || !user || user.role !== "client") {
+    return { ok: false as const, message: "Sign in as a client before submitting a batch." };
+  }
+
+  if (!rows.length) {
+    return { ok: false as const, message: "Add at least one row before submitting a batch." };
+  }
+
+  const contentTypes = await getContentTypeOptions();
+  const folders = await getClientFolders(user.profileId);
+  const batchId = `B${Date.now().toString().slice(-6)}`;
+  const payloads = [];
+
+  for (const [index, row] of rows.entries()) {
+    const contentType = contentTypes.find((type) => type.name === row.contentType && type.isOrderable);
+    const folder = folders.find((item) => item.id === row.folderId);
+    if (!contentType) {
+      return { ok: false as const, message: `Row ${index + 1}: choose an active content type.` };
+    }
+    if (!folder) {
+      return { ok: false as const, message: `Row ${index + 1}: choose a client folder.` };
+    }
+
+    const rate = contentType.basePriceCents + (row.tier === "rank" ? 10 : 0);
+    payloads.push({
+      client_id: user.profileId,
+      client_label: row.client.trim() || folder.name,
+      client_folder_id: folder.id,
+      content_type_id: contentType.id,
+      title: row.title.trim(),
+      brief: "",
+      primary_cta: "",
+      reference_links: [],
+      target_audience: folder.targetAudience,
+      tone_of_voice: folder.toneGuide,
+      target_keywords: splitLinesAndCommas(row.keywords),
+      word_count: row.wordCount,
+      priority: "standard",
+      due_date: null,
+      budget_cents: row.wordCount * rate,
+      language: row.language || "English",
+      service_tier: row.tier,
+      intake_details: {
+        _batchId: batchId,
+        _paymentSource: paymentSource,
+      },
+      status: "open",
+    });
+  }
+
+  const { error } = await supabase.from("orders").insert(payloads);
+  if (error) {
+    return { ok: false as const, message: error.message };
+  }
+
+  revalidateApp();
+  return {
+    ok: true as const,
+    message: `Batch #${batchId} — ${rows.length} content orders submitted.`,
+  };
+}
+
 function validateServiceFields(service: ServiceDefinition, fields: Record<string, string>) {
   const errors: string[] = [];
 
   for (const field of service.fields) {
     if (!field.required) {
+      continue;
+    }
+
+    if (field.showWhen && fields[field.showWhen.field] !== field.showWhen.equals) {
       continue;
     }
 

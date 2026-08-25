@@ -1,44 +1,63 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { submitOrderAction } from "@/app/client/actions";
 import type { ClientFolder, ContentTypeOption } from "@/lib/orders";
 import {
   initialOrderFormState,
   type OrderFormState,
 } from "@/lib/order-schema";
-import { supportedLanguages } from "@/lib/content-catalog";
+import {
+  FILE_ACCEPT,
+  RANK_RATE_CENTS,
+  RUSH_RATE_CENTS,
+  getRushLabel,
+  supportedLanguages,
+} from "@/lib/content-catalog";
 
 export function OrderForm({
   contentTypes,
   folders,
   presetContentTypeId,
-  hideContentTypeSelect,
 }: {
   contentTypes: ContentTypeOption[];
   folders: ClientFolder[];
   presetContentTypeId?: string;
   hideContentTypeSelect?: boolean;
 }) {
+  const orderableTypes = useMemo(
+    () => contentTypes.filter((type) => type.isOrderable),
+    [contentTypes],
+  );
   const [state, formAction, pending] = useActionState<OrderFormState, FormData>(
     submitOrderAction,
     initialOrderFormState,
   );
   const [selectedContentTypeId, setSelectedContentTypeId] = useState(
-    presetContentTypeId ?? contentTypes[0]?.id ?? "",
+    presetContentTypeId ?? orderableTypes[0]?.id ?? "",
   );
   const [selectedFolderId, setSelectedFolderId] = useState("");
   const [clientLabel, setClientLabel] = useState("");
   const [serviceTier, setServiceTier] = useState<"on-demand" | "rank">("on-demand");
+  const [priority, setPriority] = useState<"standard" | "priority" | "rush">("standard");
   const [wordCount, setWordCount] = useState("1500");
+  const [serviceValues, setServiceValues] = useState<Record<string, string>>({});
 
-  const selectedType = contentTypes.find((type) =>
-    (hideContentTypeSelect ? presetContentTypeId : selectedContentTypeId) === type.id,
-  );
+  const selectedType = orderableTypes.find((type) => type.id === selectedContentTypeId);
   const selectedFolder = folders.find((folder) => folder.id === selectedFolderId) ?? null;
   const parsedWordCount = Number(wordCount) || 0;
-  const activeRateCents = (selectedType?.basePriceCents ?? 0) + (serviceTier === "rank" ? 10 : 0);
+  const activeRateCents =
+    (selectedType?.basePriceCents ?? 0) +
+    (serviceTier === "rank" ? RANK_RATE_CENTS : 0) +
+    (priority === "rush" ? RUSH_RATE_CENTS : 0);
   const estimatedTotal = parsedWordCount > 0 ? (parsedWordCount * activeRateCents) / 100 : 0;
+  const visibleServiceFields = (selectedType?.fields ?? []).filter((field) => {
+    if (!field.showWhen) {
+      return true;
+    }
+
+    return serviceValues[field.showWhen.field] === field.showWhen.equals;
+  });
 
   return (
     <form action={formAction} className="grid gap-5 md:grid-cols-2">
@@ -79,37 +98,35 @@ export function OrderForm({
         placeholder="Acme Agency / End client"
         error={state.errors.clientLabel}
         onChange={setClientLabel}
-        required
         value={clientLabel}
       />
 
-      {hideContentTypeSelect ? (
-        <div className="md:col-span-2">
-          <input name="contentTypeId" type="hidden" value={presetContentTypeId} />
-          <FieldError message={state.errors.contentTypeId} />
+      <div className="md:col-span-2">
+        <input name="contentTypeId" type="hidden" value={selectedType?.id ?? ""} />
+        <span className="dashboard-label">Service</span>
+        <div className="mt-2 grid gap-3 md:grid-cols-3">
+          {orderableTypes.map((type) => {
+            const selected = type.id === selectedType?.id;
+            return (
+              <button
+                className={`rounded-[1.15rem] border px-4 py-4 text-left transition ${
+                  selected ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-white hover:border-slate-300"
+                }`}
+                key={type.id}
+                onClick={() => {
+                  setSelectedContentTypeId(type.id);
+                  setServiceValues({});
+                }}
+                type="button"
+              >
+                <p className="font-semibold text-slate-950">{type.name}</p>
+                <p className="mt-2 text-sm text-slate-500">{type.priceLabel}</p>
+              </button>
+            );
+          })}
         </div>
-      ) : (
-        <label>
-          <span className="dashboard-label">Content type</span>
-          <select
-            className={inputClass(Boolean(state.errors.contentTypeId))}
-            name="contentTypeId"
-            onChange={(event) => setSelectedContentTypeId(event.target.value)}
-            required
-            value={selectedContentTypeId}
-          >
-            <option disabled value="">
-              Select a content type
-            </option>
-            {contentTypes.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.name}
-              </option>
-            ))}
-          </select>
-          <FieldError message={state.errors.contentTypeId} />
-        </label>
-      )}
+        <FieldError message={state.errors.contentTypeId} />
+      </div>
 
       <label>
         <span className="dashboard-label">Tier</span>
@@ -195,12 +212,21 @@ export function OrderForm({
         <span className="dashboard-label">Priority</span>
         <select
           className={inputClass(Boolean(state.errors.priority))}
-          defaultValue="standard"
           name="priority"
+          onChange={(event) =>
+            setPriority(
+              event.target.value === "rush"
+                ? "rush"
+                : event.target.value === "priority"
+                  ? "priority"
+                  : "standard",
+            )
+          }
+          value={priority}
         >
           <option value="standard">Standard</option>
-          <option value="priority">Priority</option>
-          <option value="rush">Rush</option>
+          <option value="priority">Priority (prioritise before my other orders)</option>
+          <option value="rush">{getRushLabel(selectedType?.key)}</option>
         </select>
         <FieldError message={state.errors.priority} />
       </label>
@@ -228,13 +254,26 @@ export function OrderForm({
           className={`${inputClass(Boolean(state.errors.brief))} min-h-36`}
           name="brief"
           placeholder="Goals, structure expectations, compliance notes, required claims, delivery context, and anything the team should know."
-          required
         />
         <FieldError message={state.errors.brief} />
       </label>
 
+      <label className="md:col-span-2">
+        <span className="dashboard-label">Supporting files</span>
+        <input
+          accept={FILE_ACCEPT}
+          className="dashboard-input"
+          multiple
+          name="supportingFiles"
+          type="file"
+        />
+        <p className="mt-2 text-xs leading-5 text-slate-500">
+          Documents: .docx, .txt, .md. Media: .mp3, .mp4, .wav. No PDFs. Max 50MB per file.
+        </p>
+      </label>
+
       {selectedType ? (
-        <div className="md:col-span-2 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
+        <div className="md:col-span-2 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5" key={selectedType.id}>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
@@ -255,16 +294,23 @@ export function OrderForm({
               <p className="mt-1 text-lg font-semibold text-slate-950">
                 {selectedType.priceLabel}
               </p>
-              <p className="text-xs text-slate-500">
-                {selectedType.turnaroundDays} business days
-              </p>
+              {priority === "rush" ? (
+                <p className="text-xs text-slate-500">Rush +$0.02/word included</p>
+              ) : null}
             </div>
           </div>
 
-          {selectedType.fields.length ? (
+          {visibleServiceFields.length ? (
             <div className="mt-6 grid gap-4 md:grid-cols-2">
-              {selectedType.fields.map((field) => (
-                <ServiceField key={field.id} field={field} />
+              {visibleServiceFields.map((field) => (
+                <ServiceField
+                  field={field}
+                  key={field.id}
+                  onValueChange={(value) =>
+                    setServiceValues((current) => ({ ...current, [field.id]: value }))
+                  }
+                  value={serviceValues[field.id] ?? ""}
+                />
               ))}
             </div>
           ) : (
@@ -279,7 +325,7 @@ export function OrderForm({
         <div className="space-y-1">
           <p>
             {selectedType
-              ? `${selectedType.priceLabel} · ${selectedType.name}`
+              ? `${formatRate(activeRateCents)}/word · ${selectedType.name}`
               : "Choose a content type to see pricing."}
           </p>
           <p>
@@ -302,8 +348,12 @@ export function OrderForm({
 
 function ServiceField({
   field,
+  onValueChange,
+  value,
 }: {
   field: ContentTypeOption["fields"][number];
+  onValueChange: (value: string) => void;
+  value: string;
 }) {
   const inputName = `serviceField__${field.id}`;
   const hint = field.hint ? (
@@ -317,9 +367,34 @@ function ServiceField({
         <textarea
           className="dashboard-input min-h-28"
           name={inputName}
+          onChange={(event) => onValueChange(event.target.value)}
           placeholder={field.placeholder}
           required={field.required}
+          value={value}
         />
+        {hint}
+      </label>
+    );
+  }
+
+  if (field.kind === "file") {
+    return (
+      <label className="md:col-span-2">
+        <span className="dashboard-label">{field.label}</span>
+        <input
+          accept={field.accept ?? FILE_ACCEPT}
+          className="dashboard-input"
+          multiple
+          name={`upload__${field.id}`}
+          onChange={(event) => {
+            const names = Array.from(event.target.files ?? [])
+              .map((file) => file.name)
+              .join(", ");
+            onValueChange(names);
+          }}
+          type="file"
+        />
+        <input name={inputName} type="hidden" value={value} />
         {hint}
       </label>
     );
@@ -329,7 +404,13 @@ function ServiceField({
     return (
       <label>
         <span className="dashboard-label">{field.label}</span>
-        <select className="dashboard-input" defaultValue="" name={inputName} required={field.required}>
+        <select
+          className="dashboard-input"
+          name={inputName}
+          onChange={(event) => onValueChange(event.target.value)}
+          required={field.required}
+          value={value}
+        >
           <option value="">Select an option</option>
           {(field.options ?? []).map((option) => (
             <option key={option} value={option}>
@@ -365,13 +446,19 @@ function ServiceField({
       <input
         className="dashboard-input"
         name={inputName}
+        onChange={(event) => onValueChange(event.target.value)}
         placeholder={field.placeholder}
         required={field.required}
         type={field.kind === "date" ? "date" : "text"}
+        value={value}
       />
       {hint}
     </label>
   );
+}
+
+function formatRate(cents: number) {
+  return `$${(cents / 100).toFixed(2)}`;
 }
 
 function Field({

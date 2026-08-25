@@ -20,6 +20,7 @@ export const roleMeta: Record<
       { label: "All Orders", href: "/client/orders" },
       { label: "Completed Orders", href: "/client/orders?view=completed" },
       { label: "Client Folders", href: "/client/folders" },
+      { label: "Content Budget", href: "/client/content-budget" },
       { label: "Billing", href: "/client/billing" },
       { label: "Settings", href: "/client/settings" },
     ],
