@@ -13,6 +13,7 @@ export function DashboardShell({
   currentPath,
   userName,
   searchQuery,
+  searchAction,
   tabs,
   children,
 }: {
@@ -24,6 +25,8 @@ export function DashboardShell({
   currentPath: string;
   userName: string;
   searchQuery?: string;
+  /** Path the search form submits to. Defaults to the role workspace root. */
+  searchAction?: string;
   tabs?: { label: string; href: string; active?: boolean }[];
   children: ReactNode;
 }) {
@@ -99,7 +102,7 @@ export function DashboardShell({
               </div>
               <div className="flex items-center gap-3">
                 <form
-                  action={workspaceHref}
+                  action={searchAction ?? workspaceHref}
                   className="hidden min-w-72 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 md:flex"
                   method="get"
                 >
