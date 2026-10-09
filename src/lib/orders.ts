@@ -984,7 +984,7 @@ export async function getWriterHomeSnapshot(writerId: string): Promise<WriterHom
   const ranked = rankingRows.data ?? [];
   const myRanking = ranked.find((item) => item.writer_id === writerId);
   const currentRank = myRanking
-    ? ranked.findIndex((item) => item.score === myRanking.score) + 1
+    ? ranked.findIndex((item) => item.writer_id === writerId) + 1
     : null;
 
   const revisionJobs = active.filter((job) => job.dbStatus === "revision_requested");
@@ -2052,14 +2052,22 @@ async function seedWriterReviewData(writerProfileId: string): Promise<SeedWorksp
     return { ok: false, message: "Supabase is not configured." };
   }
 
+  // Keep marketplace samples unique per writer so shared Review Client titles
+  // don't get reused across accounts (which left home metrics empty).
+  const writerTag = writerProfileId.slice(0, 8);
+  const completedTitle = `${WRITER_SAMPLE_TITLES[0]} · ${writerTag}`;
+  const inProgressTitle = `${WRITER_SAMPLE_TITLES[1]} · ${writerTag}`;
+  const openTitle = `${WRITER_SAMPLE_TITLES[2]} · ${writerTag}`;
+
   const existing = await supabase
     .from("orders")
     .select("id, title")
-    .eq("writer_id", writerProfileId);
+    .eq("writer_id", writerProfileId)
+    .in("title", [completedTitle, inProgressTitle]);
 
   const existingTitles = new Set((existing.data ?? []).map((item) => item.title));
-  if (WRITER_SAMPLE_TITLES.slice(0, 2).every((title) => existingTitles.has(title))) {
-    return { ok: true, message: "Sample writer orders are already loaded." };
+  if (existingTitles.has(completedTitle) && existingTitles.has(inProgressTitle)) {
+    return { ok: true, message: "Sample writer orders are already loaded for this account." };
   }
 
   const client = await ensureSupportProfile("client", "Review Client", "review-client@penned.local", "Review Workspace");
@@ -2072,13 +2080,16 @@ async function seedWriterReviewData(writerProfileId: string): Promise<SeedWorksp
     return { ok: false, message: "Create active content types before loading writer review data." };
   }
 
+  // Review budgets should read as real dollars even if catalog cents are tiny placeholders.
+  const reviewBudget = (cents: number) => Math.max(cents, 25_000);
+
   const completedOrder = await createSampleOrder({
     clientId: client.id,
     clientLabel: "Verity Health",
     writerId: writerProfileId,
     contentTypeId: primaryType.id,
-    budgetCents: primaryType.basePriceCents,
-    title: WRITER_SAMPLE_TITLES[0],
+    budgetCents: reviewBudget(primaryType.basePriceCents),
+    title: completedTitle,
     brief: "Completed writer sample used to show accepted work and wallet earnings.",
     primaryCta: "Schedule a walkthrough",
     targetAudience: "SaaS operations teams",
@@ -2096,8 +2107,8 @@ async function seedWriterReviewData(writerProfileId: string): Promise<SeedWorksp
     clientLabel: "Atlas Security",
     writerId: writerProfileId,
     contentTypeId: secondaryType.id,
-    budgetCents: secondaryType.basePriceCents,
-    title: WRITER_SAMPLE_TITLES[1],
+    budgetCents: reviewBudget(secondaryType.basePriceCents),
+    title: inProgressTitle,
     brief: "In-progress writer sample that appears in active assignments.",
     primaryCta: "Book a demo",
     targetAudience: "Demand gen leads",
@@ -2110,13 +2121,13 @@ async function seedWriterReviewData(writerProfileId: string): Promise<SeedWorksp
     status: "claimed",
   });
 
-  await createSampleOrder({
+  const openOrder = await createSampleOrder({
     clientId: client.id,
     clientLabel: "Bluepeak Media",
     writerId: null,
     contentTypeId: tertiaryType.id,
-    budgetCents: tertiaryType.basePriceCents,
-    title: WRITER_SAMPLE_TITLES[2],
+    budgetCents: reviewBudget(tertiaryType.basePriceCents),
+    title: openTitle,
     brief: "Open marketplace sample to show how claimable jobs appear.",
     primaryCta: "Download the report",
     targetAudience: "RevOps teams",
@@ -2129,7 +2140,7 @@ async function seedWriterReviewData(writerProfileId: string): Promise<SeedWorksp
     status: "open",
   });
 
-  if (!completedOrder || !inProgressOrder) {
+  if (!completedOrder || !inProgressOrder || !openOrder) {
     return { ok: false, message: "Could not create sample writer orders." };
   }
 
@@ -2230,12 +2241,17 @@ async function createSampleOrder({
 
   if (!supabase) return null;
 
-  const { data: existing } = await supabase
+  let existingQuery = supabase
     .from("orders")
-    .select("id, budget_cents")
+    .select("id, budget_cents, writer_id, status")
     .eq("title", title)
-    .eq("client_id", clientId)
-    .maybeSingle();
+    .eq("client_id", clientId);
+
+  existingQuery = writerId
+    ? existingQuery.eq("writer_id", writerId)
+    : existingQuery.is("writer_id", null).eq("status", "open");
+
+  const { data: existing } = await existingQuery.maybeSingle();
 
   if (existing) {
     return existing;
@@ -2244,7 +2260,7 @@ async function createSampleOrder({
   const dueDate = new Date();
   dueDate.setDate(dueDate.getDate() + dueDateOffsetDays);
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("orders")
     .insert({
       client_id: clientId,
@@ -2266,6 +2282,11 @@ async function createSampleOrder({
     })
     .select("id, budget_cents")
     .single();
+
+  if (error) {
+    console.error("createSampleOrder failed", error);
+    return null;
+  }
 
   return data;
 }
