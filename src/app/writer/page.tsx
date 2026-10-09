@@ -37,8 +37,6 @@ export default async function WriterDashboardPage({
       role="writer"
       title="Writer Dashboard"
       description="Your week at a glance: what is due, what you have earned, and what to do next."
-      ctaLabel="Browse job marketplace"
-      ctaHref="/writer/marketplace"
       currentPath="/writer"
       userName={user.fullName}
       searchQuery={params.q}

@@ -1089,6 +1089,10 @@ function browseMarketplaceAction(): WriterNextAction {
   };
 }
 
+/**
+ * P0 Next Action: soonest due_date across assigned/claimed work, deep-linked
+ * to that job. Marketplace browse is only the idle fallback.
+ */
 function buildNextAction(active: WriterJob[]): WriterNextAction {
   const byDue = (a: WriterJob, b: WriterJob) =>
     (hoursUntil(a.dueDate) ?? Number.POSITIVE_INFINITY) - (hoursUntil(b.dueDate) ?? Number.POSITIVE_INFINITY);
@@ -1099,7 +1103,7 @@ function buildNextAction(active: WriterJob[]): WriterNextAction {
       title: `Address revisions on "${revision.title}"`,
       description: `${revision.client} asked for changes. ${revision.deadline}.`,
       href: `/writer/orders/${revision.id}`,
-      ctaLabel: "Open revisions",
+      ctaLabel: "Open job",
       tone: "urgent",
     };
   }
@@ -1110,9 +1114,9 @@ function buildNextAction(active: WriterJob[]): WriterNextAction {
     const started = next.status.key === "in_progress";
     return {
       title: `${started ? "Continue" : "Start"} "${next.title}"`,
-      description: `${next.client} · ${next.pay}. ${next.deadline}.`,
+      description: `${next.client} · ${next.pay}. Soonest deadline: ${next.deadline}.`,
       href: `/writer/orders/${next.id}`,
-      ctaLabel: started ? "Continue job" : "Start job",
+      ctaLabel: "Open job",
       tone: "normal",
     };
   }

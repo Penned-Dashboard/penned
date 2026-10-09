@@ -23,8 +23,9 @@ export function DashboardShell({
   role: Role;
   title: string;
   description: string;
-  ctaLabel: string;
-  ctaHref: string;
+  /** Omit both to hide the header primary CTA (e.g. when Next Action already owns it). */
+  ctaLabel?: string;
+  ctaHref?: string;
   currentPath: string;
   userName: string;
   searchQuery?: string;
@@ -33,6 +34,7 @@ export function DashboardShell({
   tabs?: { label: string; href: string; active?: boolean }[];
   children: ReactNode;
 }) {
+  const showHeaderCta = Boolean(ctaLabel && ctaHref);
   const meta = roleMeta[role];
   const workspaceHref = `/${role}`;
   const settingsHref = `/${role}/settings`;
@@ -141,11 +143,13 @@ export function DashboardShell({
                   {description}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-3">
-                <Link className="button-primary" href={ctaHref}>
-                  {ctaLabel}
-                </Link>
-              </div>
+              {showHeaderCta ? (
+                <div className="flex flex-wrap gap-3">
+                  <Link className="button-primary" href={ctaHref!}>
+                    {ctaLabel}
+                  </Link>
+                </div>
+              ) : null}
             </header>
             {tabs?.length ? (
               <nav className="mb-6 flex items-center gap-8 border-b border-[rgba(23,37,63,0.1)]">
