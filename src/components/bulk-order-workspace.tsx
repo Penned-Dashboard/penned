@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { submitBulkOrdersAction } from "@/app/client/actions";
-import { SectionCard } from "@/components/dashboard-shell";
+import { SectionCard } from "@/components/dashboard-cards";
 import { RANK_RATE_CENTS, serviceCatalog } from "@/lib/content-catalog";
 import type { ClientFolder, ContentTypeOption } from "@/lib/orders";
 

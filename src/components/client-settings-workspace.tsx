@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { SectionCard } from "@/components/dashboard-shell";
+import { SectionCard } from "@/components/dashboard-cards";
 
 const teamRoles = [
   {

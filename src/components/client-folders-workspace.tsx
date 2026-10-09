@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClientFolderAction } from "@/app/client/actions";
-import { SectionCard } from "@/components/dashboard-shell";
+import { SectionCard } from "@/components/dashboard-cards";
 import type { ClientFolder } from "@/lib/orders";
 
 const PAGE_SIZE = 8;
