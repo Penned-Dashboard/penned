@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { signOutAction } from "@/app/(auth)/actions";
+import { PennedLogo } from "@/components/penned-logo";
 import { getCurrentAppUser, hasClerkEnv } from "@/lib/auth";
 
 export async function AppAuthBar() {
@@ -27,14 +28,9 @@ export async function AppAuthBar() {
     <div className="sticky top-0 z-40 border-b border-black/5 bg-white/70 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4 lg:px-10">
         <div className="flex min-w-0 items-center gap-6">
-          <Link href="/" className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[linear-gradient(135deg,#2563eb_0%,#2bb6a8_100%)] text-sm font-semibold text-white">
-              P
-            </span>
+          <Link href="/" className="flex min-w-0 items-center gap-3">
+            <PennedLogo compact />
             <div className="min-w-0">
-              <p className="text-base font-semibold tracking-[-0.03em] text-slate-950">
-                Penned
-              </p>
               <p className="truncate text-xs text-slate-500">
                 {user
                   ? `${user.fullName} · ${user.role}`

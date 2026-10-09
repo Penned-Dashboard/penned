@@ -3,8 +3,10 @@
 import { redirect } from "next/navigation";
 import {
   createWorkspaceUser,
+  getCurrentAppUser,
   signInWorkspaceUserWithPassword,
   signOutWorkspaceUser,
+  switchWorkspaceRole,
 } from "@/lib/auth";
 import { isRole } from "@/lib/types";
 
@@ -78,4 +80,22 @@ export async function signInAction(formData: FormData) {
 export async function signOutAction() {
   await signOutWorkspaceUser();
   redirect("/");
+}
+
+export async function switchWorkspaceRoleAction(formData: FormData) {
+  const roleValue = String(formData.get("role") ?? "").trim();
+  const user = await getCurrentAppUser();
+
+  if (!user || !isRole(roleValue)) {
+    redirect("/sign-in");
+  }
+
+  try {
+    await switchWorkspaceRole(roleValue);
+  } catch (error) {
+    console.error("switchWorkspaceRoleAction failed", error);
+    redirect(`/${user.role}?roleSwitch=denied`);
+  }
+
+  redirect(`/${roleValue}`);
 }

@@ -298,6 +298,46 @@ export async function signOutWorkspaceUser() {
   cookieStore.delete(SESSION_COOKIE);
 }
 
+export async function switchWorkspaceRole(nextRole: Role) {
+  const user = await getCurrentAppUser();
+
+  if (!user) {
+    throw new Error("Sign in before switching roles.");
+  }
+
+  const adminEmails = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  const allowed = user.role === "admin" || adminEmails.includes(user.email.toLowerCase());
+
+  if (!allowed) {
+    throw new Error("Role switching is only available for review/admin accounts.");
+  }
+
+  const supabase = createServerSupabaseClient();
+
+  if (!supabase) {
+    throw new Error("Supabase must be configured before switching roles.");
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ role: nextRole })
+    .eq("id", user.profileId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  await setWorkspaceSession({
+    ...user,
+    role: nextRole,
+  });
+
+  return nextRole;
+}
+
 async function syncExternalProfile({
   externalAuthId,
   email,

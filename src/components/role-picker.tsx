@@ -9,7 +9,9 @@ export function RolePicker({ defaultRole }: { defaultRole: "client" | "writer" }
     <div className="grid gap-3 sm:grid-cols-2">
       <label
         className={`cursor-pointer rounded-[1.25rem] border p-4 transition ${
-          role === "client" ? "border-blue-500 bg-blue-50" : "border-slate-200 bg-white"
+          role === "client"
+            ? "border-[var(--penned-navy)] bg-[rgba(145,185,210,0.18)]"
+            : "border-slate-200 bg-white"
         }`}
       >
         <input
@@ -25,7 +27,9 @@ export function RolePicker({ defaultRole }: { defaultRole: "client" | "writer" }
       </label>
       <label
         className={`cursor-pointer rounded-[1.25rem] border p-4 transition ${
-          role === "writer" ? "border-blue-500 bg-blue-50" : "border-slate-200 bg-white"
+          role === "writer"
+            ? "border-[var(--penned-navy)] bg-[rgba(221,244,121,0.35)]"
+            : "border-slate-200 bg-white"
         }`}
       >
         <input

@@ -12,7 +12,7 @@ export const roleMeta: Record<
   client: {
     portalTitle: "Penned",
     portalSubtitle: "Content Ops Engine",
-    accentClass: "from-blue-600 to-cyan-400",
+    accentClass: "from-[#17253F] to-[#91B9D2]",
     nav: [
       { label: "Dashboard", href: "/client" },
       { label: "New Order", href: "/client/new-order" },
@@ -28,7 +28,7 @@ export const roleMeta: Record<
   writer: {
     portalTitle: "Penned",
     portalSubtitle: "Writer Portal",
-    accentClass: "from-blue-600 to-emerald-400",
+    accentClass: "from-[#17253F] to-[#DDF479]",
     nav: [
       { label: "Dashboard", href: "/writer" },
       { label: "Assigned Jobs", href: "/writer/assigned" },
@@ -42,7 +42,7 @@ export const roleMeta: Record<
   admin: {
     portalTitle: "Penned",
     portalSubtitle: "Admin Portal",
-    accentClass: "from-blue-600 to-sky-400",
+    accentClass: "from-[#17253F] to-[#91B9D2]",
     nav: [
       { label: "Dashboard", href: "/admin" },
       { label: "Orders", href: "/admin#operations" },

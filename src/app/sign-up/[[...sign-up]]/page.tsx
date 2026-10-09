@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signUpAction } from "@/app/(auth)/actions";
+import { PennedLogo } from "@/components/penned-logo";
 import { RolePicker } from "@/components/role-picker";
 import { getCurrentAppUser } from "@/lib/auth";
 
@@ -18,21 +19,16 @@ export default async function SignUpPage({
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f9fd]">
-      <div className="absolute inset-x-0 top-0 -z-10 h-[30rem] bg-[radial-gradient(circle_at_15%_20%,rgba(255,210,182,0.35),transparent_18%),radial-gradient(circle_at_75%_18%,rgba(131,216,255,0.22),transparent_24%),radial-gradient(circle_at_85%_40%,rgba(81,187,176,0.14),transparent_20%),linear-gradient(180deg,#f6f8fc_0%,#eef3f8_100%)]" />
+    <main className="min-h-screen bg-[var(--background)]">
+      <div className="absolute inset-x-0 top-0 -z-10 h-[30rem] bg-[radial-gradient(circle_at_20%_15%,rgba(221,244,121,0.35),transparent_22%),radial-gradient(circle_at_80%_20%,rgba(145,185,210,0.28),transparent_26%),linear-gradient(180deg,#f4f7fb_0%,#e8eef5_100%)]" />
       <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-6 py-12 lg:px-10">
-        <div className="w-full max-w-md rounded-[2rem] border border-white/80 bg-white/92 p-8 shadow-[0_30px_70px_rgba(25,38,63,0.08)]">
+        <div className="w-full max-w-md rounded-[2rem] border border-white/80 bg-white/95 p-8 shadow-[0_30px_70px_rgba(23,37,63,0.08)]">
           <div className="flex justify-center">
-            <Link href="/" className="inline-flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[linear-gradient(135deg,#2563eb_0%,#2bb6a8_100%)] text-sm font-semibold text-white">
-                P
-              </span>
-              <span className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">
-                Penned
-              </span>
+            <Link href="/">
+              <PennedLogo />
             </Link>
           </div>
-          <h1 className="mt-8 text-center text-4xl font-semibold tracking-[-0.05em] text-slate-950">
+          <h1 className="mt-8 text-center text-4xl font-semibold tracking-[-0.05em] text-[var(--penned-navy)]">
             Create your account
           </h1>
           <p className="mt-3 text-center text-lg text-slate-500">
@@ -64,15 +60,15 @@ export default async function SignUpPage({
               <input className="dashboard-input" minLength={8} name="password" placeholder="At least 8 characters" required type="password" />
             </label>
             {params.error ? (
-              <p className="text-sm text-rose-600">
+              <p className="rounded-[1rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                 {params.error === "exists"
                   ? "That email already has an account. Sign in instead."
                   : params.error === "setup"
-                    ? "Run the latest Supabase upgrade SQL before using password-based sign in."
+                    ? "Password auth needs the latest Supabase SQL applied (password_hash column). Run supabase/setup-auth-and-writer-p0.sql, then try again."
                     : params.error === "env"
-                      ? "Signup is not configured in this deployment yet. Add the Supabase server env vars to this Vercel environment."
+                      ? "Signup is not configured in this deployment yet. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to this Vercel Preview environment."
                       : params.error === "failed"
-                        ? "The account could not be created in this deployment. Check the server env vars and Supabase schema, then try again."
+                        ? "Account creation failed. Most common causes: missing Supabase env vars on this Vercel preview, or the password_hash column is missing. Run the setup SQL and confirm Preview env vars, then retry."
                   : "Please complete all fields and use a password with at least 8 characters."}
               </p>
             ) : null}
@@ -82,7 +78,7 @@ export default async function SignUpPage({
           </form>
           <p className="mt-6 text-center text-sm text-slate-500">
             Already have an account?{" "}
-            <Link className="font-semibold text-slate-900" href="/sign-in">
+            <Link className="font-semibold text-[var(--penned-navy)]" href="/sign-in">
               Sign in
             </Link>
           </p>

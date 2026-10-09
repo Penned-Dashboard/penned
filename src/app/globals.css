@@ -1,17 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f8fc;
-  --foreground: #13110f;
-  --panel: rgba(255, 255, 255, 0.82);
-  --panel-border: rgba(130, 147, 171, 0.14);
+  /* Penned brand kit */
+  --penned-navy: #17253f;
+  --penned-sky: #91b9d2;
+  --penned-lime: #ddf479;
+  --background: #f4f7fb;
+  --foreground: #17253f;
+  --panel: rgba(255, 255, 255, 0.92);
+  --panel-border: rgba(23, 37, 63, 0.1);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-space-grotesk);
+  --font-sans: var(--font-body);
   --font-mono: var(--font-ibm-plex-mono);
+  --font-display: var(--font-display);
 }
 
 * {
@@ -27,7 +32,7 @@ body {
   min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-space-grotesk), sans-serif;
+  font-family: var(--font-body), "Avenir Next", "Segoe UI", sans-serif;
 }
 
 a {
@@ -40,19 +45,19 @@ a {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: linear-gradient(135deg, #2563eb 0%, #2bb6a8 100%);
+  background: var(--penned-navy);
   padding: 0.85rem 1.25rem;
   color: white;
   font-size: 0.95rem;
   font-weight: 600;
-  box-shadow: 0 18px 34px rgba(37, 99, 235, 0.18);
-  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 16px 30px rgba(23, 37, 63, 0.18);
+  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .button-primary:hover {
   transform: translateY(-1px);
-  opacity: 0.94;
-  box-shadow: 0 22px 38px rgba(37, 99, 235, 0.24);
+  background: #213353;
+  box-shadow: 0 20px 34px rgba(23, 37, 63, 0.24);
 }
 
 .button-secondary {
@@ -60,18 +65,37 @@ a {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  border: 1px solid rgba(130, 147, 171, 0.18);
-  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(23, 37, 63, 0.14);
+  background: rgba(255, 255, 255, 0.95);
   padding: 0.85rem 1.25rem;
-  color: #1f2937;
+  color: var(--penned-navy);
   font-size: 0.95rem;
   font-weight: 600;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 .button-secondary:hover {
   transform: translateY(-1px);
-  border-color: rgba(19, 17, 15, 0.3);
+  border-color: rgba(23, 37, 63, 0.28);
+  background: #f7fafc;
+}
+
+.button-accent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--penned-lime);
+  padding: 0.85rem 1.25rem;
+  color: var(--penned-navy);
+  font-size: 0.95rem;
+  font-weight: 700;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.button-accent:hover {
+  transform: translateY(-1px);
+  opacity: 0.92;
 }
 
 .dashboard-panel {
@@ -97,13 +121,30 @@ a {
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: rgba(43, 182, 168, 0.08);
+  background: rgba(145, 185, 210, 0.22);
   padding: 0.4rem 0.75rem;
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #0f766e;
+  color: var(--penned-navy);
+}
+
+.brand-mark {
+  display: inline-flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 999px;
+}
+
+.brand-wordmark {
+  font-family: var(--font-display), Georgia, "Times New Roman", serif;
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: inherit;
 }
 
 .dashboard-label {
