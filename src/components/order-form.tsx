@@ -9,9 +9,8 @@ import {
 } from "@/lib/order-schema";
 import {
   FILE_ACCEPT,
-  RANK_RATE_CENTS,
-  RUSH_RATE_CENTS,
   getRushLabel,
+  getWordRateCents,
   supportedLanguages,
 } from "@/lib/content-catalog";
 
@@ -46,10 +45,11 @@ export function OrderForm({
   const selectedType = orderableTypes.find((type) => type.id === selectedContentTypeId);
   const selectedFolder = folders.find((folder) => folder.id === selectedFolderId) ?? null;
   const parsedWordCount = Number(wordCount) || 0;
-  const activeRateCents =
-    (selectedType?.basePriceCents ?? 0) +
-    (serviceTier === "rank" ? RANK_RATE_CENTS : 0) +
-    (priority === "rush" ? RUSH_RATE_CENTS : 0);
+  const activeRateCents = getWordRateCents({
+    basePriceCents: selectedType?.basePriceCents ?? 0,
+    serviceTier,
+    priority,
+  });
   const estimatedTotal = parsedWordCount > 0 ? (parsedWordCount * activeRateCents) / 100 : 0;
   const visibleServiceFields = (selectedType?.fields ?? []).filter((field) => {
     if (!field.showWhen) {
@@ -136,8 +136,8 @@ export function OrderForm({
           onChange={(event) => setServiceTier(event.target.value === "rank" ? "rank" : "on-demand")}
           value={serviceTier}
         >
-          <option value="on-demand">On-demand</option>
-          <option value="rank">Rank (+$0.10/word)</option>
+          <option value="on-demand">Standard</option>
+          <option value="rank">Specialist ($0.25/word)</option>
         </select>
         <FieldError message={state.errors.serviceTier} />
       </label>
@@ -226,7 +226,7 @@ export function OrderForm({
         >
           <option value="standard">Standard</option>
           <option value="priority">Priority (prioritise before my other orders)</option>
-          <option value="rush">{getRushLabel(selectedType?.key)}</option>
+          <option value="rush">{getRushLabel(selectedType?.key, serviceTier)}</option>
         </select>
         <FieldError message={state.errors.priority} />
       </label>
@@ -295,7 +295,9 @@ export function OrderForm({
                 {selectedType.priceLabel}
               </p>
               {priority === "rush" ? (
-                <p className="text-xs text-slate-500">Rush +$0.02/word included</p>
+                <p className="text-xs text-slate-500">
+                  {serviceTier === "rank" ? "Rush +$0.10/word included" : "Rush +$0.02/word included"}
+                </p>
               ) : null}
             </div>
           </div>

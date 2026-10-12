@@ -143,10 +143,18 @@ export default async function WriterMarketplacePage({
               return (
                 <div key={job.id} className="dashboard-list-row flex-col items-stretch gap-4 lg:flex-row lg:items-center">
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-slate-950">{job.title}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-slate-950">{job.title}</p>
+                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">
+                        {job.tierLabel}
+                      </span>
+                    </div>
                     <p className="mt-1 text-sm text-slate-500">
                       {job.client} · {job.category} · {job.industry}
                     </p>
+                    {job.brief ? (
+                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{job.brief}</p>
+                    ) : null}
                     {job.reservedByMe && minutesLeft ? (
                       <p className="mt-2 text-xs font-semibold text-blue-700">
                         Held for you · about {minutesLeft} min left to confirm
@@ -173,7 +181,10 @@ export default async function WriterMarketplacePage({
                     <CountdownBadge dueDate={job.dueDate} />
                     <span className="text-xs text-slate-500">{job.turnaround}</span>
                   </div>
-                  <div className="flex shrink-0 gap-2">
+                  <div className="flex shrink-0 flex-wrap gap-2">
+                    <a className="button-secondary" href={`/writer/orders/${job.id}`}>
+                      Preview
+                    </a>
                     {job.reservedByMe ? null : (
                       <form action={reserveOrderAction}>
                         <input name="orderId" type="hidden" value={job.id} />

@@ -30,8 +30,14 @@ export type ServiceDefinition = {
   fields: ServiceFieldDefinition[];
 };
 
+/** Standard rush uplift ($0.02/pw). */
 export const RUSH_RATE_CENTS = 2;
-export const RANK_RATE_CENTS = 10;
+/** Specialist tier flat rate ($0.25/pw). Stored as service_tier = "rank" in the DB. */
+export const SPECIALIST_RATE_CENTS = 25;
+/** @deprecated Use SPECIALIST_RATE_CENTS — kept for older imports. */
+export const RANK_RATE_CENTS = SPECIALIST_RATE_CENTS;
+/** Specialist rush uplift ($0.10/pw on top of specialist rate). */
+export const SPECIALIST_RUSH_RATE_CENTS = 10;
 export const FILE_ACCEPT = ".docx,.txt,.md,.mp3,.mp4,.wav";
 export const FORTY_EIGHT_HOUR_RUSH_KEYS = [
   "technical-article",
@@ -39,13 +45,33 @@ export const FORTY_EIGHT_HOUR_RUSH_KEYS = [
   "interview",
 ] as const;
 
-export function getRushLabel(serviceKey?: string | null) {
+export function getRushLabel(serviceKey?: string | null, serviceTier: "on-demand" | "rank" = "on-demand") {
+  if (serviceTier === "rank") {
+    return "Rush +$0.10/pw (24hr delivery)";
+  }
+
   const hours = FORTY_EIGHT_HOUR_RUSH_KEYS.includes(
     (serviceKey ?? "") as (typeof FORTY_EIGHT_HOUR_RUSH_KEYS)[number],
   )
     ? 48
     : 24;
   return `Rush +$0.02/pw (${hours}hr delivery)`;
+}
+
+export function getWordRateCents({
+  basePriceCents,
+  serviceTier,
+  priority,
+}: {
+  basePriceCents: number;
+  serviceTier: "on-demand" | "rank";
+  priority: "standard" | "priority" | "rush";
+}) {
+  if (serviceTier === "rank") {
+    return SPECIALIST_RATE_CENTS + (priority === "rush" ? SPECIALIST_RUSH_RATE_CENTS : 0);
+  }
+
+  return basePriceCents + (priority === "rush" ? RUSH_RATE_CENTS : 0);
 }
 
 export const supportedLanguages = [
@@ -85,13 +111,13 @@ export const supportedLanguages = [
 export const serviceTiers = [
   {
     value: "on-demand",
-    label: "On-demand",
+    label: "Standard",
     detail: "Standard service pricing for one-off or managed briefs.",
   },
   {
     value: "rank",
-    label: "Rank",
-    detail: "Adds $0.10/word to the standard service rate for rank-focused delivery.",
+    label: "Specialist",
+    detail: "Expert writers at $0.25/word. Rush available at +$0.10/word for 24hr delivery.",
   },
 ] as const;
 

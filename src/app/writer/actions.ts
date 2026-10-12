@@ -86,6 +86,7 @@ export async function updateWriterSettingsAction(formData: FormData) {
     available: formData.get("available") === "on",
     paymentInfo: String(formData.get("paymentInfo") ?? ""),
     taxInfo: String(formData.get("taxInfo") ?? ""),
+    avatarUrl: String(formData.get("avatarUrl") ?? ""),
     notificationPrefs,
   });
 

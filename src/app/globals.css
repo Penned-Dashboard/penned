@@ -87,7 +87,7 @@ a {
   border-radius: 999px;
   background: var(--penned-lime);
   padding: 0.85rem 1.25rem;
-  color: var(--penned-navy);
+  color: #17253f;
   font-size: 0.95rem;
   font-weight: 700;
   transition: transform 0.2s ease, opacity 0.2s ease;

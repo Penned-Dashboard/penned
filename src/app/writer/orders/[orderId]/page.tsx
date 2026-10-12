@@ -26,17 +26,28 @@ export default async function WriterOrderDetailPage({
     notFound();
   }
 
+  const isPreview = Boolean(order.isPreview);
+
   return (
     <DashboardShell
       role="writer"
       title={order.title}
-      description="Review the brief, submit your draft, and manage revision feedback."
-      ctaLabel="Back to my jobs"
-      ctaHref="/writer/jobs"
-      currentPath="/writer/jobs"
+      description={
+        isPreview
+          ? "Preview this open marketplace job before you reserve or claim it."
+          : "Review the brief, submit your draft, and manage revision feedback."
+      }
+      ctaLabel={isPreview ? "Back to marketplace" : "Back to my jobs"}
+      ctaHref={isPreview ? "/writer/marketplace" : "/writer/jobs"}
+      currentPath={isPreview ? "/writer/marketplace" : "/writer/jobs"}
       userName={user.fullName}
     >
       <Notice notice={notice.notice} noticeMessage={notice.noticeMessage} />
+      {isPreview ? (
+        <div className="rounded-[1.25rem] border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
+          Preview only — this job is still open. Use Reserve or Claim from the marketplace when you are ready.
+        </div>
+      ) : null}
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <SectionCard
           title="Assignment overview"
@@ -77,7 +88,11 @@ export default async function WriterOrderDetailPage({
           title="Submission"
           description="Submit a Google Doc and a short handoff note for review."
         >
-          {["accepted", "cancelled"].includes(order.dbStatus) ? (
+          {isPreview ? (
+            <p className="text-sm text-slate-500">
+              Claim this job from the marketplace to start work and submit a draft.
+            </p>
+          ) : ["accepted", "cancelled"].includes(order.dbStatus) ? (
             <p className="text-sm text-slate-500">
               This job is {order.status.toLowerCase()}, so new drafts can no longer be submitted.
             </p>

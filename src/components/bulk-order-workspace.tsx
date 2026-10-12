@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { submitBulkOrdersAction } from "@/app/client/actions";
 import { SectionCard } from "@/components/dashboard-cards";
-import { RANK_RATE_CENTS, serviceCatalog } from "@/lib/content-catalog";
+import { getWordRateCents, serviceCatalog } from "@/lib/content-catalog";
 import type { ClientFolder, ContentTypeOption } from "@/lib/orders";
 
 type BulkRow = {
@@ -158,7 +158,7 @@ export function BulkOrderWorkspace({
 
       <SectionCard
         title="Batch table"
-        description="Missing fields are flagged before checkout. Duplicate titles, missing folders, and Rank keyword gaps are checked here."
+        description="Missing fields are flagged before checkout. Duplicate titles, missing folders, and Specialist keyword gaps are checked here."
       >
         <div className="overflow-x-auto rounded-[1.25rem] border border-slate-200">
           <table className="min-w-[1100px] w-full border-collapse text-sm">
@@ -202,8 +202,8 @@ export function BulkOrderWorkspace({
                       }
                       value={row.tier}
                     >
-                      <option value="on-demand">On-demand</option>
-                      <option value="rank">Rank</option>
+                      <option value="on-demand">Standard</option>
+                      <option value="rank">Specialist</option>
                     </select>
                   </td>
                   <td className="px-3 py-2">
@@ -326,7 +326,9 @@ function validateRows(rows: BulkRow[], folders: ClientFolder[]) {
     if (!row.contentType.trim()) issues.push(`${label}: missing content type.`);
     if (!row.title.trim()) issues.push(`${label}: missing title.`);
     if (!Number(row.wordCount)) issues.push(`${label}: missing word count.`);
-    if (row.tier === "rank" && !row.keywords.trim()) issues.push(`${label}: missing target keyword for Rank.`);
+                if (row.tier === "rank" && !row.keywords.trim()) {
+                  issues.push(`${label}: missing target keyword for Specialist.`);
+                }
     if (!row.folderId) issues.push(`${label}: missing client folder.`);
     if (row.folderId && !folders.some((folder) => folder.id === row.folderId)) {
       issues.push(`${label}: unknown client folder.`);
@@ -352,7 +354,11 @@ function summarizeRows(rows: BulkRow[], contentTypes: ContentTypeOption[]) {
   const rankCount = rows.filter((row) => row.tier === "rank").length;
   const estimatedTotal = rows.reduce((sum, row) => {
     const service = contentTypes.find((type) => type.name === row.contentType);
-    const rate = (service?.basePriceCents ?? 5) + (row.tier === "rank" ? RANK_RATE_CENTS : 0);
+    const rate = getWordRateCents({
+      basePriceCents: service?.basePriceCents ?? 5,
+      serviceTier: row.tier,
+      priority: "standard",
+    });
     return sum + ((Number(row.wordCount) || 0) * rate) / 100;
   }, 0);
 
@@ -360,7 +366,7 @@ function summarizeRows(rows: BulkRow[], contentTypes: ContentTypeOption[]) {
     totalOrders,
     totalWords,
     estimatedTotal,
-    tierMix: `${totalOrders - rankCount} On-demand, ${rankCount} Rank`,
+    tierMix: `${totalOrders - rankCount} Standard, ${rankCount} Specialist`,
   };
 }
 

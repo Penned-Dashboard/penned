@@ -26,6 +26,7 @@ export default async function WriterSettingsPage({
       ctaHref="/writer"
       currentPath="/writer/settings"
       userName={user.fullName}
+      avatarUrl={settings.avatarUrl}
       searchAction="/writer/settings"
     >
       <Notice notice={params.notice} noticeMessage={params.noticeMessage} />
@@ -50,6 +51,25 @@ export default async function WriterSettingsPage({
                 <span className="dashboard-label">Email</span>
                 <input className="dashboard-input" disabled value={settings.email} readOnly />
               </label>
+              <label>
+                <span className="dashboard-label">Profile photo URL</span>
+                <input
+                  className="dashboard-input"
+                  defaultValue={settings.avatarUrl}
+                  name="avatarUrl"
+                  placeholder="https://…"
+                  type="url"
+                />
+                <span className="mt-2 block text-xs text-slate-500">
+                  Paste a public image link for now. File upload can come later.
+                </span>
+              </label>
+              <div className="rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                Writer tier: <span className="font-semibold text-slate-900 capitalize">{settings.writerTier}</span>
+                <span className="mt-1 block text-xs text-slate-500">
+                  Specialist access is set by the Penned team when your account is created.
+                </span>
+              </div>
               <label>
                 <span className="dashboard-label">Bio</span>
                 <textarea

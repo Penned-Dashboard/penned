@@ -40,6 +40,7 @@ export default async function WriterDashboardPage({
       currentPath="/writer"
       userName={user.fullName}
       searchQuery={params.q}
+      searchAction="/writer/jobs"
     >
       <Notice notice={params.notice} noticeMessage={params.noticeMessage} />
 
@@ -92,6 +93,13 @@ export default async function WriterDashboardPage({
             {action.ctaLabel}
           </Link>
         </div>
+        {action.secondaryHref && action.secondaryLabel ? (
+          <div className="mt-5 border-t border-black/5 pt-4">
+            <Link className="text-sm font-semibold text-[var(--penned-navy)] underline-offset-4 hover:underline" href={action.secondaryHref}>
+              {action.secondaryLabel} →
+            </Link>
+          </div>
+        ) : null}
       </section>
 
       <SectionCard title="Recent activity" description="Claims, submissions, feedback, and payments across your jobs.">

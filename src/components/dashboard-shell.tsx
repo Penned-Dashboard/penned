@@ -17,6 +17,7 @@ export function DashboardShell({
   ctaHref,
   currentPath,
   userName,
+  avatarUrl,
   searchQuery,
   searchAction,
   tabs,
@@ -30,6 +31,7 @@ export function DashboardShell({
   ctaHref?: string;
   currentPath: string;
   userName: string;
+  avatarUrl?: string | null;
   searchQuery?: string;
   /** Path the search form submits to. Defaults to the role workspace root. */
   searchAction?: string;
@@ -73,7 +75,7 @@ export function DashboardShell({
                   key={`${item.label}-${item.href}`}
                   className={
                     isActive
-                      ? "flex items-center rounded-2xl bg-[var(--penned-lime)] px-4 py-3 text-sm font-semibold text-[var(--penned-navy)]"
+                      ? "flex items-center rounded-2xl bg-[var(--penned-sky)] px-4 py-3 text-sm font-semibold !text-[var(--penned-navy)]"
                       : "flex items-center rounded-2xl px-4 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/10 hover:text-white"
                   }
                   href={item.href}
@@ -127,8 +129,11 @@ export function DashboardShell({
                   href={settingsHref}
                   title="Open settings"
                 >
-                  {initials || (
-                    <Image alt="" height={40} src="/brand/penned-mark.svg" width={40} />
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img alt="" className="h-full w-full object-cover" src={avatarUrl} />
+                  ) : (
+                    initials || <Image alt="" height={40} src="/brand/penned-mark.svg" width={40} />
                   )}
                 </Link>
                 <form action={signOutAction}>

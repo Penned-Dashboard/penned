@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentAppUser } from "@/lib/auth";
 import {
   getServiceByName,
+  getWordRateCents,
   type ServiceDefinition,
 } from "@/lib/content-catalog";
 import {
@@ -84,6 +85,10 @@ export type MarketplaceOrder = {
   client: string;
   industry: string;
   category: string;
+  brief: string;
+  /** DB service_tier: on-demand = Standard, rank = Specialist. */
+  serviceTier: "on-demand" | "rank";
+  tierLabel: "Standard" | "Specialist";
   wordCount: number | null;
   payCents: number;
   pay: string;
@@ -217,6 +222,9 @@ export type WriterNextAction = {
   href: string;
   ctaLabel: string;
   tone: "urgent" | "normal" | "idle";
+  /** Secondary link under the primary CTA (e.g. See all to-do). */
+  secondaryHref?: string;
+  secondaryLabel?: string;
 };
 
 export type WriterActivityItem = {
@@ -290,6 +298,8 @@ export type WriterSettings = {
   paymentInfo: string;
   taxInfo: string;
   notificationPrefs: NotificationPrefs;
+  avatarUrl: string;
+  writerTier: "standard" | "specialist";
   /** False when supabase/writer-p0-upgrade.sql has not been applied yet. */
   schemaReady: boolean;
 };
@@ -684,23 +694,43 @@ export async function getWriterMarketplace(
     .from("orders")
     .select(
       `
-        id,
-        title,
-        due_date,
-        budget_cents,
-        word_count,
-        status,
-        target_audience,
-        created_at,
-        reserved_by,
-        reserved_until,
-        client:profiles!orders_client_id_fkey(company_name, full_name),
-        content_types(name)
-      `,
+          id,
+          title,
+          brief,
+          due_date,
+          budget_cents,
+          word_count,
+          status,
+          service_tier,
+          target_audience,
+          created_at,
+          reserved_by,
+          reserved_until,
+          client:profiles!orders_client_id_fkey(company_name, full_name),
+          content_types(name)
+        `,
     )
     .eq("status", "open")
     .is("writer_id", null)
     .order("created_at", { ascending: false });
+
+  // writer_tier may be missing until supabase/writer-tier-and-avatar.sql is applied.
+  let writerProfile: { writer_tier?: string | null; niche_tags?: string[] | null } | null = null;
+  const withTier = await supabase
+    .from("profiles")
+    .select("writer_tier, niche_tags")
+    .eq("id", writerProfileId)
+    .maybeSingle();
+  if (withTier.error) {
+    const fallback = await supabase.from("profiles").select("niche_tags").eq("id", writerProfileId).maybeSingle();
+    writerProfile = fallback.data;
+  } else {
+    writerProfile = withTier.data;
+  }
+
+  const writerIsSpecialist =
+    writerProfile?.writer_tier === "specialist" ||
+    (writerProfile?.niche_tags ?? []).some((tag) => tag.toLowerCase() === "specialist");
 
   const now = Date.now();
   // Marketplace shows open jobs plus jobs whose reservation expired (or that the viewer reserved).
@@ -710,10 +740,19 @@ export async function getWriterMarketplace(
     return new Date(order.reserved_until).getTime() <= now;
   });
 
-  const all: MarketplaceOrder[] = visible.map((order) => {
+  const all: MarketplaceOrder[] = visible
+    .filter((order) => {
+      // Specialist jobs (service_tier = rank) are only visible to specialist writers.
+      if (order.service_tier === "rank" && !writerIsSpecialist) {
+        return false;
+      }
+      return true;
+    })
+    .map((order) => {
     const client = readSingleRelation(order.client);
     const reservedByMe = order.reserved_by === writerProfileId && new Date(order.reserved_until ?? 0).getTime() > now;
     const payCents = order.budget_cents ?? 0;
+    const serviceTier = order.service_tier === "rank" ? "rank" : "on-demand";
 
     return {
       id: order.id,
@@ -721,6 +760,9 @@ export async function getWriterMarketplace(
       client: client?.company_name ?? client?.full_name ?? "Penned client",
       industry: order.target_audience ?? "General business",
       category: readSingleRelation(order.content_types)?.name ?? "Uncategorized",
+      brief: order.brief ?? "",
+      serviceTier,
+      tierLabel: serviceTier === "rank" ? "Specialist" : "Standard",
       wordCount: order.word_count ?? null,
       payCents,
       pay: payCents ? formatUsd(payCents) : "TBD",
@@ -849,14 +891,14 @@ export async function getWriterAssignments(writerProfileId: string): Promise<Wri
 export async function getWriterOrderDetail(
   orderId: string,
   writerProfileId: string,
-): Promise<WriterOrderDetail | null> {
+): Promise<(WriterOrderDetail & { isPreview?: boolean }) | null> {
   const supabase = createServerSupabaseClient();
 
   if (!supabase) {
     return null;
   }
 
-  const { data: order } = await supabase
+  const { data: assigned } = await supabase
     .from("orders")
     .select(
       `
@@ -875,6 +917,7 @@ export async function getWriterOrderDetail(
         reference_links,
         attachments,
         intake_details,
+        writer_id,
         client:profiles!orders_client_id_fkey(company_name, full_name),
         content_types(name),
         folder:client_folders(name, brief_template_url, brand_notes, tone_guide, target_audience, compliance_notes, delivery_preference)
@@ -884,8 +927,46 @@ export async function getWriterOrderDetail(
     .eq("writer_id", writerProfileId)
     .maybeSingle();
 
+  let order = assigned;
+  let isPreview = false;
+
   if (!order) {
-    return null;
+    const { data: openJob } = await supabase
+      .from("orders")
+      .select(
+        `
+          id,
+          title,
+          client_label,
+          status,
+          due_date,
+          brief,
+          primary_cta,
+          tone_of_voice,
+          target_keywords,
+          word_count,
+          budget_cents,
+          priority,
+          reference_links,
+          attachments,
+          intake_details,
+          writer_id,
+          client:profiles!orders_client_id_fkey(company_name, full_name),
+          content_types(name),
+          folder:client_folders(name, brief_template_url, brand_notes, tone_guide, target_audience, compliance_notes, delivery_preference)
+        `,
+      )
+      .eq("id", orderId)
+      .eq("status", "open")
+      .is("writer_id", null)
+      .maybeSingle();
+
+    if (!openJob) {
+      return null;
+    }
+
+    order = openJob;
+    isPreview = true;
   }
 
   const [latestSubmission, ledger] = await Promise.all([
@@ -934,8 +1015,9 @@ export async function getWriterOrderDetail(
         }
       : null,
     started,
-    canStart: order.status === "claimed" && !started,
-    latestSubmission,
+    canStart: !isPreview && order.status === "claimed" && !started,
+    latestSubmission: isPreview ? null : latestSubmission,
+    isPreview,
   };
 }
 
@@ -1086,6 +1168,8 @@ function browseMarketplaceAction(): WriterNextAction {
     href: "/writer/marketplace",
     ctaLabel: "Browse marketplace",
     tone: "idle",
+    secondaryHref: "/writer/assigned",
+    secondaryLabel: "See all to-do",
   };
 }
 
@@ -1105,6 +1189,8 @@ function buildNextAction(active: WriterJob[]): WriterNextAction {
       href: `/writer/orders/${revision.id}`,
       ctaLabel: "Open job",
       tone: "urgent",
+      secondaryHref: "/writer/assigned",
+      secondaryLabel: "See all to-do",
     };
   }
 
@@ -1118,6 +1204,8 @@ function buildNextAction(active: WriterJob[]): WriterNextAction {
       href: `/writer/orders/${next.id}`,
       ctaLabel: "Open job",
       tone: "normal",
+      secondaryHref: "/writer/assigned",
+      secondaryLabel: "See all to-do",
     };
   }
 
@@ -1288,6 +1376,8 @@ const EMPTY_SETTINGS = (fullName: string, email: string): WriterSettings => ({
   paymentInfo: "",
   taxInfo: "",
   notificationPrefs: normalizeNotificationPrefs({}),
+  avatarUrl: "",
+  writerTier: "standard",
   schemaReady: false,
 });
 
@@ -1301,11 +1391,21 @@ export async function getWriterSettings(
     return EMPTY_SETTINGS(fallback.fullName, fallback.email);
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("profiles")
-    .select("full_name, email, bio, niche_tags, available, payment_info, tax_info, notification_prefs")
+    .select("full_name, email, bio, niche_tags, available, payment_info, tax_info, notification_prefs, avatar_url, writer_tier")
     .eq("id", writerProfileId)
     .maybeSingle();
+
+  if (error) {
+    const fallbackQuery = await supabase
+      .from("profiles")
+      .select("full_name, email, bio, niche_tags, available, payment_info, tax_info, notification_prefs, avatar_url")
+      .eq("id", writerProfileId)
+      .maybeSingle();
+    data = fallbackQuery.data as typeof data;
+    error = fallbackQuery.error;
+  }
 
   if (error || !data) {
     return EMPTY_SETTINGS(fallback.fullName, fallback.email);
@@ -1320,6 +1420,8 @@ export async function getWriterSettings(
     paymentInfo: data.payment_info ?? "",
     taxInfo: data.tax_info ?? "",
     notificationPrefs: normalizeNotificationPrefs(data.notification_prefs),
+    avatarUrl: data.avatar_url ?? "",
+    writerTier: (data as { writer_tier?: string }).writer_tier === "specialist" ? "specialist" : "standard",
     schemaReady: true,
   };
 }
@@ -1332,6 +1434,7 @@ export async function saveWriterSettings(values: {
   paymentInfo: string;
   taxInfo: string;
   notificationPrefs: NotificationPrefs;
+  avatarUrl: string;
 }) {
   const supabase = createServerSupabaseClient();
   const user = await getCurrentAppUser();
@@ -1362,6 +1465,11 @@ export async function saveWriterSettings(values: {
     return { ok: false as const, message: "Use at most 12 niche tags of 40 characters or fewer." };
   }
 
+  const avatarUrl = values.avatarUrl.trim();
+  if (avatarUrl && !/^https?:\/\//i.test(avatarUrl)) {
+    return { ok: false as const, message: "Profile photo must be a full http(s) image URL." };
+  }
+
   const { error } = await supabase
     .from("profiles")
     .update({
@@ -1372,6 +1480,7 @@ export async function saveWriterSettings(values: {
       payment_info: values.paymentInfo.trim() || null,
       tax_info: values.taxInfo.trim() || null,
       notification_prefs: values.notificationPrefs,
+      avatar_url: avatarUrl || null,
     })
     .eq("id", user.profileId);
 
@@ -1863,10 +1972,13 @@ export async function createOrder(values: OrderFormValues) {
   }
 
   const wordCount = payload.wordCount;
-  const baseRate = contentType.base_price_cents;
-  const tierMarkup = payload.serviceTier === "rank" ? 10 : 0;
-  const rushMarkup = payload.priority === "rush" ? 2 : 0;
-  const budgetCents = wordCount * (baseRate + tierMarkup + rushMarkup);
+  const budgetCents =
+    wordCount *
+    getWordRateCents({
+      basePriceCents: contentType.base_price_cents,
+      serviceTier: payload.serviceTier === "rank" ? "rank" : "on-demand",
+      priority: payload.priority === "rush" ? "rush" : "standard",
+    });
   const folderName = payload.clientFolderId
     ? (await getClientFolders(user.profileId)).find((folder) => folder.id === payload.clientFolderId)?.name
     : "";

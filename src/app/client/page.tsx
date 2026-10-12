@@ -83,6 +83,7 @@ export default async function ClientDashboardPage({
       currentPath="/client"
       userName={user.fullName}
       searchQuery={params.q}
+      searchAction="/client"
       tabs={[
         { label: "Overview", href: "/client", active: true },
         { label: "All Orders", href: "/client/orders", active: false },
