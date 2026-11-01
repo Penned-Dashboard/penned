@@ -33,6 +33,7 @@ export default async function ClientOrdersPage({
       currentPath="/client/orders"
       userName={user.fullName}
       searchQuery={params.q}
+      searchAction="/client/orders"
       tabs={[
         { label: "All orders", href: "/client/orders", active: view === "all" },
         { label: "Completed orders", href: "/client/orders?view=completed", active: view === "completed" },
