@@ -64,11 +64,14 @@ export function DashboardShell({
           <nav className="mt-8 space-y-2">
             {meta.nav.map((item) => {
               const workspaceRoot = `/${role}`;
-              const isActive = item.href.includes("#")
-                ? currentPath === item.href.split("#")[0]
+              const [itemPath] = item.href.split("#");
+              const isHashOnly = item.href.includes("#");
+              // Hash links on the same page should not all look "active" at once.
+              const isActive = isHashOnly
+                ? false
                 : item.href === workspaceRoot
-                  ? currentPath === item.href
-                  : currentPath === item.href || currentPath.startsWith(`${item.href}/`);
+                  ? currentPath === itemPath
+                  : currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
 
               return (
                 <Link
@@ -109,7 +112,7 @@ export function DashboardShell({
               <div className="flex items-center gap-3">
                 <form
                   action={searchAction ?? workspaceHref}
-                  className="flex min-w-0 max-w-xs flex-1 items-center gap-2 rounded-2xl border border-[rgba(23,37,63,0.1)] bg-white px-3 py-2 sm:min-w-72 sm:flex-none"
+                  className="flex min-w-0 max-w-sm flex-1 items-center gap-2 rounded-2xl border border-[rgba(23,37,63,0.18)] bg-white px-3 py-2 shadow-sm sm:min-w-80 sm:flex-none"
                   method="get"
                 >
                   <input
@@ -117,11 +120,22 @@ export function DashboardShell({
                     className="w-full bg-transparent px-1 py-1 text-sm text-slate-700 outline-none placeholder:text-slate-400"
                     defaultValue={searchQuery}
                     name="q"
-                    placeholder="Search..."
+                    placeholder="Orders, clients, writers…"
                     type="search"
                   />
-                  <button className="shrink-0 text-sm font-semibold text-[var(--penned-navy)]" type="submit">
-                    Go
+                  {searchQuery ? (
+                    <Link
+                      className="shrink-0 text-xs font-semibold text-slate-500 underline"
+                      href={searchAction ?? workspaceHref}
+                    >
+                      Clear
+                    </Link>
+                  ) : null}
+                  <button
+                    className="shrink-0 rounded-xl bg-[var(--penned-navy)] px-3 py-1.5 text-xs font-semibold text-white"
+                    type="submit"
+                  >
+                    Search
                   </button>
                 </form>
                 <Link

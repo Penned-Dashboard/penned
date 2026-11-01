@@ -132,10 +132,19 @@ export default async function AdminDashboardPage({
               ))
             ) : (
               <EmptyState
-                title="No orders to oversee yet"
-                body="Client orders will appear here once the first briefs are submitted."
+                title={query ? `No orders match “${params.q}”` : "No orders to oversee yet"}
+                body={
+                  query
+                    ? "Clear the search box (or search something from an order title/client) and try again."
+                    : "Client orders will appear here once the first briefs are submitted."
+                }
               />
             )}
+            {query ? (
+              <Link className="mt-3 inline-block text-sm font-semibold text-[var(--penned-navy)] underline" href="/admin">
+                Clear search
+              </Link>
+            ) : null}
           </div>
         </SectionCard>
 
@@ -160,8 +169,12 @@ export default async function AdminDashboardPage({
               ))
             ) : (
               <EmptyState
-                title="No content types found"
-                body="Run the seed data or add catalog entries before clients create orders."
+                title={query ? `No content types match “${params.q}”` : "No content types found"}
+                body={
+                  query
+                    ? "Clear search to see the full catalog again."
+                    : "Run the seed data or add catalog entries before clients create orders."
+                }
               />
             )}
           </div>

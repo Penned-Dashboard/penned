@@ -35,7 +35,10 @@ export async function RoleSwitcherPanel({ currentRole }: { currentRole: Role }) 
             </option>
           ))}
         </select>
-        <button className="button-accent w-full !py-2 text-sm" type="submit">
+        <button
+          className="button-accent w-full !py-2 text-sm !text-[#17253F]"
+          type="submit"
+        >
           Switch role
         </button>
       </form>
