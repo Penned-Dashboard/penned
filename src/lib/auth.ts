@@ -11,6 +11,8 @@ export type AppUser = {
   fullName: string;
   role: Role;
   source: "workspace" | "clerk";
+  /** Review accounts keep this true so Test as role still works after switching away from admin. */
+  canSwitchRoles?: boolean;
 };
 
 const SESSION_COOKIE = "penned-session";
@@ -305,37 +307,30 @@ export async function switchWorkspaceRole(nextRole: Role) {
     throw new Error("Sign in before switching roles.");
   }
 
-  const adminEmails = (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean);
-  const allowed = user.role === "admin" || adminEmails.includes(user.email.toLowerCase());
+  const allowed = user.canSwitchRoles || canEmailSwitchRoles(user.email) || user.role === "admin";
 
   if (!allowed) {
     throw new Error("Role switching is only available for review/admin accounts.");
   }
 
-  const supabase = createServerSupabaseClient();
-
-  if (!supabase) {
-    throw new Error("Supabase must be configured before switching roles.");
-  }
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ role: nextRole })
-    .eq("id", user.profileId);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
+  // Session-only switch for testing — do not overwrite the account's real DB role,
+  // otherwise reviewers get stuck as writer/client and lose the switcher.
   await setWorkspaceSession({
     ...user,
     role: nextRole,
+    canSwitchRoles: true,
   });
 
   return nextRole;
+}
+
+export function canEmailSwitchRoles(email: string | undefined) {
+  if (!email) return false;
+  const adminEmails = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  return adminEmails.includes(email.toLowerCase());
 }
 
 async function syncExternalProfile({
@@ -394,6 +389,9 @@ async function syncExternalProfile({
 
 async function setWorkspaceSession(user: AppUser) {
   const cookieStore = await cookies();
+  const canSwitchRoles =
+    user.canSwitchRoles || user.role === "admin" || canEmailSwitchRoles(user.email);
+
   cookieStore.set(
     SESSION_COOKIE,
     JSON.stringify({
@@ -403,6 +401,7 @@ async function setWorkspaceSession(user: AppUser) {
       fullName: user.fullName,
       role: user.role,
       source: user.source,
+      canSwitchRoles,
     }),
     {
       httpOnly: true,
@@ -430,6 +429,11 @@ async function readWorkspaceSession(): Promise<AppUser | null> {
       typeof parsed.fullName === "string" &&
       isRole(parsed.role)
     ) {
+      const canSwitchRoles =
+        parsed.canSwitchRoles === true ||
+        parsed.role === "admin" ||
+        canEmailSwitchRoles(parsed.email);
+
       return {
         authId: parsed.authId ?? parsed.profileId,
         profileId: parsed.profileId,
@@ -437,6 +441,7 @@ async function readWorkspaceSession(): Promise<AppUser | null> {
         fullName: parsed.fullName,
         role: parsed.role,
         source: "workspace",
+        canSwitchRoles,
       };
     }
 

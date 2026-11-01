@@ -1,12 +1,28 @@
+import Link from "next/link";
 import { MarketingPageShell } from "@/components/marketing-page-shell";
 
 export default function SecurityPage() {
   return (
     <MarketingPageShell
-      eyebrow="Security"
-      title="Current security posture and next hardening steps."
-      description="The MVP now has role-aware app access, but database-level protections still need a dedicated RLS pass before production launch."
+      eyebrow="Security notes"
+      title="This is a planning page, not an admin tool."
+      description="It explains what is already locked down and what still needs hardening before launch. It does not change settings."
     >
+      <div className="mb-8 rounded-[1.5rem] border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-900">
+        Looking for admin controls? Go to{" "}
+        <Link className="font-semibold underline" href="/admin">
+          Admin Dashboard
+        </Link>
+        ,{" "}
+        <Link className="font-semibold underline" href="/admin/people">
+          People
+        </Link>
+        , or{" "}
+        <Link className="font-semibold underline" href="/admin/orders">
+          All Orders
+        </Link>
+        .
+      </div>
       <div className="grid gap-6 md:grid-cols-2">
         {[
           "Roles are enforced in application routing and page-level guards.",

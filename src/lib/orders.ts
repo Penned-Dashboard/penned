@@ -310,6 +310,12 @@ export type AdminQueueOrder = {
   owner: string;
   state: string;
   deadline: string;
+  clientLabel: string;
+  contentType: string;
+  statusKey: string;
+  budgetCents: number;
+  budget: string;
+  writer: string;
 };
 
 export type AdminOrderDetail = {
@@ -1754,7 +1760,10 @@ export async function getAdminOrderQueue(): Promise<AdminQueueOrder[]> {
         client_label,
         status,
         due_date,
-        client:profiles!orders_client_id_fkey(company_name, full_name)
+        budget_cents,
+        client:profiles!orders_client_id_fkey(company_name, full_name),
+        writer:profiles!orders_writer_id_fkey(full_name),
+        content_types(name)
       `,
     )
     .order("updated_at", { ascending: false });
@@ -1766,10 +1775,140 @@ export async function getAdminOrderQueue(): Promise<AdminQueueOrder[]> {
       id: order.id,
       title: order.title,
       owner: client?.company_name ?? client?.full_name ?? "Client account",
+      clientLabel: order.client_label ?? client?.company_name ?? client?.full_name ?? "Client",
+      contentType: readSingleRelation(order.content_types)?.name ?? "Content order",
+      statusKey: order.status,
       state: formatOrderStatus(order.status),
       deadline: formatDeadline(order.due_date),
+      budgetCents: order.budget_cents ?? 0,
+      budget: formatUsd(order.budget_cents ?? 0),
+      writer: readSingleRelation(order.writer)?.full_name ?? "Unassigned",
     };
   });
+}
+
+export async function refundOrderToClientBudget(orderId: string) {
+  const supabase = createServerSupabaseClient();
+  const user = await getCurrentAppUser();
+
+  if (!supabase || !user || user.role !== "admin") {
+    return { ok: false as const, message: "Admin access is required." };
+  }
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("id, status, budget_cents, client_id, title, intake_details")
+    .eq("id", orderId)
+    .maybeSingle();
+
+  if (!order) {
+    return { ok: false as const, message: "Order not found." };
+  }
+
+  if (["cancelled", "draft"].includes(order.status)) {
+    return { ok: false as const, message: "That order is already cancelled or not billable." };
+  }
+
+  const intake =
+    order.intake_details && typeof order.intake_details === "object" && !Array.isArray(order.intake_details)
+      ? (order.intake_details as Record<string, unknown>)
+      : {};
+
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      status: "cancelled",
+      intake_details: {
+        ...intake,
+        refunded_at: new Date().toISOString(),
+        refunded_by: user.profileId,
+        refund_note: `Admin refund recorded for ${formatUsd(order.budget_cents ?? 0)}. Credit the client budget manually in billing until wallet refunds are automated.`,
+      },
+    })
+    .eq("id", orderId);
+
+  if (error) {
+    return { ok: false as const, message: error.message };
+  }
+
+  revalidateApp();
+  return {
+    ok: true as const,
+    message: `Order cancelled and marked for refund (${formatUsd(order.budget_cents ?? 0)}).`,
+  };
+}
+
+export type AdminProfileRow = {
+  id: string;
+  fullName: string;
+  email: string;
+  role: string;
+  companyName: string;
+  writerTier: string;
+};
+
+export async function getAdminProfiles(): Promise<AdminProfileRow[]> {
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return [];
+
+  let { data, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, role, company_name, writer_tier")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (error) {
+    const fallback = await supabase
+      .from("profiles")
+      .select("id, full_name, email, role, company_name")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    data = fallback.data as typeof data;
+  }
+
+  return (data ?? []).map((profile) => ({
+    id: profile.id,
+    fullName: profile.full_name ?? "Untitled",
+    email: profile.email ?? "",
+    role: profile.role ?? "client",
+    companyName: profile.company_name ?? "—",
+    writerTier: (profile as { writer_tier?: string }).writer_tier === "specialist" ? "specialist" : "standard",
+  }));
+}
+
+export async function updateAdminProfile(values: {
+  profileId: string;
+  role: Role;
+  writerTier: "standard" | "specialist";
+  companyName: string;
+}) {
+  const supabase = createServerSupabaseClient();
+  const user = await getCurrentAppUser();
+
+  if (!supabase || !user || user.role !== "admin") {
+    return { ok: false as const, message: "Admin access is required." };
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      role: values.role,
+      writer_tier: values.writerTier,
+      company_name: values.companyName.trim() || null,
+    })
+    .eq("id", values.profileId);
+
+  if (error) {
+    return {
+      ok: false as const,
+      message: error.message.includes("writer_tier")
+        ? "Run supabase/writer-tier-and-avatar.sql first, then retry."
+        : error.message,
+    };
+  }
+
+  revalidateApp();
+  return { ok: true as const, message: "Account updated." };
 }
 
 export async function getAdminOrderDetail(orderId: string): Promise<AdminOrderDetail | null> {

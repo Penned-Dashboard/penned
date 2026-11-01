@@ -137,13 +137,14 @@ a {
   flex-shrink: 0;
   overflow: hidden;
   border-radius: 999px;
+  background: var(--penned-navy);
 }
 
 .brand-wordmark {
   font-family: var(--font-display), Georgia, "Times New Roman", serif;
-  font-size: 1.35rem;
-  font-weight: 600;
-  letter-spacing: -0.03em;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
   color: inherit;
 }
 

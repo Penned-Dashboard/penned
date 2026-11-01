@@ -45,10 +45,11 @@ export const roleMeta: Record<
     accentClass: "from-[#17253F] to-[#91B9D2]",
     nav: [
       { label: "Dashboard", href: "/admin" },
-      { label: "Orders", href: "/admin#operations" },
+      { label: "All Orders", href: "/admin/orders" },
+      { label: "People", href: "/admin/people" },
       { label: "Payouts", href: "/admin#payouts" },
       { label: "Content Types", href: "/admin#content-types" },
-      { label: "Security", href: "/security" },
+      { label: "Security notes", href: "/security" },
       { label: "Settings", href: "/admin/settings" },
     ],
   },

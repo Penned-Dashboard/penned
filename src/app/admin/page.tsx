@@ -74,9 +74,11 @@ export default async function AdminDashboardPage({
       currentPath="/admin"
       userName={user.fullName}
       searchQuery={params.q}
+      searchAction="/admin"
       tabs={[
         { label: "Overview", href: "/admin", active: true },
-        { label: "Orders", href: "/admin#operations", active: false },
+        { label: "All Orders", href: "/admin/orders", active: false },
+        { label: "People", href: "/admin/people", active: false },
         { label: "Payouts", href: "/admin#payouts", active: false },
       ]}
     >
@@ -107,11 +109,16 @@ export default async function AdminDashboardPage({
         <SectionCard
           id="operations"
           title="Operations Queue"
-          description="Orders and issues that need admin attention before they block fulfillment."
+          description="Recent orders. Use View all for filters, refunds, and the full list."
         >
+          <div className="mb-4">
+            <Link className="button-secondary" href="/admin/orders">
+              View all orders
+            </Link>
+          </div>
           <div className="space-y-3">
             {filteredOperations.length ? (
-              filteredOperations.map((item) => (
+              filteredOperations.slice(0, 8).map((item) => (
                 <Link key={item.id} className="dashboard-list-row" href={`/admin/orders/${item.id}`}>
                   <div>
                     <p className="font-semibold text-slate-950">{item.title}</p>

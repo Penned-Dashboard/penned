@@ -109,7 +109,7 @@ export function DashboardShell({
               <div className="flex items-center gap-3">
                 <form
                   action={searchAction ?? workspaceHref}
-                  className="hidden min-w-72 items-center gap-2 rounded-2xl border border-[rgba(23,37,63,0.1)] bg-white px-3 py-2 md:flex"
+                  className="flex min-w-0 max-w-xs flex-1 items-center gap-2 rounded-2xl border border-[rgba(23,37,63,0.1)] bg-white px-3 py-2 sm:min-w-72 sm:flex-none"
                   method="get"
                 >
                   <input
@@ -117,11 +117,11 @@ export function DashboardShell({
                     className="w-full bg-transparent px-1 py-1 text-sm text-slate-700 outline-none placeholder:text-slate-400"
                     defaultValue={searchQuery}
                     name="q"
-                    placeholder="Search workspace..."
+                    placeholder="Search..."
                     type="search"
                   />
-                  <button className="text-sm font-medium text-slate-500" type="submit">
-                    Search
+                  <button className="shrink-0 text-sm font-semibold text-[var(--penned-navy)]" type="submit">
+                    Go
                   </button>
                 </form>
                 <Link

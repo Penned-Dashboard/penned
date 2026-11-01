@@ -4,9 +4,17 @@ import { roles, type Role } from "@/lib/types";
 
 export async function RoleSwitcherPanel({ currentRole }: { currentRole: Role }) {
   const currentUser = await getCurrentAppUser();
-  const canSwitchRoles = canUseRoleSwitcher(currentUser?.email, currentRole);
+  const canSwitchRoles = Boolean(
+    currentUser?.canSwitchRoles ||
+      currentUser?.role === "admin" ||
+      (currentUser?.email &&
+        (process.env.ADMIN_EMAILS ?? "")
+          .split(",")
+          .map((value) => value.trim().toLowerCase())
+          .includes(currentUser.email.toLowerCase())),
+  );
 
-  if (!canSwitchRoles) {
+  if (!canSwitchRoles || !currentUser) {
     return null;
   }
 
@@ -32,21 +40,8 @@ export async function RoleSwitcherPanel({ currentRole }: { currentRole: Role }) 
         </button>
       </form>
       <p className="mt-2 px-1 text-[11px] leading-4 text-slate-300">
-        Editor / manager portals are not separate yet — use writer + admin for team testing.
+        This only changes what you see for testing. Pick admin again any time to come back.
       </p>
     </div>
   );
-}
-
-function canUseRoleSwitcher(email: string | undefined, role: Role) {
-  if (role === "admin") {
-    return true;
-  }
-
-  const adminEmails = (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((value) => value.trim().toLowerCase())
-    .filter(Boolean);
-
-  return Boolean(email && adminEmails.includes(email.toLowerCase()));
 }
