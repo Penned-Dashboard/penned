@@ -147,7 +147,7 @@ export function DashboardShell({
                     // eslint-disable-next-line @next/next/no-img-element
                     <img alt="" className="h-full w-full object-cover" src={avatarUrl} />
                   ) : (
-                    initials || <Image alt="" height={40} src="/brand/penned-mark.svg" width={40} />
+                    initials || <Image alt="" height={40} src="/brand/penned-mark.png" width={40} />
                   )}
                 </Link>
                 <form action={signOutAction}>

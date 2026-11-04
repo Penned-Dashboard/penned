@@ -17,10 +17,18 @@ export default async function SignInPage({
   }
 
   return (
-    <main className="min-h-screen bg-[var(--background)]">
-      <div className="absolute inset-x-0 top-0 -z-10 h-[30rem] bg-[radial-gradient(circle_at_20%_15%,rgba(221,244,121,0.35),transparent_22%),radial-gradient(circle_at_80%_20%,rgba(145,185,210,0.28),transparent_26%),linear-gradient(180deg,#f4f7fb_0%,#e8eef5_100%)]" />
-      <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-6 py-12 lg:px-10">
-        <div className="w-full max-w-md rounded-[2rem] border border-white/80 bg-white/95 p-8 shadow-[0_30px_70px_rgba(23,37,63,0.08)]">
+    <main className="relative min-h-screen overflow-hidden bg-[var(--penned-navy)]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.22]"
+        style={{
+          backgroundImage: "url(/brand/penned-pattern-navy.png)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      />
+      <div className="relative mx-auto flex min-h-screen max-w-6xl items-center justify-center px-6 py-12 lg:px-10">
+        <div className="w-full max-w-md rounded-[2rem] border border-white/15 bg-white p-8 shadow-[0_30px_70px_rgba(0,0,0,0.35)]">
           <div className="flex justify-center">
             <Link href="/">
               <PennedLogo />
@@ -29,7 +37,7 @@ export default async function SignInPage({
           <h1 className="mt-8 text-center text-4xl font-semibold tracking-[-0.05em] text-[var(--penned-navy)]">
             Sign in
           </h1>
-          <p className="mt-3 text-center text-lg text-slate-500">
+          <p className="mt-3 text-center text-base text-slate-500">
             Access your client, writer, or admin workspace
           </p>
           <form action={signInAction} className="mt-8 space-y-5">
@@ -68,10 +76,13 @@ export default async function SignInPage({
             </button>
           </form>
           <p className="mt-6 text-center text-sm text-slate-500">
-            New to Penned?{" "}
+            New client?{" "}
             <Link className="font-semibold text-[var(--penned-navy)]" href="/sign-up">
               Create your account
             </Link>
+          </p>
+          <p className="mt-2 text-center text-xs text-slate-400">
+            Writers use an invited login — no public writer signup.
           </p>
         </div>
       </div>

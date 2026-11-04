@@ -19,7 +19,8 @@ export async function signUpAction(formData: FormData) {
   const companyName = String(formData.get("companyName") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
-  if (!firstName || !lastName || !email || password.length < 8 || !isRole(roleValue)) {
+  // Public registration is client-only; writers are invited and sign in.
+  if (!firstName || !lastName || !email || password.length < 8 || roleValue !== "client") {
     redirect("/sign-up?error=invalid");
   }
 
@@ -29,7 +30,7 @@ export async function signUpAction(formData: FormData) {
     user = await createWorkspaceUser({
       fullName,
       email,
-      role: roleValue,
+      role: "client",
       companyName,
       password,
     });

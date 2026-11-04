@@ -24,6 +24,10 @@ const ibmPlexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Penned",
   description: "Publishing operations dashboard for clients, writers, and admins.",
+  icons: {
+    icon: "/brand/favicon.png",
+    apple: "/brand/penned-mark.png",
+  },
 };
 
 export default function RootLayout({

@@ -2,47 +2,18 @@
 
 import { useState } from "react";
 
-export function RolePicker({ defaultRole }: { defaultRole: "client" | "writer" }) {
-  const [role, setRole] = useState<"client" | "writer">(defaultRole);
+/** Public signup is client-only; writers are invited and sign in. */
+export function RolePicker({ defaultRole }: { defaultRole?: "client" | "writer" }) {
+  const [role] = useState<"client">("client");
+  void defaultRole;
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <label
-        className={`cursor-pointer rounded-[1.25rem] border p-4 transition ${
-          role === "client"
-            ? "border-[var(--penned-navy)] bg-[rgba(145,185,210,0.18)]"
-            : "border-slate-200 bg-white"
-        }`}
-      >
-        <input
-          checked={role === "client"}
-          className="sr-only"
-          name="role"
-          onChange={() => setRole("client")}
-          type="radio"
-          value="client"
-        />
-        <p className="text-base font-semibold text-slate-950">I need content</p>
-        <p className="mt-1 text-sm text-slate-500">Order and manage content</p>
-      </label>
-      <label
-        className={`cursor-pointer rounded-[1.25rem] border p-4 transition ${
-          role === "writer"
-            ? "border-[var(--penned-navy)] bg-[rgba(221,244,121,0.35)]"
-            : "border-slate-200 bg-white"
-        }`}
-      >
-        <input
-          checked={role === "writer"}
-          className="sr-only"
-          name="role"
-          onChange={() => setRole("writer")}
-          type="radio"
-          value="writer"
-        />
-        <p className="text-base font-semibold text-slate-950">I write content</p>
-        <p className="mt-1 text-sm text-slate-500">Find work and earn</p>
-      </label>
+    <div className="rounded-[1.25rem] border border-[var(--penned-navy)] bg-[rgba(145,185,210,0.18)] p-4">
+      <input name="role" type="hidden" value={role} />
+      <p className="text-base font-semibold text-slate-950">Client account</p>
+      <p className="mt-1 text-sm text-slate-500">
+        Order and manage content. Writers sign in with an invited account.
+      </p>
     </div>
   );
 }
