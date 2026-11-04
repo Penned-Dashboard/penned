@@ -72,7 +72,7 @@ export default async function WriterRankingsPage({
                 className={`dashboard-list-row ${entry.isYou ? "!border-blue-200 !bg-blue-50" : ""}`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(135deg,#2563eb_0%,#2bb6a8_100%)] text-sm font-semibold text-white">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--penned-navy)] text-sm font-semibold text-[var(--penned-lime)]">
                     {entry.rank}
                   </span>
                   <div>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AppAuthBar } from "@/components/app-auth-bar";
+import { PennedLogo } from "@/components/penned-logo";
 import { getCurrentAppUser } from "@/lib/auth";
 
 const features = [
@@ -58,21 +59,21 @@ export default async function Home() {
         ? "Open Admin Console"
         : "See Platform Features";
   const secondaryHeroHref = !user
-    ? "/sign-up?role=writer"
+    ? "/sign-in"
     : user.role === "writer"
       ? "/writer"
       : user.role === "admin"
         ? "/admin"
         : "/#writers";
   const secondaryHeroLabel = !user
-    ? "Join as Writer"
+    ? "Writer sign in"
     : user.role === "writer"
       ? "Open Writer Workspace"
       : user.role === "admin"
         ? "Open Admin Console"
         : "See Writer Workflow";
   const writerHref = !user
-    ? "/sign-up?role=writer"
+    ? "/sign-in"
     : user.role === "writer"
       ? "/writer"
       : "/#writers";
@@ -103,8 +104,8 @@ export default async function Home() {
             { label: "Payouts", href: "/admin#payouts" },
           ]
     : [
-        { label: "Client Sign Up", href: "/sign-up?role=client" },
-        { label: "Writer Sign Up", href: "/sign-up?role=writer" },
+        { label: "Client Sign Up", href: "/sign-up" },
+        { label: "Writer Sign In", href: "/sign-in" },
         { label: "Admin Sign In", href: "/sign-in" },
       ];
 
@@ -245,14 +246,9 @@ export default async function Home() {
       <footer id="about" className="border-t border-slate-200 bg-white px-6 py-16 lg:px-10">
         <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-4">
           <div>
-            <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[linear-gradient(135deg,#2563eb_0%,#2bb6a8_100%)] text-sm font-semibold text-white">
-                P
-              </span>
-              <span className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">
-                Penned
-              </span>
-            </div>
+            <Link href="/" className="inline-flex items-center">
+              <PennedLogo compact />
+            </Link>
             <p className="mt-5 max-w-xs text-lg leading-8 text-slate-500">
               Premium content at scale. Connect with expert writers and grow
               your publishing engine.
