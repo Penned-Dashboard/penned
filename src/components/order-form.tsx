@@ -55,7 +55,6 @@ export function OrderForm({
     industry,
     contentTypeKey: selectedType?.key,
   });
-  const estimatedTotal = pricePreview.totalCents / 100;
   const visibleServiceFields = (selectedType?.fields ?? []).filter((field) => {
     if (!field.showWhen) {
       return true;
@@ -360,17 +359,21 @@ export function OrderForm({
         <div className="space-y-1">
           <p>
             {selectedType
-              ? `${formatRate(activeRateCents)}/word · ${selectedType.name}`
+              ? `${writingTierFromDb(serviceTier)} · ${selectedType.name}`
               : "Choose a content type to see pricing."}
           </p>
+          <div className="space-y-1 text-xs text-orange-800/80">
+            {pricePreview.lines.map((line) => (
+              <p key={line.label}>
+                {line.label}: {formatUsdFromCents(line.amountCents)}
+              </p>
+            ))}
+          </div>
           <p>
             Estimated total: {formatUsdFromCents(pricePreview.totalCents)}
             <span className="mt-1 block text-xs font-normal text-slate-500">
               Due within {pricePreview.deliveryHours} hours of acceptance
             </span>
-          </p>
-          <p>
-            Blank optional fields are still saved for the production team to review.
           </p>
           {state.message && state.success ? (
             <p className="text-emerald-700">{state.message}</p>
