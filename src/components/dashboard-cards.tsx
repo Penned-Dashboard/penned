@@ -39,15 +39,12 @@ export function SectionCard({
       className="rounded-[1.75rem] border border-[rgba(23,37,63,0.1)] bg-white p-5 shadow-[0_18px_40px_rgba(23,37,63,0.04)] md:p-6"
     >
       <div className="mb-5">
-        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
-          Section
-        </p>
-        <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-[var(--penned-navy)]">
+        <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--penned-navy)]">
           {title}
         </h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          {description}
-        </p>
+        {description.trim() ? (
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{description}</p>
+        ) : null}
       </div>
       {children}
     </section>
