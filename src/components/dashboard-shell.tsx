@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { signOutAction } from "@/app/(auth)/actions";
+import { DashboardMobileNav } from "@/components/dashboard-mobile-nav";
 import { PennedLogo } from "@/components/penned-logo";
 import { RoleSwitcherPanel } from "@/components/role-switcher-panel";
 import { roleMeta } from "@/lib/navigation";
@@ -12,7 +13,7 @@ export { SectionCard, StatCard } from "@/components/dashboard-cards";
 export function DashboardShell({
   role,
   title,
-  description,
+  description = "",
   ctaLabel,
   ctaHref,
   currentPath,
@@ -25,7 +26,7 @@ export function DashboardShell({
 }: {
   role: Role;
   title: string;
-  description: string;
+  description?: string;
   /** Omit both to hide the header primary CTA (e.g. when Next Action already owns it). */
   ctaLabel?: string;
   ctaHref?: string;
@@ -39,6 +40,7 @@ export function DashboardShell({
   children: ReactNode;
 }) {
   const showHeaderCta = Boolean(ctaLabel && ctaHref);
+  const showDescription = Boolean(description?.trim());
   const meta = roleMeta[role];
   const workspaceHref = `/${role}`;
   const settingsHref = `/${role}/settings`;
@@ -55,7 +57,7 @@ export function DashboardShell({
   return (
     <main className="min-h-screen bg-[var(--background)]">
       <div className="grid min-h-screen lg:grid-cols-[240px_minmax(0,1fr)]">
-        <aside className="border-r border-white/10 bg-[var(--penned-navy)] px-4 py-6 text-slate-100 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-y-auto">
+        <aside className="hidden border-r border-white/10 bg-[var(--penned-navy)] px-4 py-6 text-slate-100 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-y-auto">
           <Link href={logoHref} className="flex items-center gap-3 rounded-2xl px-3 py-2">
             <PennedLogo tone="light" />
           </Link>
@@ -114,6 +116,12 @@ export function DashboardShell({
 
         <div className="px-6 py-8 lg:px-8">
           <div className="mx-auto max-w-7xl">
+            <DashboardMobileNav
+              currentPath={currentPath}
+              items={meta.nav}
+              logoHref={logoHref}
+              role={role}
+            />
             <div className="mb-6 flex items-center justify-between gap-4 border-b border-[rgba(23,37,63,0.1)] pb-6">
               <div>
                 <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[var(--penned-navy)]">
@@ -123,7 +131,7 @@ export function DashboardShell({
               <div className="flex items-center gap-3">
                 <form
                   action={searchAction ?? workspaceHref}
-                  className="flex min-w-0 max-w-sm flex-1 items-center gap-2 rounded-2xl border border-[rgba(23,37,63,0.18)] bg-white px-3 py-2 shadow-sm sm:min-w-80 sm:flex-none"
+                  className="hidden min-w-0 max-w-sm flex-1 items-center gap-2 rounded-2xl border border-[rgba(23,37,63,0.18)] bg-white px-3 py-2 shadow-sm sm:flex sm:min-w-80 sm:flex-none"
                   method="get"
                 >
                   <input
@@ -150,7 +158,7 @@ export function DashboardShell({
                   </button>
                 </form>
                 <Link
-                  className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[var(--penned-navy)] text-sm font-semibold text-[var(--penned-lime)] transition hover:scale-[1.02]"
+                  className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[var(--penned-navy)] text-sm font-semibold text-white transition hover:scale-[1.02]"
                   href={settingsHref}
                   title="Open settings"
                 >
@@ -164,20 +172,24 @@ export function DashboardShell({
               </div>
             </div>
 
-            <header className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <p className="mt-3 max-w-3xl text-base leading-7 text-slate-500">
-                  {description}
-                </p>
-              </div>
-              {showHeaderCta ? (
-                <div className="flex flex-wrap gap-3">
-                  <Link className="button-primary" href={ctaHref!}>
-                    {ctaLabel}
-                  </Link>
-                </div>
-              ) : null}
-            </header>
+            {showDescription || showHeaderCta ? (
+              <header className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                {showDescription ? (
+                  <div>
+                    <p className="max-w-3xl text-base leading-7 text-slate-500">{description}</p>
+                  </div>
+                ) : (
+                  <div />
+                )}
+                {showHeaderCta ? (
+                  <div className="flex flex-wrap gap-3">
+                    <Link className="button-primary" href={ctaHref!}>
+                      {ctaLabel}
+                    </Link>
+                  </div>
+                ) : null}
+              </header>
+            ) : null}
             {tabs?.length ? (
               <nav className="mb-6 flex items-center gap-8 border-b border-[rgba(23,37,63,0.1)]">
                 {tabs.map((tab) => (

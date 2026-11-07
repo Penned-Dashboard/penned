@@ -93,12 +93,17 @@ export function getWordRateCents({
 export { writingTierToDb, writingTierFromDb, perWordCardPriceLabel };
 
 export const supportedLanguages = [
-  "English",
-  "Spanish",
-  "French",
+  "English (UK)",
+  "English (US)",
+  "Spanish (Spain)",
+  "Spanish (Mexico)",
+  "Spanish (LatAm)",
+  "French (France)",
+  "French (Canada)",
   "German",
   "Italian",
-  "Portuguese",
+  "Portuguese (Brazil)",
+  "Portuguese (Portugal)",
   "Dutch",
   "Swedish",
   "Norwegian",
@@ -402,7 +407,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     rateCents: 6,
     turnaroundDays: 5,
     rushHours: 24,
-    orderIndex: 6,
+    orderIndex: 9,
     isOrderable: true,
     fields: [
       {
@@ -458,7 +463,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     rateCents: 6,
     turnaroundDays: 4,
     rushHours: 24,
-    orderIndex: 7,
+    orderIndex: 10,
     isOrderable: true,
     fields: [
       {
@@ -518,7 +523,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     rateCents: 6,
     turnaroundDays: 5,
     rushHours: 48,
-    orderIndex: 8,
+    orderIndex: 11,
     isOrderable: true,
     fields: [
       {
@@ -567,7 +572,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     rateCents: 6,
     turnaroundDays: 4,
     rushHours: 24,
-    orderIndex: 9,
+    orderIndex: 12,
     isOrderable: true,
     fields: [
       {
@@ -610,7 +615,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     rateCents: 6,
     turnaroundDays: 4,
     rushHours: 24,
-    orderIndex: 10,
+    orderIndex: 13,
     isOrderable: true,
     fields: [
       {
@@ -645,6 +650,54 @@ export const serviceCatalog: ServiceDefinition[] = [
     ],
   },
   {
+    key: "newsletter",
+    name: "Newsletter",
+    description: "A full newsletter issue in your client's voice.",
+    whatYouGet:
+      "A full newsletter issue in your client's voice, with a subject line, sections and a clear call to action, ready to paste into their email tool.",
+    perfectFor:
+      "Agencies running weekly or monthly newsletters for clients who want to stay in front of their list.",
+    priceLabel: "$260",
+    rateCents: 26000,
+    turnaroundDays: 5,
+    rushHours: 48,
+    orderIndex: 6,
+    isOrderable: true,
+    fields: [],
+  },
+  {
+    key: "product-page",
+    name: "Product page",
+    description: "Product or feature page copy that ranks and converts.",
+    whatYouGet:
+      "Product or feature page copy that explains what it does, who it's for and why to buy, optimised for the keywords buyers search.",
+    perfectFor:
+      "Ecommerce and SaaS clients launching or refreshing product pages that need to rank and convert.",
+    priceLabel: "$420",
+    rateCents: 42000,
+    turnaroundDays: 5,
+    rushHours: 48,
+    orderIndex: 7,
+    isOrderable: true,
+    fields: [],
+  },
+  {
+    key: "whitepaper",
+    name: "Whitepaper",
+    description: "A long-form, research-led report built around one clear argument.",
+    whatYouGet:
+      "A long-form, research-led report built around one clear argument, structured for design and ready to gate.",
+    perfectFor:
+      "B2B clients who need a lead magnet that proves expertise and earns the download.",
+    priceLabel: "$950",
+    rateCents: 95000,
+    turnaroundDays: 10,
+    rushHours: 48,
+    orderIndex: 8,
+    isOrderable: true,
+    fields: [],
+  },
+  {
     key: "ai-content-rescue",
     name: "AI Content Rescue",
     description: "Human-rebuilt copy from your AI draft — coming soon.",
@@ -656,7 +709,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     rateCents: 6,
     turnaroundDays: 5,
     rushHours: 24,
-    orderIndex: 11,
+    orderIndex: 20,
     isOrderable: false,
     fields: [],
   },
@@ -672,7 +725,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     rateCents: 6,
     turnaroundDays: 7,
     rushHours: 24,
-    orderIndex: 12,
+    orderIndex: 21,
     isOrderable: false,
     fields: [],
   },
@@ -688,7 +741,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     rateCents: 6,
     turnaroundDays: 3,
     rushHours: 24,
-    orderIndex: 13,
+    orderIndex: 22,
     isOrderable: false,
     fields: [],
   },
@@ -704,7 +757,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     rateCents: 10000,
     turnaroundDays: 4,
     rushHours: 24,
-    orderIndex: 14,
+    orderIndex: 23,
     isOrderable: false,
     fields: [],
   },
@@ -720,7 +773,7 @@ export const serviceCatalog: ServiceDefinition[] = [
     rateCents: 10000,
     turnaroundDays: 6,
     rushHours: 24,
-    orderIndex: 15,
+    orderIndex: 24,
     isOrderable: false,
     fields: [],
   },
@@ -734,6 +787,22 @@ export const serviceCatalogByKey = new Map(
   serviceCatalog.map((service) => [service.key, service]),
 );
 
+const serviceNameAliases: Record<string, string> = {
+  newsletter: "newsletter",
+  "product page": "product-page",
+  "product-page": "product-page",
+  whitepaper: "whitepaper",
+  "white paper": "whitepaper",
+  "expert writing": "thought-leadership",
+  "thought leadership": "thought-leadership",
+  "expert writing / thought leadership": "thought-leadership",
+};
+
 export function getServiceByName(name: string | null | undefined) {
-  return serviceCatalogByName.get((name ?? "").trim().toLowerCase()) ?? null;
+  const normalised = (name ?? "").trim().toLowerCase();
+  const direct = serviceCatalogByName.get(normalised);
+  if (direct) return direct;
+  const aliasKey = serviceNameAliases[normalised];
+  if (aliasKey) return serviceCatalogByKey.get(aliasKey) ?? null;
+  return null;
 }

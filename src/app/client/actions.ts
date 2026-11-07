@@ -104,7 +104,10 @@ export async function submitBulkOrdersAction(payload: {
     wordCount: number;
     language: string;
     keywords: string;
+    industry?: string;
     folderId: string;
+    delivery?: "standard" | "priority" | "rush";
+    briefLink?: string;
   }[];
 }) {
   return createBulkOrders(payload.rows, payload.paymentSource);

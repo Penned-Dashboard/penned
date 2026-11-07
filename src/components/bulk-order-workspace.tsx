@@ -13,6 +13,7 @@ type BulkRow = {
   contentType: string;
   tier: "on-demand" | "signature" | "rank";
   title: string;
+  briefLink: string;
   wordCount: string;
   language: string;
   keywords: string;
@@ -22,6 +23,8 @@ type BulkRow = {
 };
 
 const orderableServices = serviceCatalog.filter((service) => service.isOrderable);
+const GOOGLE_SHEET_TEMPLATE =
+  "https://docs.google.com/spreadsheets/d/1penned-bulk-order-template/copy";
 
 function emptyRow(): BulkRow {
   return {
@@ -30,13 +33,18 @@ function emptyRow(): BulkRow {
     contentType: orderableServices[0]?.name ?? "Blog Post",
     tier: "on-demand",
     title: "",
+    briefLink: "",
     wordCount: "1200",
-    language: "English",
+    language: "English (UK)",
     keywords: "",
     industry: "",
     folderId: "",
     delivery: "standard",
   };
+}
+
+function dueLabel(delivery: BulkRow["delivery"]) {
+  return delivery === "rush" ? "Within 48h of acceptance" : "Within 72h of acceptance";
 }
 
 function isFilledRow(row: BulkRow) {
@@ -102,7 +110,10 @@ export function BulkOrderWorkspace({
         wordCount: Number(row.wordCount),
         language: row.language,
         keywords: row.keywords,
+        industry: row.industry,
         folderId: row.folderId,
+        delivery: row.delivery,
+        briefLink: row.briefLink,
       })),
     });
     setPending(false);
@@ -113,14 +124,17 @@ export function BulkOrderWorkspace({
     <div className="grid gap-4">
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
         <SectionCard
-          title="Add rows"
-          description="Build a batch manually, paste from Google Sheets, or upload a CSV / Excel export."
+          title="Add your orders"
+          description="Use our Google Sheet template, paste rows in, or add them one at a time."
         >
           <div className="flex flex-wrap gap-3">
+            <a className="button-secondary" href={GOOGLE_SHEET_TEMPLATE} rel="noreferrer" target="_blank">
+              Use our Google Sheet template
+            </a>
             <button className="button-secondary" onClick={() => setRows((current) => [...current, emptyRow()])} type="button">
               Add row
             </button>
-            <button className="button-primary" onClick={() => setShowPaste((open) => !open)} type="button">
+            <button className="button-secondary" onClick={() => setShowPaste((open) => !open)} type="button">
               Paste from Google Sheets
             </button>
             <label className="button-secondary cursor-pointer">
@@ -138,6 +152,9 @@ export function BulkOrderWorkspace({
               />
             </label>
           </div>
+          <p className="mt-3 text-xs text-slate-500">
+            Open the template, choose File → Make a copy, fill it in, then download as CSV or Excel and upload it here.
+          </p>
           {showPaste ? (
             <div className="mt-4 grid gap-3">
               <textarea
@@ -179,7 +196,7 @@ export function BulkOrderWorkspace({
           <table className="min-w-[1280px] w-full border-collapse text-sm">
             <thead className="bg-slate-50 text-left text-slate-500">
               <tr>
-                {["Client", "Folder (optional)", "Content type", "Writing level", "Title", "Words", "Language", "Delivery", "Keywords", "Industry", ""].map((label) => (
+                {["Title", "Link to brief", "Content type", "Writing level", "Words", "Language", "Delivery", "Due", "Keywords", "Industry", "Client / Folder", ""].map((label) => (
                   <th className={`px-3 py-3 font-medium ${label === "Writing level" ? "min-w-[9rem]" : ""}`} key={label}>
                     {label}
                   </th>
@@ -192,23 +209,17 @@ export function BulkOrderWorkspace({
                   <td className="px-3 py-2">
                     <input
                       className="dashboard-input"
-                      onChange={(event) => updateRow(row.id, { client: event.target.value })}
-                      value={row.client}
+                      onChange={(event) => updateRow(row.id, { title: event.target.value })}
+                      value={row.title}
                     />
                   </td>
                   <td className="px-3 py-2">
-                    <select
+                    <input
                       className="dashboard-input"
-                      onChange={(event) => updateRow(row.id, { folderId: event.target.value })}
-                      value={row.folderId}
-                    >
-                      <option value="">No folder</option>
-                      {folders.map((folder) => (
-                        <option key={folder.id} value={folder.id}>
-                          {folder.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(event) => updateRow(row.id, { briefLink: event.target.value })}
+                      placeholder="https://"
+                      value={row.briefLink}
+                    />
                   </td>
                   <td className="px-3 py-2">
                     <select
@@ -239,13 +250,6 @@ export function BulkOrderWorkspace({
                       <option value="signature">Signature</option>
                       <option value="rank">Specialist</option>
                     </select>
-                  </td>
-                  <td className="px-3 py-2">
-                    <input
-                      className="dashboard-input"
-                      onChange={(event) => updateRow(row.id, { title: event.target.value })}
-                      value={row.title}
-                    />
                   </td>
                   <td className="w-28 px-3 py-2">
                     <input
@@ -282,6 +286,9 @@ export function BulkOrderWorkspace({
                       <option value="rush">Rush</option>
                     </select>
                   </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-xs text-slate-500">
+                    {dueLabel(row.delivery)}
+                  </td>
                   <td className="px-3 py-2">
                     <input
                       className="dashboard-input"
@@ -297,6 +304,28 @@ export function BulkOrderWorkspace({
                       placeholder={row.tier === "rank" ? "e.g. medical" : ""}
                       value={row.industry}
                     />
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="grid gap-2">
+                      <input
+                        className="dashboard-input"
+                        onChange={(event) => updateRow(row.id, { client: event.target.value })}
+                        placeholder="Client name"
+                        value={row.client}
+                      />
+                      <select
+                        className="dashboard-input"
+                        onChange={(event) => updateRow(row.id, { folderId: event.target.value })}
+                        value={row.folderId}
+                      >
+                        <option value="">No folder</option>
+                        {folders.map((folder) => (
+                          <option key={folder.id} value={folder.id}>
+                            {folder.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </td>
                   <td className="px-3 py-2">
                     <button
@@ -372,6 +401,7 @@ function validateRows(rows: BulkRow[], folders: ClientFolder[]) {
   rows.forEach((row, index) => {
     const label = `Row ${index + 1}`;
     if (!row.title.trim()) issues.push(`${label}: missing title.`);
+    if (!row.briefLink.trim()) issues.push(`${label}: missing link to brief.`);
     if (!row.contentType.trim()) issues.push(`${label}: missing content type.`);
     if (!Number(row.wordCount)) issues.push(`${label}: missing word count.`);
     if (row.tier === "rank" && !row.keywords.trim()) {

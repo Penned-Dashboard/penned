@@ -3268,7 +3268,10 @@ export async function createBulkOrders(
     wordCount: number;
     language: string;
     keywords: string;
+    industry?: string;
     folderId: string;
+    delivery?: "standard" | "priority" | "rush";
+    briefLink?: string;
   }[],
   paymentSource: string,
 ) {
@@ -3300,37 +3303,43 @@ export async function createBulkOrders(
 
     const writingTier =
       row.tier === "rank" ? "specialist" : row.tier === "signature" ? "signature" : "standard";
-    const budgetCents = calculateOrderPrice({
+    const delivery = row.delivery === "rush" || row.delivery === "priority" ? row.delivery : "standard";
+    const price = calculateOrderPrice({
       words: row.wordCount,
       tier: writingTier,
       language: row.language || "English",
-      delivery: "standard",
+      delivery,
+      industry: row.industry,
       contentTypeKey: contentType.key,
-    }).totalCents;
+    });
     payloads.push({
       client_id: user.profileId,
       client_label: row.client.trim() || folder?.name || "Unnamed client",
       client_folder_id: folder?.id ?? null,
       content_type_id: contentType.id,
       title: row.title.trim(),
-      brief: "",
+      brief: row.briefLink?.trim() ? `Brief link: ${row.briefLink.trim()}` : "",
       primary_cta: "",
-      reference_links: [],
+      reference_links: row.briefLink?.trim() ? [row.briefLink.trim()] : [],
       target_audience: folder?.targetAudience ?? "",
       tone_of_voice: folder?.toneGuide ?? "",
       target_keywords: splitLinesAndCommas(row.keywords),
       word_count: row.wordCount,
-      priority: "standard",
+      priority: delivery,
       due_date: null,
-      budget_cents: budgetCents,
+      budget_cents: price.totalCents,
       language: row.language || "English",
       service_tier: row.tier,
       intake_details: {
         _batchId: batchId,
         _paymentSource: paymentSource,
+        industry: row.industry?.trim() || null,
+        brief_link: row.briefLink?.trim() || null,
         pricing_snapshot: {
           tier: writingTier,
-          total_cents: budgetCents,
+          delivery,
+          total_cents: price.totalCents,
+          delivery_hours: price.deliveryHours,
         },
       },
       status: "open",
