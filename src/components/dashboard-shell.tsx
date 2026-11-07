@@ -50,28 +50,36 @@ export function DashboardShell({
     .join("")
     .toUpperCase();
 
+  const logoHref = role === "client" ? "https://penned.io" : `/${role}`;
+
   return (
-    <main className="min-h-[calc(100vh-73px)] bg-[var(--background)]">
-      <div className="grid min-h-[calc(100vh-73px)] lg:grid-cols-[240px_minmax(0,1fr)]">
-        <aside className="border-r border-white/10 bg-[var(--penned-navy)] px-4 py-6 text-slate-100">
-          <Link href={`/${role}`} className="flex items-center gap-3 rounded-2xl px-3 py-2">
+    <main className="min-h-screen bg-[var(--background)]">
+      <div className="grid min-h-screen lg:grid-cols-[240px_minmax(0,1fr)]">
+        <aside className="border-r border-white/10 bg-[var(--penned-navy)] px-4 py-6 text-slate-100 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-y-auto">
+          <Link href={logoHref} className="flex items-center gap-3 rounded-2xl px-3 py-2">
             <PennedLogo tone="light" />
           </Link>
-          <p className="mt-3 px-3 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--penned-sky)]">
-            {meta.portalSubtitle}
-          </p>
+          {meta.portalSubtitle ? (
+            <p className="mt-3 px-3 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--penned-sky)]">
+              {meta.portalSubtitle}
+            </p>
+          ) : null}
 
           <nav className="mt-8 space-y-2">
             {meta.nav.map((item) => {
               const workspaceRoot = `/${role}`;
-              const [itemPath] = item.href.split("#");
+              const [itemPath, itemQuery = ""] = item.href.split("?");
+              const [itemPathNoHash] = itemPath.split("#");
               const isHashOnly = item.href.includes("#");
-              // Hash links on the same page should not all look "active" at once.
+              // Exact path match for workspace root; avoid Orders highlighting Dashboard children wrongly.
               const isActive = isHashOnly
                 ? false
                 : item.href === workspaceRoot
-                  ? currentPath === itemPath
-                  : currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
+                  ? currentPath === itemPathNoHash
+                  : currentPath === itemPathNoHash ||
+                    (itemPathNoHash !== workspaceRoot &&
+                      currentPath.startsWith(`${itemPathNoHash}/`));
+              void itemQuery;
 
               return (
                 <Link
@@ -89,15 +97,18 @@ export function DashboardShell({
             })}
           </nav>
 
-          <RoleSwitcherPanel currentRole={role} />
-
-          <div className="mt-10 border-t border-white/10 pt-6">
-            <Link
-              className="flex items-center rounded-2xl px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
-              href="/"
-            >
-              Back to site
-            </Link>
+          <div className="mt-auto">
+            <RoleSwitcherPanel currentRole={role} />
+            <div className="mt-6 border-t border-white/10 pt-4">
+              <form action={signOutAction}>
+                <button
+                  className="flex w-full items-center rounded-2xl px-4 py-3 text-left text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white"
+                  type="submit"
+                >
+                  Sign out
+                </button>
+              </form>
+            </div>
           </div>
         </aside>
 
@@ -120,7 +131,7 @@ export function DashboardShell({
                     className="w-full bg-transparent px-1 py-1 text-sm text-slate-700 outline-none placeholder:text-slate-400"
                     defaultValue={searchQuery}
                     name="q"
-                    placeholder="Orders, clients, writers…"
+                    placeholder="Search orders or clients"
                     type="search"
                   />
                   {searchQuery ? (
@@ -150,11 +161,6 @@ export function DashboardShell({
                     initials || <Image alt="" height={40} src="/brand/penned-mark.png" width={40} />
                   )}
                 </Link>
-                <form action={signOutAction}>
-                  <button className="button-secondary" type="submit">
-                    Sign out
-                  </button>
-                </form>
               </div>
             </div>
 

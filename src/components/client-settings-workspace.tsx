@@ -29,7 +29,7 @@ const teamRoles = [
 const approvalRules = [
   {
     id: "spend",
-    title: "Require approval over £250",
+    title: "Require approval over $250",
     detail: "Recommended for larger briefs or any order that crosses the spend threshold.",
   },
   {

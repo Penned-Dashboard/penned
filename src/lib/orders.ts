@@ -9,6 +9,7 @@ import {
   orderSchema,
   type OrderFormValues,
 } from "@/lib/order-schema";
+import { calculateOrderPrice } from "@/lib/pricing";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Role } from "@/lib/types";
 import {
@@ -2111,13 +2112,20 @@ export async function createOrder(values: OrderFormValues) {
   }
 
   const wordCount = payload.wordCount;
-  const budgetCents =
-    wordCount *
-    getWordRateCents({
-      basePriceCents: contentType.base_price_cents,
-      serviceTier: payload.serviceTier === "rank" ? "rank" : "on-demand",
-      priority: payload.priority === "rush" ? "rush" : "standard",
-    });
+  const writingTier =
+    payload.serviceTier === "rank"
+      ? "specialist"
+      : payload.serviceTier === "signature"
+        ? "signature"
+        : "standard";
+  const budgetCents = calculateOrderPrice({
+    words: wordCount,
+    tier: writingTier,
+    language: payload.language,
+    delivery: payload.priority,
+    industry: payload.industry ?? "",
+    contentTypeKey: service.key,
+  }).totalCents;
   const folderName = payload.clientFolderId
     ? (await getClientFolders(user.profileId)).find((folder) => folder.id === payload.clientFolderId)?.name
     : "";
@@ -2141,7 +2149,16 @@ export async function createOrder(values: OrderFormValues) {
     budget_cents: budgetCents,
     language: payload.language,
     service_tier: payload.serviceTier,
-    intake_details: payload.serviceFields,
+    intake_details: {
+      ...payload.serviceFields,
+      ...(payload.industry ? { industry: payload.industry } : {}),
+      pricing_snapshot: {
+        tier: writingTier,
+        total_cents: budgetCents,
+        language: payload.language,
+        delivery: payload.priority,
+      },
+    },
     status: "open",
   });
 

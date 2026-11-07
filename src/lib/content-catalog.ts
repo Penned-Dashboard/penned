@@ -1,3 +1,13 @@
+import {
+  calculateOrderPrice,
+  perWordCardPriceLabel,
+  pricingSettings,
+  writingTierFromDb,
+  writingTierToDb,
+  type DeliveryOption,
+  type WritingTier,
+} from "@/lib/pricing";
+
 export type ServiceFieldKind = "text" | "textarea" | "select" | "date" | "multiselect" | "file";
 
 export type ServiceFieldDefinition = {
@@ -30,49 +40,57 @@ export type ServiceDefinition = {
   fields: ServiceFieldDefinition[];
 };
 
-/** Standard rush uplift ($0.02/pw). */
-export const RUSH_RATE_CENTS = 2;
-/** Specialist tier flat rate ($0.25/pw). Stored as service_tier = "rank" in the DB. */
-export const SPECIALIST_RATE_CENTS = 25;
-/** @deprecated Use SPECIALIST_RATE_CENTS — kept for older imports. */
+/** @deprecated Prefer pricingSettings / calculateOrderPrice. */
+export const RUSH_RATE_CENTS = pricingSettings.rushByTierCents.standard;
+/** @deprecated Prefer pricingSettings.specialistCents. */
+export const SPECIALIST_RATE_CENTS = pricingSettings.specialistCents;
+/** @deprecated Use SPECIALIST_RATE_CENTS. */
 export const RANK_RATE_CENTS = SPECIALIST_RATE_CENTS;
-/** Specialist rush uplift ($0.10/pw on top of specialist rate). */
-export const SPECIALIST_RUSH_RATE_CENTS = 10;
+/** @deprecated Prefer pricingSettings.rushByTierCents.specialist. */
+export const SPECIALIST_RUSH_RATE_CENTS = pricingSettings.rushByTierCents.specialist;
 export const FILE_ACCEPT = ".docx,.txt,.md,.mp3,.mp4,.wav";
-export const FORTY_EIGHT_HOUR_RUSH_KEYS = [
-  "technical-article",
-  "thought-leadership",
-  "interview",
-] as const;
+/** Rush is always 48 hours now (Liam handover). */
+export const FORTY_EIGHT_HOUR_RUSH_KEYS = [] as const;
 
-export function getRushLabel(serviceKey?: string | null, serviceTier: "on-demand" | "rank" = "on-demand") {
-  if (serviceTier === "rank") {
-    return "Rush +$0.10/pw (24hr delivery)";
-  }
-
-  const hours = FORTY_EIGHT_HOUR_RUSH_KEYS.includes(
-    (serviceKey ?? "") as (typeof FORTY_EIGHT_HOUR_RUSH_KEYS)[number],
-  )
-    ? 48
-    : 24;
-  return `Rush +$0.02/pw (${hours}hr delivery)`;
+export function getRushLabel(
+  _serviceKey?: string | null,
+  serviceTier: "on-demand" | "signature" | "rank" | WritingTier = "on-demand",
+) {
+  const tier =
+    serviceTier === "standard" || serviceTier === "signature" || serviceTier === "specialist"
+      ? serviceTier
+      : writingTierFromDb(serviceTier);
+  const cents = pricingSettings.rushByTierCents[tier];
+  return `Rush · 48 hours (+$${(cents / 100).toFixed(2)} per word)`;
 }
 
 export function getWordRateCents({
-  basePriceCents,
+  basePriceCents: _basePriceCents,
   serviceTier,
   priority,
+  language,
+  industry,
 }: {
-  basePriceCents: number;
-  serviceTier: "on-demand" | "rank";
-  priority: "standard" | "priority" | "rush";
+  basePriceCents?: number;
+  serviceTier: "on-demand" | "signature" | "rank" | WritingTier;
+  priority: DeliveryOption;
+  language?: string | null;
+  industry?: string | null;
 }) {
-  if (serviceTier === "rank") {
-    return SPECIALIST_RATE_CENTS + (priority === "rush" ? SPECIALIST_RUSH_RATE_CENTS : 0);
-  }
-
-  return basePriceCents + (priority === "rush" ? RUSH_RATE_CENTS : 0);
+  const tier =
+    serviceTier === "standard" || serviceTier === "signature" || serviceTier === "specialist"
+      ? serviceTier
+      : writingTierFromDb(serviceTier);
+  return calculateOrderPrice({
+    words: 1,
+    tier,
+    language,
+    delivery: priority,
+    industry,
+  }).ratePerWordCents;
 }
+
+export { writingTierToDb, writingTierFromDb, perWordCardPriceLabel };
 
 export const supportedLanguages = [
   "English",
@@ -112,12 +130,17 @@ export const serviceTiers = [
   {
     value: "on-demand",
     label: "Standard",
-    detail: "Standard service pricing for one-off or managed briefs.",
+    detail: `$${((pricingSettings.standardCents) / 100).toFixed(2)}/word. AI-assisted drafting, then a human edit and proofread.`,
+  },
+  {
+    value: "signature",
+    label: "Signature",
+    detail: `$${((pricingSettings.signatureCents) / 100).toFixed(2)}/word. Professional writer, no AI, with an AI-detection report.`,
   },
   {
     value: "rank",
     label: "Specialist",
-    detail: "Expert writers at $0.25/word. Rush available at +$0.10/word for 24hr delivery.",
+    detail: `From $${((pricingSettings.specialistCents) / 100).toFixed(2)}/word (medical/legal $${((pricingSettings.specialistMedicalLegalCents) / 100).toFixed(2)}). Industry specialist with senior edit.`,
   },
 ] as const;
 
@@ -130,8 +153,8 @@ export const serviceCatalog: ServiceDefinition[] = [
       "Publication-placed, keyword-optimised content written to earn links and rank.",
     perfectFor:
       "Agencies building off-site link profiles and third-party placements.",
-    priceLabel: "$0.05/word",
-    rateCents: 5,
+    priceLabel: "From $0.06 per word",
+    rateCents: 6,
     turnaroundDays: 5,
     rushHours: 24,
     orderIndex: 1,
@@ -207,8 +230,8 @@ export const serviceCatalog: ServiceDefinition[] = [
       "Promise-led, audience-first posts that deliver real value and drive traffic.",
     perfectFor:
       "Brands and agencies publishing regularly to an owned channel.",
-    priceLabel: "$0.05/word",
-    rateCents: 5,
+    priceLabel: "From $0.06 per word",
+    rateCents: 6,
     turnaroundDays: 5,
     rushHours: 24,
     orderIndex: 2,
@@ -244,8 +267,8 @@ export const serviceCatalog: ServiceDefinition[] = [
       "Editorial-depth pieces — reported, analytical, or opinion-led — for any channel.",
     perfectFor:
       "Trade publications, industry platforms, and high-authority placements.",
-    priceLabel: "$0.05/word",
-    rateCents: 5,
+    priceLabel: "From $0.06 per word",
+    rateCents: 6,
     turnaroundDays: 6,
     rushHours: 24,
     orderIndex: 3,
@@ -290,8 +313,8 @@ export const serviceCatalog: ServiceDefinition[] = [
       "Accurate, claim-safe technical content written by specialists who know the field.",
     perfectFor:
       "SaaS, cybersecurity, finance, medical, and other regulated industries.",
-    priceLabel: "$0.07/word",
-    rateCents: 7,
+    priceLabel: "From $0.06 per word",
+    rateCents: 6,
     turnaroundDays: 7,
     rushHours: 48,
     orderIndex: 4,
@@ -335,8 +358,8 @@ export const serviceCatalog: ServiceDefinition[] = [
       "Thesis-led, evidence-backed content that positions real expertise — not just opinion.",
     perfectFor:
       "Founders and executives building a credible public voice.",
-    priceLabel: "$0.07/word",
-    rateCents: 7,
+    priceLabel: "From $0.06 per word",
+    rateCents: 6,
     turnaroundDays: 7,
     rushHours: 48,
     orderIndex: 5,
@@ -375,8 +398,8 @@ export const serviceCatalog: ServiceDefinition[] = [
       "Reputation-safe, evidence-backed content that builds credibility for individuals.",
     perfectFor:
       "Visa applications, award submissions, and media positioning.",
-    priceLabel: "$0.05/word",
-    rateCents: 5,
+    priceLabel: "From $0.06 per word",
+    rateCents: 6,
     turnaroundDays: 5,
     rushHours: 24,
     orderIndex: 6,
@@ -431,8 +454,8 @@ export const serviceCatalog: ServiceDefinition[] = [
       "Fact-locked, media-ready announcements written to get picked up and published.",
     perfectFor:
       "Launches, funding rounds, partnerships, and company news.",
-    priceLabel: "$0.05/word",
-    rateCents: 5,
+    priceLabel: "From $0.06 per word",
+    rateCents: 6,
     turnaroundDays: 4,
     rushHours: 24,
     orderIndex: 7,
@@ -491,8 +514,8 @@ export const serviceCatalog: ServiceDefinition[] = [
       "Quote-faithful, narrative-aware content built from real interviews and transcripts.",
     perfectFor:
       "Founder stories, customer voices, and expert perspectives.",
-    priceLabel: "$0.05/word",
-    rateCents: 5,
+    priceLabel: "From $0.06 per word",
+    rateCents: 6,
     turnaroundDays: 5,
     rushHours: 48,
     orderIndex: 8,
@@ -540,8 +563,8 @@ export const serviceCatalog: ServiceDefinition[] = [
       "Diagnosis-first editing that sharpens structure, voice, and clarity — nothing lost.",
     perfectFor:
       "Strong drafts that need a professional eye — including AI-assisted content.",
-    priceLabel: "$0.05/word",
-    rateCents: 5,
+    priceLabel: "From $0.06 per word",
+    rateCents: 6,
     turnaroundDays: 4,
     rushHours: 24,
     orderIndex: 9,
@@ -583,8 +606,8 @@ export const serviceCatalog: ServiceDefinition[] = [
       "Controlled transformation — same intent, clearer structure, stronger execution.",
     perfectFor:
       "Existing content that isn't performing or representing the brand it should.",
-    priceLabel: "$0.05/word",
-    rateCents: 5,
+    priceLabel: "From $0.06 per word",
+    rateCents: 6,
     turnaroundDays: 4,
     rushHours: 24,
     orderIndex: 10,
@@ -629,8 +652,8 @@ export const serviceCatalog: ServiceDefinition[] = [
       "Human-rebuilt copy from your AI draft — restructured, fact-checked, and rewritten to read as though a specialist wrote it from scratch.",
     perfectFor:
       "Agencies and teams sitting on AI-generated drafts that aren't publish-ready, on-brand, or safe to send to a client.",
-    priceLabel: "$0.05/word",
-    rateCents: 5,
+    priceLabel: "From $0.06 per word",
+    rateCents: 6,
     turnaroundDays: 5,
     rushHours: 24,
     orderIndex: 11,
@@ -645,8 +668,8 @@ export const serviceCatalog: ServiceDefinition[] = [
       "Answer-structured, citation-ready content written to be surfaced and quoted by ChatGPT, Perplexity, Google AI Overviews, and other answer engines.",
     perfectFor:
       "Brands and agencies building visibility in AI-powered search — where the goal is being cited, not just ranked.",
-    priceLabel: "$0.07/word",
-    rateCents: 7,
+    priceLabel: "From $0.06 per word",
+    rateCents: 6,
     turnaroundDays: 7,
     rushHours: 24,
     orderIndex: 12,
@@ -661,8 +684,8 @@ export const serviceCatalog: ServiceDefinition[] = [
       "Scroll-stopping posts written in your voice — built to grow reach and authority.",
     perfectFor:
       "Founders, executives, and personal brands publishing consistently on LinkedIn.",
-    priceLabel: "$0.07/word",
-    rateCents: 7,
+    priceLabel: "From $0.06 per word",
+    rateCents: 6,
     turnaroundDays: 3,
     rushHours: 24,
     orderIndex: 13,

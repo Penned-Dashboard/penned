@@ -30,8 +30,14 @@ export async function submitOrderAction(
     clientFolderId: String(formData.get("clientFolderId") ?? ""),
     title: String(formData.get("title") ?? ""),
     contentTypeId: String(formData.get("contentTypeId") ?? ""),
-    serviceTier: String(formData.get("serviceTier") ?? "") === "rank" ? "rank" : "on-demand",
+    serviceTier: (() => {
+      const value = String(formData.get("serviceTier") ?? "");
+      if (value === "rank") return "rank";
+      if (value === "signature") return "signature";
+      return "on-demand";
+    })(),
     language: String(formData.get("language") ?? ""),
+    industry: String(formData.get("industry") ?? ""),
     targetAudience: String(formData.get("targetAudience") ?? ""),
     toneOfVoice: String(formData.get("toneOfVoice") ?? ""),
     targetKeywords: String(formData.get("targetKeywords") ?? ""),

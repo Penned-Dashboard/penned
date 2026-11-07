@@ -10,9 +10,9 @@ import {
 import {
   FILE_ACCEPT,
   getRushLabel,
-  getWordRateCents,
   supportedLanguages,
 } from "@/lib/content-catalog";
+import { calculateOrderPrice, formatUsdFromCents, writingTierFromDb } from "@/lib/pricing";
 
 export function OrderForm({
   contentTypes,
@@ -37,20 +37,25 @@ export function OrderForm({
   );
   const [selectedFolderId, setSelectedFolderId] = useState("");
   const [clientLabel, setClientLabel] = useState("");
-  const [serviceTier, setServiceTier] = useState<"on-demand" | "rank">("on-demand");
+  const [serviceTier, setServiceTier] = useState<"on-demand" | "signature" | "rank">("on-demand");
   const [priority, setPriority] = useState<"standard" | "priority" | "rush">("standard");
+  const [language, setLanguage] = useState("English");
+  const [industry, setIndustry] = useState("");
   const [wordCount, setWordCount] = useState("1500");
   const [serviceValues, setServiceValues] = useState<Record<string, string>>({});
 
   const selectedType = orderableTypes.find((type) => type.id === selectedContentTypeId);
   const selectedFolder = folders.find((folder) => folder.id === selectedFolderId) ?? null;
   const parsedWordCount = Number(wordCount) || 0;
-  const activeRateCents = getWordRateCents({
-    basePriceCents: selectedType?.basePriceCents ?? 0,
-    serviceTier,
-    priority,
+  const pricePreview = calculateOrderPrice({
+    words: parsedWordCount,
+    tier: writingTierFromDb(serviceTier),
+    language,
+    delivery: priority,
+    industry,
+    contentTypeKey: selectedType?.key,
   });
-  const estimatedTotal = parsedWordCount > 0 ? (parsedWordCount * activeRateCents) / 100 : 0;
+  const estimatedTotal = pricePreview.totalCents / 100;
   const visibleServiceFields = (selectedType?.fields ?? []).filter((field) => {
     if (!field.showWhen) {
       return true;
@@ -128,19 +133,46 @@ export function OrderForm({
         <FieldError message={state.errors.contentTypeId} />
       </div>
 
-      <label>
-        <span className="dashboard-label">Tier</span>
+      <label className="md:col-span-2">
+        <span className="dashboard-label">Writing level</span>
+        <p className="mb-2 text-sm text-slate-500">
+          Need volume? Standard. Client says no AI? Signature. Regulated or technical niche? Specialist.
+        </p>
         <select
           className={inputClass(Boolean(state.errors.serviceTier))}
           name="serviceTier"
-          onChange={(event) => setServiceTier(event.target.value === "rank" ? "rank" : "on-demand")}
+          onChange={(event) => {
+            const value = event.target.value;
+            setServiceTier(
+              value === "rank" ? "rank" : value === "signature" ? "signature" : "on-demand",
+            );
+          }}
           value={serviceTier}
         >
-          <option value="on-demand">Standard</option>
-          <option value="rank">Specialist ($0.25/word)</option>
+          <option value="on-demand">Standard · $0.06 per word</option>
+          <option value="signature">Signature · $0.15 per word</option>
+          <option value="rank">Specialist · from $0.35 per word</option>
         </select>
         <FieldError message={state.errors.serviceTier} />
       </label>
+
+      {serviceTier === "rank" ? (
+        <label>
+          <span className="dashboard-label">Client&apos;s industry</span>
+          <input
+            className={inputClass(Boolean(state.errors.industry))}
+            name="industry"
+            onChange={(event) => setIndustry(event.target.value)}
+            placeholder="e.g. iGaming, fintech, insurance, medical"
+            required
+            value={industry}
+          />
+          <p className="mt-1 text-xs text-slate-500">We&apos;ll match a writer who knows it. Medical or legal uses $0.45 per word.</p>
+          <FieldError message={state.errors.industry} />
+        </label>
+      ) : (
+        <input name="industry" type="hidden" value="" />
+      )}
 
       <Field
         label="Working title or topic"
@@ -151,18 +183,24 @@ export function OrderForm({
       />
 
       <label>
-        <span className="dashboard-label">Language</span>
+        <span className="dashboard-label">Language and market</span>
         <select
           className={inputClass(Boolean(state.errors.language))}
-          defaultValue="English"
           name="language"
+          onChange={(event) => setLanguage(event.target.value)}
+          value={language}
         >
-          {supportedLanguages.map((language) => (
-            <option key={language} value={language}>
-              {language}
+          {supportedLanguages.map((option) => (
+            <option key={option} value={option}>
+              {option}
             </option>
           ))}
         </select>
+        <p className="mt-1 text-xs text-slate-500">
+          {serviceTier === "on-demand"
+            ? "On Standard: languages other than English add $0.02 per word."
+            : "On Signature and Specialist: every language is included at no extra cost."}
+        </p>
         <FieldError message={state.errors.language} />
       </label>
 
@@ -191,25 +229,20 @@ export function OrderForm({
         value={wordCount}
       />
 
-      <Field
-        label="Due date"
-        name="dueDate"
-        type="date"
-        error={state.errors.dueDate}
-      />
+      <input name="dueDate" type="hidden" value="" />
 
       <label className="md:col-span-2">
         <span className="dashboard-label">Target keywords</span>
         <textarea
           className={`${inputClass(Boolean(state.errors.targetKeywords))} min-h-24`}
           name="targetKeywords"
-          placeholder="Primary keywords, angle notes, or ranking priorities"
+          placeholder="Main keyword first, then any others"
         />
         <FieldError message={state.errors.targetKeywords} />
       </label>
 
       <label>
-        <span className="dashboard-label">Priority</span>
+        <span className="dashboard-label">Delivery</span>
         <select
           className={inputClass(Boolean(state.errors.priority))}
           name="priority"
@@ -224,8 +257,8 @@ export function OrderForm({
           }
           value={priority}
         >
-          <option value="standard">Standard</option>
-          <option value="priority">Priority (prioritise before my other orders)</option>
+          <option value="standard">Standard · 72 hours</option>
+          <option value="priority">Priority · 72 hours, ahead of your other orders</option>
           <option value="rush">{getRushLabel(selectedType?.key, serviceTier)}</option>
         </select>
         <FieldError message={state.errors.priority} />
@@ -331,7 +364,10 @@ export function OrderForm({
               : "Choose a content type to see pricing."}
           </p>
           <p>
-            Estimated total: {estimatedTotal ? `$${estimatedTotal.toLocaleString()}` : "$0"}
+            Estimated total: {formatUsdFromCents(pricePreview.totalCents)}
+            <span className="mt-1 block text-xs font-normal text-slate-500">
+              Due within {pricePreview.deliveryHours} hours of acceptance
+            </span>
           </p>
           <p>
             Blank optional fields are still saved for the production team to review.

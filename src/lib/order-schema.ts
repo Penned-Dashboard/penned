@@ -9,14 +9,15 @@ export const orderSchema = z.object({
   clientFolderId: z.string().uuid().optional().or(z.literal("")),
   title: z.string().trim().min(5, "Title must be at least 5 characters."),
   contentTypeId: z.string().uuid("Choose a valid content type."),
-  serviceTier: z.enum(["on-demand", "rank"], {
+  serviceTier: z.enum(["on-demand", "signature", "rank"], {
     error: "Select a valid tier.",
   }),
   language: z.string().trim().min(2, "Language is required."),
+  industry: z.string().trim().max(120, "Industry is too long.").optional().or(z.literal("")),
   targetAudience: z.string().trim().max(160, "Target audience is too long."),
   toneOfVoice: z.string().trim().max(120, "Tone of voice is too long."),
   targetKeywords: z.string().trim(),
-  dueDate: z.string().trim(),
+  dueDate: z.string().trim().optional().or(z.literal("")),
   wordCount: z.coerce
     .number()
     .int("Word count must be a whole number.")
