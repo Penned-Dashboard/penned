@@ -3,19 +3,22 @@
 import { useMemo, useState } from "react";
 import { submitBulkOrdersAction } from "@/app/client/actions";
 import { SectionCard } from "@/components/dashboard-cards";
-import { getWordRateCents, serviceCatalog } from "@/lib/content-catalog";
+import { serviceCatalog } from "@/lib/content-catalog";
+import { calculateOrderPrice, formatUsdFromCents, writingTierFromDb } from "@/lib/pricing";
 import type { ClientFolder, ContentTypeOption } from "@/lib/orders";
 
 type BulkRow = {
   id: string;
   client: string;
   contentType: string;
-  tier: "on-demand" | "rank";
+  tier: "on-demand" | "signature" | "rank";
   title: string;
   wordCount: string;
   language: string;
   keywords: string;
+  industry: string;
   folderId: string;
+  delivery: "standard" | "priority" | "rush";
 };
 
 const orderableServices = serviceCatalog.filter((service) => service.isOrderable);
@@ -30,8 +33,14 @@ function emptyRow(): BulkRow {
     wordCount: "1200",
     language: "English",
     keywords: "",
+    industry: "",
     folderId: "",
+    delivery: "standard",
   };
+}
+
+function isFilledRow(row: BulkRow) {
+  return Boolean(row.title.trim() || row.client.trim() || Number(row.wordCount));
 }
 
 export function BulkOrderWorkspace({
@@ -52,8 +61,11 @@ export function BulkOrderWorkspace({
     setRows((current) => current.map((row) => (row.id === id ? { ...row, ...patch } : row)));
   }
 
-  const issues = useMemo(() => validateRows(rows, folders), [rows, folders]);
-  const summary = useMemo(() => summarizeRows(rows, contentTypes), [rows, contentTypes]);
+  const filledRows = useMemo(() => rows.filter(isFilledRow), [rows]);
+  const issues = useMemo(() => validateRows(filledRows, folders), [filledRows, folders]);
+  const summary = useMemo(() => summarizeRows(filledRows, contentTypes), [filledRows, contentTypes]);
+  const walletBalance = 3750;
+  const remainingAfterBatch = Math.max(0, walletBalance - summary.estimatedTotal);
 
   async function importDelimited(text: string) {
     const parsed = parseDelimited(text);
@@ -82,8 +94,8 @@ export function BulkOrderWorkspace({
     setPending(true);
     const result = await submitBulkOrdersAction({
       paymentSource,
-      rows: rows.map((row) => ({
-        client: row.client,
+      rows: filledRows.map((row) => ({
+        client: row.client || "Unnamed client",
         contentType: row.contentType,
         tier: row.tier,
         title: row.title,
@@ -149,23 +161,26 @@ export function BulkOrderWorkspace({
             <Metric label="Total orders" value={String(summary.totalOrders)} />
             <Metric label="Total words" value={summary.totalWords.toLocaleString()} />
             <Metric label="Tier mix" value={summary.tierMix} />
-            <Metric label="Estimated total" value={`$${summary.estimatedTotal.toLocaleString()}`} />
-            <Metric label="Wallet deduction" value={`$${summary.estimatedTotal.toLocaleString()}`} />
-            <Metric label="Remaining balance" value="$3,750" />
+            <Metric label="Estimated total" value={formatUsdFromCents(Math.round(summary.estimatedTotal * 100))} />
+            <Metric label="Wallet deduction" value={formatUsdFromCents(Math.round(summary.estimatedTotal * 100))} />
+            <Metric label="Remaining balance" value={formatUsdFromCents(Math.round(remainingAfterBatch * 100))} />
           </div>
+          <p className="mt-3 text-xs text-slate-500">
+            Only rows with content are counted. Empty starter rows are ignored until you fill them in.
+          </p>
         </SectionCard>
       </section>
 
       <SectionCard
         title="Batch table"
-        description="Missing fields are flagged before checkout. Duplicate titles, missing folders, and Specialist keyword gaps are checked here."
+        description="Missing fields are flagged when you submit. Client folder is optional. Specialist rows need keywords."
       >
         <div className="overflow-x-auto rounded-[1.25rem] border border-slate-200">
-          <table className="min-w-[1100px] w-full border-collapse text-sm">
+          <table className="min-w-[1280px] w-full border-collapse text-sm">
             <thead className="bg-slate-50 text-left text-slate-500">
               <tr>
-                {["Client", "Content type", "Tier", "Title", "Words", "Language", "Keywords", "Folder", ""].map((label) => (
-                  <th className="px-3 py-3 font-medium" key={label}>
+                {["Client", "Folder (optional)", "Content type", "Writing level", "Title", "Words", "Language", "Delivery", "Keywords", "Industry", ""].map((label) => (
+                  <th className={`px-3 py-3 font-medium ${label === "Writing level" ? "min-w-[9rem]" : ""}`} key={label}>
                     {label}
                   </th>
                 ))}
@@ -184,6 +199,20 @@ export function BulkOrderWorkspace({
                   <td className="px-3 py-2">
                     <select
                       className="dashboard-input"
+                      onChange={(event) => updateRow(row.id, { folderId: event.target.value })}
+                      value={row.folderId}
+                    >
+                      <option value="">No folder</option>
+                      {folders.map((folder) => (
+                        <option key={folder.id} value={folder.id}>
+                          {folder.name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="px-3 py-2">
+                    <select
+                      className="dashboard-input"
                       onChange={(event) => updateRow(row.id, { contentType: event.target.value })}
                       value={row.contentType}
                     >
@@ -194,15 +223,20 @@ export function BulkOrderWorkspace({
                       ))}
                     </select>
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="min-w-[9rem] px-3 py-2">
                     <select
                       className="dashboard-input"
-                      onChange={(event) =>
-                        updateRow(row.id, { tier: event.target.value === "rank" ? "rank" : "on-demand" })
-                      }
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        updateRow(row.id, {
+                          tier:
+                            value === "rank" ? "rank" : value === "signature" ? "signature" : "on-demand",
+                        });
+                      }}
                       value={row.tier}
                     >
                       <option value="on-demand">Standard</option>
+                      <option value="signature">Signature</option>
                       <option value="rank">Specialist</option>
                     </select>
                   </td>
@@ -229,25 +263,40 @@ export function BulkOrderWorkspace({
                     />
                   </td>
                   <td className="px-3 py-2">
+                    <select
+                      className="dashboard-input"
+                      onChange={(event) =>
+                        updateRow(row.id, {
+                          delivery:
+                            event.target.value === "rush"
+                              ? "rush"
+                              : event.target.value === "priority"
+                                ? "priority"
+                                : "standard",
+                        })
+                      }
+                      value={row.delivery}
+                    >
+                      <option value="standard">Standard</option>
+                      <option value="priority">Priority</option>
+                      <option value="rush">Rush</option>
+                    </select>
+                  </td>
+                  <td className="px-3 py-2">
                     <input
                       className="dashboard-input"
                       onChange={(event) => updateRow(row.id, { keywords: event.target.value })}
+                      placeholder={row.tier === "rank" ? "Required" : "Optional"}
                       value={row.keywords}
                     />
                   </td>
                   <td className="px-3 py-2">
-                    <select
+                    <input
                       className="dashboard-input"
-                      onChange={(event) => updateRow(row.id, { folderId: event.target.value })}
-                      value={row.folderId}
-                    >
-                      <option value="">Select folder</option>
-                      {folders.map((folder) => (
-                        <option key={folder.id} value={folder.id}>
-                          {folder.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(event) => updateRow(row.id, { industry: event.target.value })}
+                      placeholder={row.tier === "rank" ? "e.g. medical" : ""}
+                      value={row.industry}
+                    />
                   </td>
                   <td className="px-3 py-2">
                     <button
@@ -322,14 +371,15 @@ function validateRows(rows: BulkRow[], folders: ClientFolder[]) {
 
   rows.forEach((row, index) => {
     const label = `Row ${index + 1}`;
-    if (!row.client.trim()) issues.push(`${label}: missing client.`);
-    if (!row.contentType.trim()) issues.push(`${label}: missing content type.`);
     if (!row.title.trim()) issues.push(`${label}: missing title.`);
+    if (!row.contentType.trim()) issues.push(`${label}: missing content type.`);
     if (!Number(row.wordCount)) issues.push(`${label}: missing word count.`);
-                if (row.tier === "rank" && !row.keywords.trim()) {
-                  issues.push(`${label}: missing target keyword for Specialist.`);
-                }
-    if (!row.folderId) issues.push(`${label}: missing client folder.`);
+    if (row.tier === "rank" && !row.keywords.trim()) {
+      issues.push(`${label}: missing target keyword for Specialist.`);
+    }
+    if (row.tier === "rank" && !row.industry.trim()) {
+      issues.push(`${label}: missing client's industry for Specialist.`);
+    }
     if (row.folderId && !folders.some((folder) => folder.id === row.folderId)) {
       issues.push(`${label}: unknown client folder.`);
     }
@@ -351,22 +401,29 @@ function validateRows(rows: BulkRow[], folders: ClientFolder[]) {
 function summarizeRows(rows: BulkRow[], contentTypes: ContentTypeOption[]) {
   const totalOrders = rows.length;
   const totalWords = rows.reduce((sum, row) => sum + (Number(row.wordCount) || 0), 0);
+  const standardCount = rows.filter((row) => row.tier === "on-demand").length;
+  const signatureCount = rows.filter((row) => row.tier === "signature").length;
   const rankCount = rows.filter((row) => row.tier === "rank").length;
-  const estimatedTotal = rows.reduce((sum, row) => {
+  const estimatedTotalCents = rows.reduce((sum, row) => {
     const service = contentTypes.find((type) => type.name === row.contentType);
-    const rate = getWordRateCents({
-      basePriceCents: service?.basePriceCents ?? 5,
-      serviceTier: row.tier,
-      priority: "standard",
-    });
-    return sum + ((Number(row.wordCount) || 0) * rate) / 100;
+    return (
+      sum +
+      calculateOrderPrice({
+        words: Number(row.wordCount) || 0,
+        tier: writingTierFromDb(row.tier),
+        language: row.language,
+        delivery: row.delivery,
+        industry: row.industry,
+        contentTypeKey: service?.key,
+      }).totalCents
+    );
   }, 0);
 
   return {
     totalOrders,
     totalWords,
-    estimatedTotal,
-    tierMix: `${totalOrders - rankCount} Standard, ${rankCount} Specialist`,
+    estimatedTotal: estimatedTotalCents / 100,
+    tierMix: `${standardCount} Standard, ${signatureCount} Signature, ${rankCount} Specialist`,
   };
 }
 

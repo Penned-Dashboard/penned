@@ -21,9 +21,9 @@ export default async function ContentBudgetPage({
   return (
     <DashboardShell
       role="client"
-      title="Content Budget"
-      description="Track prepaid balance, savings, and spend without plan-style dashboard language."
-      ctaLabel="Top up content budget"
+      title="Content budget"
+      description=""
+      ctaLabel="Top up"
       ctaHref="/client/content-budget/top-up"
       currentPath="/client/content-budget"
       userName={user.fullName}
@@ -43,38 +43,39 @@ export default async function ContentBudgetPage({
 
       <section className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <SectionCard
-          title="Remaining balance"
-          description="The most important number for content operations is how much working budget is left."
+          title="Balance"
+          description="Orders are paid from this balance. Top up any time."
         >
-          <div className="rounded-[1.5rem] border border-slate-200 bg-[linear-gradient(135deg,rgba(37,99,235,0.09),rgba(43,182,168,0.12))] p-6">
-            <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Content budget</p>
+          <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6">
+            <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Balance</p>
             <h2 className="mt-3 text-5xl font-semibold tracking-[-0.05em] text-slate-950">
               {snapshot.remainingLabel}
             </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Flexible agency billing with prepaid budgets, monthly account limits, and fast bulk ordering.
-            </p>
           </div>
           <div className="mt-5 grid gap-3 md:grid-cols-3">
             <Metric
-              label="Current discount tier"
-              value={`Saving ${snapshot.currentTier.discount}%`}
-              hint={`${snapshot.currentTier.name} tier`}
+              label="Your pre-pay credit"
+              value={snapshot.currentTier.discount ? `${snapshot.currentTier.discount}% extra` : "No extra credit yet"}
+              hint={snapshot.currentTier.name}
             />
             <Metric
-              label="Total saved to date"
+              label="Saved so far"
               value={`$${snapshot.totalSaved.toFixed(2)}`}
-              hint="You’ve saved this so far on this balance."
+              hint="Extra credit from your pre-payments."
             />
             <Metric
-              label="Burn rate estimate"
-              value={`${snapshot.weeksRemaining} weeks left`}
-              hint="At your current order rate, your balance covers approximately 4 more weeks."
+              label="Time left"
+              value={
+                snapshot.weeksRemaining
+                  ? `${snapshot.weeksRemaining} weeks left`
+                  : "Not enough order history yet"
+              }
+              hint="At the rate you're ordering now."
             />
           </div>
           <div className="mt-5">
             <Link className="button-primary" href="/client/content-budget/top-up">
-              Top up content budget
+              Top up
             </Link>
           </div>
         </SectionCard>
@@ -88,19 +89,23 @@ export default async function ContentBudgetPage({
       </section>
 
       <SectionCard
-        title="Recent budget activity"
-        description="Top-ups, deductions, refunds, and invoice-linked charges should be easy to scan."
+        title="Recent activity"
+        description="History of top-ups, credits and order deductions."
       >
         <div className="space-y-3">
-          {snapshot.recentActivity.map((item) => (
-            <div key={`${item.label}-${item.note}`} className="dashboard-list-row">
-              <div>
-                <p className="font-semibold text-slate-950">{item.label}</p>
-                <p className="text-sm text-slate-500">{item.note}</p>
+          {snapshot.recentActivity.length ? (
+            snapshot.recentActivity.map((item) => (
+              <div key={`${item.label}-${item.note}`} className="dashboard-list-row">
+                <div>
+                  <p className="font-semibold text-slate-950">{item.label}</p>
+                  <p className="text-sm text-slate-500">{item.note}</p>
+                </div>
+                <p className="text-sm font-medium text-slate-700">{item.value}</p>
               </div>
-              <p className="text-sm font-medium text-slate-700">{item.value}</p>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-sm text-slate-500">No top-ups or deductions yet.</p>
+          )}
         </div>
       </SectionCard>
     </DashboardShell>

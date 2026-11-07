@@ -3,6 +3,7 @@ import { getCurrentAppUser } from "@/lib/auth";
 import {
   getServiceByName,
   getWordRateCents,
+  perWordCardPriceLabel,
   type ServiceDefinition,
 } from "@/lib/content-catalog";
 import {
@@ -409,43 +410,64 @@ export async function getContentTypeOptions({
     return [];
   }
 
-  return data
-    .map((item) => {
-      const service = getServiceByName(item.name);
+  const mapped = data.map((item) => {
+    const service = getServiceByName(item.name);
 
-      if (!service) {
-        return {
-          id: item.id,
-          key: item.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
-          name: item.name,
-          description: item.description ?? "Structured content service.",
-          whatYouGet: item.description ?? "Structured content service.",
-          perfectFor: "General publishing workflows.",
-          priceLabel: item.base_price_cents >= 100 ? formatCurrency(item.base_price_cents) : `$${(item.base_price_cents / 100).toFixed(2)}/word`,
-          turnaroundDays: item.turnaround_days,
-          basePriceCents: item.base_price_cents,
-          isOrderable: item.active,
-          orderIndex: 999,
-          fields: [],
-        } satisfies ContentTypeOption;
-      }
-
+    if (!service) {
       return {
         id: item.id,
-        key: service.key,
-        name: service.name,
-        description: service.description,
-        whatYouGet: service.whatYouGet,
-        perfectFor: service.perfectFor,
-        priceLabel: service.priceLabel,
+        key: item.name.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+        name: item.name,
+        description: item.description ?? "Structured content service.",
+        whatYouGet: item.description ?? "Structured content service.",
+        perfectFor: "General publishing workflows.",
+        priceLabel:
+          item.base_price_cents >= 100
+            ? formatCurrency(item.base_price_cents)
+            : perWordCardPriceLabel(),
         turnaroundDays: item.turnaround_days,
         basePriceCents: item.base_price_cents,
-        isOrderable: item.active && service.isOrderable,
-        orderIndex: service.orderIndex,
-        fields: service.fields,
+        isOrderable: item.active,
+        orderIndex: 999,
+        fields: [],
       } satisfies ContentTypeOption;
-    })
-    .sort((left, right) => left.orderIndex - right.orderIndex || left.name.localeCompare(right.name));
+    }
+
+    return {
+      id: item.id,
+      key: service.key,
+      name: service.name,
+      description: service.description,
+      whatYouGet: service.whatYouGet,
+      perfectFor: service.perfectFor,
+      priceLabel: service.priceLabel,
+      turnaroundDays: item.turnaround_days,
+      basePriceCents: item.base_price_cents,
+      isOrderable: item.active && service.isOrderable,
+      orderIndex: service.orderIndex,
+      fields: service.fields,
+    } satisfies ContentTypeOption;
+  });
+
+  // One card per service key — DB sometimes has duplicate Press Release / LinkedIn rows.
+  const deduped = new Map<string, ContentTypeOption>();
+  for (const option of mapped) {
+    const existing = deduped.get(option.key);
+    if (!existing) {
+      deduped.set(option.key, option);
+      continue;
+    }
+    const preferIncoming =
+      Number(option.isOrderable) > Number(existing.isOrderable) ||
+      (option.isOrderable === existing.isOrderable && option.orderIndex < existing.orderIndex);
+    if (preferIncoming) {
+      deduped.set(option.key, option);
+    }
+  }
+
+  return [...deduped.values()].sort(
+    (left, right) => left.orderIndex - right.orderIndex || left.name.localeCompare(right.name),
+  );
 }
 
 export async function getClientFolders(clientProfileId: string): Promise<ClientFolder[]> {
@@ -3241,7 +3263,7 @@ export async function createBulkOrders(
   rows: {
     client: string;
     contentType: string;
-    tier: "on-demand" | "rank";
+    tier: "on-demand" | "signature" | "rank";
     title: string;
     wordCount: number;
     language: string;
@@ -3268,36 +3290,48 @@ export async function createBulkOrders(
 
   for (const [index, row] of rows.entries()) {
     const contentType = contentTypes.find((type) => type.name === row.contentType && type.isOrderable);
-    const folder = folders.find((item) => item.id === row.folderId);
+    const folder = row.folderId ? folders.find((item) => item.id === row.folderId) : null;
     if (!contentType) {
       return { ok: false as const, message: `Row ${index + 1}: choose an active content type.` };
     }
-    if (!folder) {
-      return { ok: false as const, message: `Row ${index + 1}: choose a client folder.` };
+    if (row.folderId && !folder) {
+      return { ok: false as const, message: `Row ${index + 1}: unknown client folder.` };
     }
 
-    const rate = contentType.basePriceCents + (row.tier === "rank" ? 10 : 0);
+    const writingTier =
+      row.tier === "rank" ? "specialist" : row.tier === "signature" ? "signature" : "standard";
+    const budgetCents = calculateOrderPrice({
+      words: row.wordCount,
+      tier: writingTier,
+      language: row.language || "English",
+      delivery: "standard",
+      contentTypeKey: contentType.key,
+    }).totalCents;
     payloads.push({
       client_id: user.profileId,
-      client_label: row.client.trim() || folder.name,
-      client_folder_id: folder.id,
+      client_label: row.client.trim() || folder?.name || "Unnamed client",
+      client_folder_id: folder?.id ?? null,
       content_type_id: contentType.id,
       title: row.title.trim(),
       brief: "",
       primary_cta: "",
       reference_links: [],
-      target_audience: folder.targetAudience,
-      tone_of_voice: folder.toneGuide,
+      target_audience: folder?.targetAudience ?? "",
+      tone_of_voice: folder?.toneGuide ?? "",
       target_keywords: splitLinesAndCommas(row.keywords),
       word_count: row.wordCount,
       priority: "standard",
       due_date: null,
-      budget_cents: row.wordCount * rate,
+      budget_cents: budgetCents,
       language: row.language || "English",
       service_tier: row.tier,
       intake_details: {
         _batchId: batchId,
         _paymentSource: paymentSource,
+        pricing_snapshot: {
+          tier: writingTier,
+          total_cents: budgetCents,
+        },
       },
       status: "open",
     });
@@ -3337,7 +3371,10 @@ function validateServiceFields(service: ServiceDefinition, fields: Record<string
 }
 
 function formatOrderStatus(status: string) {
-  return status.replaceAll("_", " ");
+  const normalized = status.replaceAll("_", " ").trim().toLowerCase();
+  if (!normalized) return "Unknown";
+  // Title-case so Completed filters and badges match ("accepted" → "Accepted").
+  return normalized.replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function formatDeadline(date: string | null) {

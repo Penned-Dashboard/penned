@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { DashboardShell, SectionCard } from "@/components/dashboard-shell";
 import {
   acceptSubmissionAction,
@@ -21,17 +20,40 @@ export default async function ClientOrderDetailPage({
   const order = await getClientOrderDetail(orderId, user.profileId);
 
   if (!order) {
-    notFound();
+    return (
+      <DashboardShell
+        role="client"
+        title="This order isn't available"
+        description=""
+        ctaLabel="← Orders"
+        ctaHref="/client/orders"
+        currentPath="/client/orders"
+        userName={user.fullName}
+      >
+        <section className="rounded-[1.75rem] border border-slate-200 bg-white p-8 text-sm leading-7 text-slate-600">
+          <p>You don’t have access to this order, or it no longer exists.</p>
+          <Link className="button-primary mt-6 inline-flex" href="/client/orders">
+            Back to Orders
+          </Link>
+        </section>
+      </DashboardShell>
+    );
   }
+
+  const isAccepted = ["Accepted", "Approved", "Completed"].includes(order.status);
+  const canReviewLatest =
+    Boolean(order.latestSubmission) &&
+    !isAccepted &&
+    !["Accepted", "Approved"].includes(order.latestSubmission?.status ?? "");
 
   return (
     <DashboardShell
       role="client"
       title={order.title}
-      description="Order detail view for tracking brief quality, ownership, and delivery state."
-      ctaLabel="Back to client dashboard"
-      ctaHref="/client"
-      currentPath="/client"
+      description=""
+      ctaLabel="← Orders"
+      ctaHref="/client/orders"
+      currentPath="/client/orders"
       userName={user.fullName}
     >
       <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
@@ -47,7 +69,16 @@ export default async function ClientOrderDetailPage({
             <DetailItem label="Target audience" value={order.targetAudience} />
             <DetailItem label="Tone of voice" value={order.toneOfVoice} />
             <DetailItem label="Target word count" value={order.wordCount} />
-            <DetailItem label="Priority" value={order.priority} />
+            <DetailItem
+              label="Delivery"
+              value={
+                order.priority?.toLowerCase() === "rush"
+                  ? "Rush"
+                  : order.priority?.toLowerCase() === "priority"
+                    ? "Priority"
+                    : "Standard"
+              }
+            />
             <DetailItem label="Primary CTA" value={order.primaryCta} />
           </dl>
         </SectionCard>
@@ -106,36 +137,44 @@ export default async function ClientOrderDetailPage({
                   </Link>
                 ) : null}
               </div>
-              <div className="flex flex-wrap gap-3">
-                <form action={acceptSubmissionAction}>
-                  <input name="orderId" type="hidden" value={order.id} />
-                  <input
-                    name="submissionId"
-                    type="hidden"
-                    value={order.latestSubmission.id}
-                  />
-                  <button className="button-secondary" type="submit">
-                    Accept submission
-                  </button>
-                </form>
-                <form action={requestRevisionAction} className="flex flex-1 flex-col gap-3">
-                  <input name="orderId" type="hidden" value={order.id} />
-                  <input
-                    name="submissionId"
-                    type="hidden"
-                    value={order.latestSubmission.id}
-                  />
-                  <textarea
-                    className="dashboard-input min-h-24"
-                    name="feedback"
-                    placeholder="Request changes, add direction, or note missing points."
-                    required
-                  />
-                  <button className="button-primary self-start" type="submit">
-                    Request Revision
-                  </button>
-                </form>
-              </div>
+              {canReviewLatest ? (
+                <div className="flex flex-wrap gap-3">
+                  <form action={acceptSubmissionAction}>
+                    <input name="orderId" type="hidden" value={order.id} />
+                    <input
+                      name="submissionId"
+                      type="hidden"
+                      value={order.latestSubmission.id}
+                    />
+                    <button className="button-primary" type="submit">
+                      Approve draft
+                    </button>
+                  </form>
+                  <form action={requestRevisionAction} className="flex flex-1 flex-col gap-3">
+                    <input name="orderId" type="hidden" value={order.id} />
+                    <input
+                      name="submissionId"
+                      type="hidden"
+                      value={order.latestSubmission.id}
+                    />
+                    <textarea
+                      className="dashboard-input min-h-24"
+                      name="feedback"
+                      placeholder="What should the writer change? Be as specific as you can."
+                      required
+                    />
+                    <button className="button-secondary self-start" type="submit">
+                      Request changes
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">
+                  {isAccepted
+                    ? "This order is approved. Download the draft above if you need it again."
+                    : "Review actions will appear when a draft is waiting for your feedback."}
+                </p>
+              )}
             </div>
           ) : (
             <p className="text-sm text-slate-500">

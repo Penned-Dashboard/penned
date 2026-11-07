@@ -99,7 +99,7 @@ export async function submitBulkOrdersAction(payload: {
   rows: {
     client: string;
     contentType: string;
-    tier: "on-demand" | "rank";
+    tier: "on-demand" | "signature" | "rank";
     title: string;
     wordCount: number;
     language: string;

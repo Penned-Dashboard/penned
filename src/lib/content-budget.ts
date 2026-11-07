@@ -1,41 +1,48 @@
 import type { DashboardOrder, InvoiceItem } from "@/lib/orders";
+import {
+  formatUsdFromCents,
+  nextVolumeTierNudge,
+  pricingSettings,
+  volumeDiscountCreditCents,
+  volumeDiscountPercent,
+} from "@/lib/pricing";
 
 export const topUpTiers = [
   {
     id: "standard",
-    name: "Standard top-up",
+    name: "Under $5,000",
     min: 0,
     max: 4999,
     discount: 0,
-    discountLabel: "No discount",
-    copy: "Pay-as-you-go rate. No minimum amount. Add what you need, when you need it.",
+    discountLabel: "No extra credit",
+    copy: "Pay-as-you-go. Add what you need, when you need it.",
   },
   {
     id: "managed-5k",
-    name: "$5,000–$9,999",
+    name: "$5,000–$12,499",
     min: 5000,
-    max: 9999,
+    max: 12499,
     discount: 5,
-    discountLabel: "5% off every eligible Managed order",
-    copy: "Save up to $499 on this top-up.",
+    discountLabel: "5% extra credit",
+    copy: "Up to $625 back as extra credit.",
   },
   {
     id: "managed-10k",
-    name: "$10,000–$19,999",
-    min: 10000,
-    max: 19999,
+    name: "$12,500–$24,999",
+    min: 12500,
+    max: 24999,
     discount: 7.5,
-    discountLabel: "7.5% off every eligible Managed order",
-    copy: "Save up to $1,500 on this top-up.",
+    discountLabel: "7.5% extra credit",
+    copy: "Up to $1,875 back as extra credit.",
   },
   {
     id: "managed-20k",
-    name: "$20,000+",
-    min: 20000,
+    name: "$25,000+",
+    min: 25000,
     max: Number.POSITIVE_INFINITY,
     discount: 10,
-    discountLabel: "10% off every eligible Managed order",
-    copy: "Save $2,000+ on this top-up.",
+    discountLabel: "10% extra credit",
+    copy: "$2,500+ back as extra credit.",
   },
 ] as const;
 
@@ -46,45 +53,61 @@ export function getTierForAmount(amount: number) {
 }
 
 export function getContentBudgetSnapshot(orders: DashboardOrder[], invoices: InvoiceItem[]) {
-  const completed = orders.filter((order) => order.status === "Accepted").length;
-  const remaining = 3750;
-  const currentTier = topUpTiers[2];
-  const totalSaved = 937.5;
-  const weeksRemaining = 4;
+  const completed = orders.filter((order) =>
+    ["Accepted", "Approved", "Completed"].includes(order.status),
+  ).length;
+  const hasLiveData = orders.length > 0 || invoices.length > 0;
+
+  // Until wallet ledger is wired end-to-end, keep a coherent demo only when live data exists.
+  const demoTopUpCents = hasLiveData ? 500_000 : 0;
+  const demoCreditCents = volumeDiscountCreditCents(demoTopUpCents);
+  const demoSpendCents = hasLiveData ? 125_000 : 0;
+  const remainingCents = Math.max(0, demoTopUpCents + demoCreditCents - demoSpendCents);
+  const currentTier = getTierForAmount(demoTopUpCents / 100);
+  const totalSaved = demoCreditCents / 100;
+  const weeksRemaining = hasLiveData && demoSpendCents > 0 ? Math.max(1, Math.round(remainingCents / (demoSpendCents / 4))) : null;
   const notEligible = completed < 3;
   const priorityState = notEligible
-    ? "Not eligible"
-    : invoices.length
-      ? "Eligible, not activated"
-      : "Eligible, not activated";
+    ? "Not yet eligible"
+    : "You're on standard terms: top up first, then order.";
 
-  const demoActivity = [
-    { label: "Managed top-up", value: "+$5,000.00", note: "Prepaid wallet" },
-    { label: "Rank article batch", value: "-$960.00", note: "Order deduction" },
-    { label: "Blog post — Northstar Growth", value: "-$75.00", note: "Order deduction" },
-    { label: "Revision credit", value: "+$37.50", note: "Refund / credit" },
-  ];
-
-  const liveActivity = orders.slice(0, 3).map((order) => ({
-    label: `${order.name} · ${order.clientLabel}`,
-    value: order.status === "Accepted" ? "-$275.00" : "Reserved",
-    note: order.deadline,
-  }));
+  const recentActivity = hasLiveData
+    ? [
+        {
+          label: "Top-up",
+          value: `+${formatUsdFromCents(demoTopUpCents)}`,
+          note: "Prepaid wallet",
+        },
+        {
+          label: `Pre-pay credit (${volumeDiscountPercent(demoTopUpCents)}%)`,
+          value: `+${formatUsdFromCents(demoCreditCents)}`,
+          note: "Extra credit",
+        },
+        ...orders.slice(0, 3).map((order) => ({
+          label: `Order: ${order.name}`,
+          value: order.status === "Accepted" ? "-$90.00" : "Reserved",
+          note: order.deadline,
+        })),
+      ].slice(0, 6)
+    : [];
 
   return {
-    remaining,
-    remainingLabel: `$${remaining.toLocaleString()} remaining`,
+    remaining: remainingCents / 100,
+    remainingLabel: `${formatUsdFromCents(remainingCents)} left`,
     currentTier,
     totalSaved,
     weeksRemaining,
-    billingMode: remaining > 0 ? "Prepaid wallet" : "Pay per order",
+    billingMode: remainingCents > 0 ? "Prepaid wallet" : "Pay per order",
     priorityState,
     notEligible,
-    recentActivity: [...demoActivity, ...liveActivity].slice(0, 6),
+    recentActivity,
+    hasLiveData,
+    volumeTable: pricingSettings.volumeDiscounts,
+    nextTierNudge: nextVolumeTierNudge(demoTopUpCents),
   };
 }
 
-export function estimateArticles(amount: number, rate = 0.05, words = 800) {
+export function estimateArticles(amount: number, rate = 0.06, words = 1000) {
   if (amount <= 0) {
     return 0;
   }
