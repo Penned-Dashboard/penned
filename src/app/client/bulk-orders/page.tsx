@@ -13,10 +13,8 @@ export default async function ClientBulkOrdersPage() {
   return (
     <DashboardShell
       role="client"
-      title="Bulk Orders"
-      description="Batch multiple content requests with spreadsheet-style prep, validation, and pricing visibility before submission."
-      ctaLabel="Back to orders"
-      ctaHref="/client/orders"
+      title="Bulk orders"
+      description="Order lots of pieces at once. Add them as rows, check the price, then submit them as one batch."
       currentPath="/client/bulk-orders"
       userName={user.fullName}
     >

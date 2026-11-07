@@ -15,9 +15,9 @@ export default async function ContentBudgetTopUpPage() {
   return (
     <DashboardShell
       role="client"
-      title="Add to your content budget"
-      description="Top up at the standard rate, or prepay a larger Managed amount to unlock a discount on every eligible order."
-      ctaLabel="Back to content budget"
+      title="Top up"
+      description=""
+      ctaLabel="← Back to Content budget"
       ctaHref="/client/content-budget"
       currentPath="/client/content-budget/top-up"
       userName={user.fullName}

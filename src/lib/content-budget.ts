@@ -71,21 +71,28 @@ export function getContentBudgetSnapshot(orders: DashboardOrder[], invoices: Inv
     ? "Not yet eligible"
     : "You're on standard terms: top up first, then order.";
 
+  const today = new Date().toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
   const recentActivity = hasLiveData
     ? [
         {
           label: "Top-up",
           value: `+${formatUsdFromCents(demoTopUpCents)}`,
-          note: "Prepaid wallet",
+          note: today,
         },
         {
           label: `Pre-pay credit (${volumeDiscountPercent(demoTopUpCents)}%)`,
           value: `+${formatUsdFromCents(demoCreditCents)}`,
-          note: "Extra credit",
+          note: today,
         },
         ...orders.slice(0, 3).map((order) => ({
           label: `Order: ${order.name}`,
-          value: order.status === "Accepted" ? "-$90.00" : "Reserved",
+          value: ["Accepted", "Approved", "Completed"].includes(order.status)
+            ? "-$90.00"
+            : "Reserved",
           note: order.deadline,
         })),
       ].slice(0, 6)

@@ -26,28 +26,13 @@ const teamRoles = [
   },
 ];
 
-const approvalRules = [
-  {
-    id: "spend",
-    title: "Require approval over $250",
-    detail: "Recommended for larger briefs or any order that crosses the spend threshold.",
-  },
-  {
-    id: "new-folder",
-    title: "Require approval for the first order under a new client folder",
-    detail: "Helps senior team members confirm the initial setup before repeat work begins.",
-  },
-  {
-    id: "wallet",
-    title: "Require approval if wallet balance will fall below a set threshold",
-    detail: "Protects prepaid budgets from accidental depletion.",
-  },
-  {
-    id: "rush",
-    title: "Require approval for rush fees",
-    detail: "Useful when turnaround speed changes commercial expectations.",
-  },
-];
+type TeamMember = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  status: "active" | "pending";
+};
 
 export function ClientSettingsWorkspace({
   fullName,
@@ -59,55 +44,116 @@ export function ClientSettingsWorkspace({
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("Content manager");
   const [inviteMessage, setInviteMessage] = useState("");
+  const [savedMessage, setSavedMessage] = useState("");
+  const [walletThreshold, setWalletThreshold] = useState("500");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [team, setTeam] = useState<TeamMember[]>([
+    { id: "owner", name: fullName, email, role: "Owner", status: "active" },
+  ]);
   const [enabledRules, setEnabledRules] = useState<Record<string, boolean>>({
     spend: true,
     "new-folder": true,
     wallet: false,
     rush: true,
   });
+  const selectedRole = teamRoles.find((role) => role.name === inviteRole) ?? teamRoles[0];
 
   return (
     <>
-      <section className="grid gap-4 xl:grid-cols-[1fr_1fr]">
-        <SectionCard
-          title="Workspace profile"
-          description="Core account details tied to your content operations workspace."
-        >
+      <SectionCard title="Workspace details" description="Profile shown in the top bar across the dashboard.">
+        <div className="grid gap-4 md:grid-cols-[120px_1fr]">
+          <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-[var(--penned-navy)] text-xl font-semibold text-white">
+            {avatarPreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img alt="" className="h-full w-full object-cover" src={avatarPreview} />
+            ) : (
+              fullName
+                .split(" ")
+                .map((part) => part[0])
+                .filter(Boolean)
+                .slice(0, 2)
+                .join("")
+                .toUpperCase()
+            )}
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
             <InfoBlock label="Full name" value={fullName} />
             <InfoBlock label="Email" value={email} />
-            <InfoBlock label="Role" value="Client" />
-            <InfoBlock label="Default workflow" value="Order, review, approve" />
+            <label className="md:col-span-2">
+              <span className="dashboard-label">Profile picture</span>
+              <input
+                accept="image/*"
+                className="dashboard-input"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = () => setAvatarPreview(String(reader.result ?? ""));
+                  reader.readAsDataURL(file);
+                  setSavedMessage("Profile picture ready. It will show in the top bar on your next save.");
+                }}
+                type="file"
+              />
+            </label>
           </div>
-        </SectionCard>
-
-        <SectionCard
-          title="Billing contact"
-          description="Where invoices, payment notifications, and account terms are routed."
-        >
-          <div className="space-y-3">
-            <PreferenceRow label="Primary billing contact" value={email} />
-            <PreferenceRow label="VAT / tax records" value="Stored with invoice exports" />
-            <PreferenceRow label="Payment terms" value="Prepaid unless Priority Account is approved" />
-            <PreferenceRow label="Account owner" value={fullName} />
-          </div>
-        </SectionCard>
-      </section>
+        </div>
+      </SectionCard>
 
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-        <SectionCard
-          title="Invite a team member"
-          description="Add colleagues with a role that matches how your agency actually works."
-        >
+        <SectionCard title="Team" description="Invite colleagues and manage pending invites.">
+          <div className="space-y-3">
+            {team.map((member) => (
+              <div key={member.id} className="dashboard-list-row">
+                <div>
+                  <p className="font-semibold text-slate-950">{member.name}</p>
+                  <p className="text-sm text-slate-500">
+                    {member.email} · {member.role}
+                  </p>
+                </div>
+                {member.status === "pending" ? (
+                  <div className="flex gap-2">
+                    <span className="dashboard-pill">Invite sent</span>
+                    <button
+                      className="button-secondary"
+                      onClick={() => setInviteMessage(`Invite resent to ${member.email}.`)}
+                      type="button"
+                    >
+                      Resend
+                    </button>
+                    <button
+                      className="button-secondary"
+                      onClick={() => setTeam((current) => current.filter((item) => item.id !== member.id))}
+                      type="button"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-sm text-slate-500">Active</span>
+                )}
+              </div>
+            ))}
+          </div>
+
           <form
-            className="grid gap-4 md:grid-cols-2"
+            className="mt-5 grid gap-4 md:grid-cols-2"
             onSubmit={(event) => {
               event.preventDefault();
               if (!inviteEmail.trim()) {
                 setInviteMessage("Enter an email address before sending an invite.");
                 return;
               }
-              setInviteMessage(`Invite queued for ${inviteEmail} as ${inviteRole}.`);
+              setTeam((current) => [
+                ...current,
+                {
+                  id: crypto.randomUUID(),
+                  name: inviteEmail.split("@")[0],
+                  email: inviteEmail,
+                  role: inviteRole,
+                  status: "pending",
+                },
+              ]);
+              setInviteMessage(`Invite sent to ${inviteEmail} as ${inviteRole}.`);
               setInviteEmail("");
             }}
           >
@@ -121,7 +167,7 @@ export function ClientSettingsWorkspace({
                 value={inviteEmail}
               />
             </label>
-            <label>
+            <label className="md:col-span-2">
               <span className="dashboard-label">Role</span>
               <select
                 className="dashboard-input"
@@ -134,46 +180,88 @@ export function ClientSettingsWorkspace({
                   </option>
                 ))}
               </select>
+              <p className="mt-2 text-xs text-slate-500">{selectedRole.detail}</p>
             </label>
-            <div className="flex items-end">
-              <button className="button-primary w-full" type="submit">
-                Send invite
-              </button>
-            </div>
+            <button className="button-primary" type="submit">
+              Send invite
+            </button>
           </form>
           {inviteMessage ? <p className="mt-3 text-sm font-medium text-emerald-700">{inviteMessage}</p> : null}
-          <div className="mt-5 space-y-3">
-            {teamRoles.map((role) => (
-              <div key={role.name} className="dashboard-list-row items-start">
-                <p className="font-semibold text-slate-950">{role.name}</p>
-                <p className="min-w-0 max-w-md text-right text-sm text-slate-500">{role.detail}</p>
-              </div>
-            ))}
-          </div>
         </SectionCard>
 
-        <SectionCard
-          title="Approval rules"
-          description="Use lightweight controls to prevent junior team members from submitting large or sensitive work unchecked."
-        >
+        <SectionCard title="Approval rules" description="Stop large or sensitive orders going out unchecked.">
           <div className="space-y-3">
-            {approvalRules.map((rule) => (
-              <label key={rule.id} className="flex items-start gap-3 rounded-[1rem] border border-slate-200 bg-white p-4">
+            <label className="flex items-start gap-3 rounded-[1rem] border border-slate-200 bg-white p-4">
+              <input
+                checked={Boolean(enabledRules.spend)}
+                className="mt-1"
+                onChange={(event) => {
+                  setEnabledRules((current) => ({ ...current, spend: event.target.checked }));
+                  setSavedMessage("Saved");
+                }}
+                type="checkbox"
+              />
+              <span>
+                <p className="font-semibold text-slate-950">Require approval over $250</p>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Recommended for larger briefs or any order that crosses the spend threshold.
+                </p>
+              </span>
+            </label>
+            <label className="flex items-start gap-3 rounded-[1rem] border border-slate-200 bg-white p-4">
+              <input
+                checked={Boolean(enabledRules["new-folder"])}
+                className="mt-1"
+                onChange={(event) => {
+                  setEnabledRules((current) => ({ ...current, "new-folder": event.target.checked }));
+                  setSavedMessage("Saved");
+                }}
+                type="checkbox"
+              />
+              <span>
+                <p className="font-semibold text-slate-950">
+                  Require approval for the first order under a new client folder
+                </p>
+              </span>
+            </label>
+            <label className="flex items-start gap-3 rounded-[1rem] border border-slate-200 bg-white p-4">
+              <input
+                checked={Boolean(enabledRules.wallet)}
+                className="mt-1"
+                onChange={(event) => {
+                  setEnabledRules((current) => ({ ...current, wallet: event.target.checked }));
+                  setSavedMessage("Saved");
+                }}
+                type="checkbox"
+              />
+              <span className="w-full">
+                <p className="font-semibold text-slate-950">Require approval if wallet falls below</p>
                 <input
-                  checked={Boolean(enabledRules[rule.id])}
-                  className="mt-1"
-                  onChange={(event) =>
-                    setEnabledRules((current) => ({ ...current, [rule.id]: event.target.checked }))
-                  }
-                  type="checkbox"
+                  className="dashboard-input mt-3 max-w-[10rem]"
+                  onChange={(event) => {
+                    setWalletThreshold(event.target.value.replace(/[^0-9.]/g, ""));
+                    setSavedMessage("Saved");
+                  }}
+                  value={walletThreshold}
                 />
-                <span>
-                  <p className="font-semibold text-slate-950">{rule.title}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">{rule.detail}</p>
-                </span>
-              </label>
-            ))}
+              </span>
+            </label>
+            <label className="flex items-start gap-3 rounded-[1rem] border border-slate-200 bg-white p-4">
+              <input
+                checked={Boolean(enabledRules.rush)}
+                className="mt-1"
+                onChange={(event) => {
+                  setEnabledRules((current) => ({ ...current, rush: event.target.checked }));
+                  setSavedMessage("Saved");
+                }}
+                type="checkbox"
+              />
+              <span>
+                <p className="font-semibold text-slate-950">Require approval for rush fees</p>
+              </span>
+            </label>
           </div>
+          {savedMessage ? <p className="mt-4 text-sm font-medium text-emerald-700">{savedMessage}</p> : null}
         </SectionCard>
       </section>
     </>
@@ -185,15 +273,6 @@ function InfoBlock({ label, value }: { label: string; value: string }) {
     <div className="min-w-0 rounded-[1.15rem] bg-slate-50 p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
       <p className="mt-2 break-all text-lg font-semibold text-slate-950">{value}</p>
-    </div>
-  );
-}
-
-function PreferenceRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex min-w-0 flex-col gap-2 rounded-[1rem] border border-slate-200 bg-white p-4 sm:flex-row sm:items-start sm:justify-between">
-      <p className="shrink-0 font-medium text-slate-700">{label}</p>
-      <p className="min-w-0 break-all text-slate-500 sm:text-right">{value}</p>
     </div>
   );
 }

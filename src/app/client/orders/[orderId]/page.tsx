@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { DashboardShell, SectionCard } from "@/components/dashboard-shell";
+import { WriterPrivacyCard } from "@/components/writer-privacy-card";
+import { firstNameOnly, redactContactDetails } from "@/lib/writer-privacy";
 import {
   acceptSubmissionAction,
   addSubmissionCommentAction,
@@ -41,10 +43,32 @@ export default async function ClientOrderDetailPage({
   }
 
   const isAccepted = ["Accepted", "Approved", "Completed"].includes(order.status);
+  const inReview =
+    ["In Review", "Submitted", "Revision Requested"].includes(order.status) ||
+    Boolean(order.latestSubmission && !isAccepted);
+  const writerFirst = firstNameOnly(order.writer);
+  const deliveryLabel =
+    order.priority?.toLowerCase() === "rush"
+      ? "Rush"
+      : order.priority?.toLowerCase() === "priority"
+        ? "Priority"
+        : "Standard";
   const canReviewLatest =
     Boolean(order.latestSubmission) &&
     !isAccepted &&
     !["Accepted", "Approved"].includes(order.latestSubmission?.status ?? "");
+  const versions = order.latestSubmission
+    ? [
+        {
+          id: order.latestSubmission.id,
+          label: `v${order.latestSubmission.version}`,
+          status: order.latestSubmission.status,
+          date: order.latestSubmission.submittedAt,
+          notes: order.latestSubmission.notes,
+          googleDocUrl: order.latestSubmission.googleDocUrl,
+        },
+      ]
+    : [];
 
   return (
     <DashboardShell
@@ -56,208 +80,239 @@ export default async function ClientOrderDetailPage({
       currentPath="/client/orders"
       userName={user.fullName}
     >
-      <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <SectionCard
-          title="Order overview"
-          description="This is the persisted brief and current lifecycle state."
-        >
-          <dl className="grid gap-4 md:grid-cols-2">
-            <DetailItem label="Status" value={order.status} />
-            <DetailItem label="Content type" value={order.contentType} />
-            <DetailItem label="Due date" value={order.deadline} />
-            <DetailItem label="Writer" value={order.writer} />
-            <DetailItem label="Target audience" value={order.targetAudience} />
-            <DetailItem label="Tone of voice" value={order.toneOfVoice} />
-            <DetailItem label="Target word count" value={order.wordCount} />
-            <DetailItem
-              label="Delivery"
-              value={
-                order.priority?.toLowerCase() === "rush"
-                  ? "Rush"
-                  : order.priority?.toLowerCase() === "priority"
-                    ? "Priority"
-                    : "Standard"
-              }
-            />
-            <DetailItem label="Primary CTA" value={order.primaryCta} />
-          </dl>
-        </SectionCard>
+      <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600">
+        <span className="dashboard-pill">{order.status}</span>
+        <span>{order.contentType}</span>
+        <span>·</span>
+        <span>{order.serviceTier ? formatTier(order.serviceTier) : "Standard"}</span>
+        <span>·</span>
+        <span>Due {order.deadline}</span>
+        <span>·</span>
+        <span>{order.wordCount} words</span>
+        <span>·</span>
+        <span>{writerFirst}</span>
+        <span>·</span>
+        <span>{deliveryLabel}</span>
+      </div>
 
-        <SectionCard
-          title="References"
-          description="Source links and supporting notes attached to the brief."
-        >
-          <div className="space-y-3">
-            {order.referenceLinks.length ? (
-              order.referenceLinks.map((link) => (
-                <div key={link} className="dashboard-list-row">
-                  <Link
-                    className="text-sm font-medium text-slate-700 underline decoration-slate-300 underline-offset-4"
-                    href={link.startsWith("http") ? link : "#"}
-                    target={link.startsWith("http") ? "_blank" : undefined}
-                  >
-                    {link}
-                  </Link>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-slate-500">No references attached.</p>
-            )}
-          </div>
-        </SectionCard>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <SectionCard
-          title="Latest submission"
-          description="Review the newest version, open the draft, and move the order forward."
-        >
-          {order.latestSubmission ? (
-            <div className="space-y-4">
-              <div className="rounded-[1.15rem] border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-900">
-                Request a revision from this delivered item without starting a new order.
-              </div>
-              <div className="rounded-[1.25rem] bg-white p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                    Version {order.latestSubmission.version} · {order.latestSubmission.status}
-                  </p>
-                  <p className="text-xs text-slate-500">{order.latestSubmission.submittedAt}</p>
-                </div>
-                <p className="mt-4 text-sm leading-7 text-slate-700">
-                  {order.latestSubmission.notes}
-                </p>
-                {order.latestSubmission.googleDocUrl ? (
-                  <Link
-                    className="mt-4 inline-flex text-sm font-semibold text-slate-900 underline decoration-slate-300 underline-offset-4"
-                    href={order.latestSubmission.googleDocUrl}
-                    target="_blank"
-                  >
-                    Open Google Doc
-                  </Link>
-                ) : null}
-              </div>
+      <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+        {inReview && order.latestSubmission ? (
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p className="text-sm font-medium text-slate-700">
+              Draft {order.latestSubmission.version} is ready for your review
+            </p>
+            <div className="flex flex-wrap gap-3">
+              {order.latestSubmission.googleDocUrl ? (
+                <Link
+                  className="button-secondary"
+                  href={order.latestSubmission.googleDocUrl}
+                  target="_blank"
+                >
+                  Open draft ↗
+                </Link>
+              ) : null}
               {canReviewLatest ? (
-                <div className="flex flex-wrap gap-3">
+                <>
                   <form action={acceptSubmissionAction}>
                     <input name="orderId" type="hidden" value={order.id} />
-                    <input
-                      name="submissionId"
-                      type="hidden"
-                      value={order.latestSubmission.id}
-                    />
+                    <input name="submissionId" type="hidden" value={order.latestSubmission.id} />
                     <button className="button-primary" type="submit">
-                      Approve draft
+                      Approve
                     </button>
                   </form>
-                  <form action={requestRevisionAction} className="flex flex-1 flex-col gap-3">
-                    <input name="orderId" type="hidden" value={order.id} />
-                    <input
-                      name="submissionId"
-                      type="hidden"
-                      value={order.latestSubmission.id}
-                    />
-                    <textarea
-                      className="dashboard-input min-h-24"
-                      name="feedback"
-                      placeholder="What should the writer change? Be as specific as you can."
-                      required
-                    />
-                    <button className="button-secondary self-start" type="submit">
-                      Request changes
-                    </button>
-                  </form>
-                </div>
-              ) : (
-                <p className="text-sm text-slate-500">
-                  {isAccepted
-                    ? "This order is approved. Download the draft above if you need it again."
-                    : "Review actions will appear when a draft is waiting for your feedback."}
-                </p>
-              )}
+                </>
+              ) : null}
             </div>
-          ) : (
-            <p className="text-sm text-slate-500">
-              No writer submission has been created for this order yet.
-            </p>
-          )}
-        </SectionCard>
+          </div>
+        ) : isAccepted ? (
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p className="text-sm font-medium text-slate-700">Approved and ready to download</p>
+            <div className="flex flex-wrap gap-3">
+              {order.latestSubmission?.googleDocUrl ? (
+                <Link className="button-primary" href={order.latestSubmission.googleDocUrl} target="_blank">
+                  Download ↗
+                </Link>
+              ) : null}
+              <Link className="button-secondary" href="/client/new-order">
+                Order something similar
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm font-medium text-slate-700">
+            Being written · Due {order.deadline}
+          </p>
+        )}
+      </section>
 
-        <SectionCard
-          title="Review thread"
-          description="Keep revision feedback and clarifications attached to the submission."
-        >
-          {order.latestSubmission ? (
-            <div className="space-y-4">
-              <div className="space-y-3">
-                {order.latestSubmission.comments.map((comment) => (
-                  <div key={comment.id} className="dashboard-list-row flex-col items-start">
-                    <div className="flex w-full items-center justify-between gap-3">
-                      <p className="font-semibold text-slate-950">{comment.author}</p>
-                      <p className="text-xs text-slate-500">{comment.createdAt}</p>
-                    </div>
-                    <p className="text-sm leading-7 text-slate-700">{comment.body}</p>
-                  </div>
-                ))}
+      {order.latestSubmission ? (
+        <WriterPrivacyCard firstName={writerFirst} />
+      ) : null}
+
+      <SectionCard title="Conversation" description="Drafts, comments and change requests in one place.">
+        {order.latestSubmission ? (
+          <div className="space-y-4">
+            <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                  Version {order.latestSubmission.version} · {order.latestSubmission.status}
+                </p>
+                <p className="text-xs text-slate-500">{order.latestSubmission.submittedAt}</p>
               </div>
-              <form action={addSubmissionCommentAction} className="space-y-3">
-                <input
-                  name="submissionId"
-                  type="hidden"
-                  value={order.latestSubmission.id}
+              <p className="mt-4 text-sm leading-7 text-slate-700">
+                {redactContactDetails(order.latestSubmission.notes || "")}
+              </p>
+              {order.latestSubmission.googleDocUrl ? (
+                <Link
+                  className="button-secondary mt-4 inline-flex"
+                  href={order.latestSubmission.googleDocUrl}
+                  target="_blank"
+                >
+                  Open Google Doc ↗
+                </Link>
+              ) : null}
+              {/signature|specialist|rank/i.test(String(order.serviceTier ?? "")) ? (
+                <p className="mt-3 text-sm">
+                  <span className="font-semibold text-slate-900">Download AI-detection report</span>
+                  <span className="text-slate-500"> · included on Signature and Specialist</span>
+                </p>
+              ) : null}
+            </div>
+
+            <div className="space-y-3">
+              {order.latestSubmission.comments.map((comment) => (
+                <div key={comment.id} className="dashboard-list-row flex-col items-start">
+                  <div className="flex w-full items-center justify-between gap-3">
+                    <p className="font-semibold text-slate-950">{firstNameOnly(comment.author)}</p>
+                    <p className="text-xs text-slate-500">{comment.createdAt}</p>
+                  </div>
+                  <p className="text-sm leading-7 text-slate-700">
+                    {redactContactDetails(comment.body)}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {canReviewLatest ? (
+              <form action={requestRevisionAction} className="space-y-3">
+                <input name="orderId" type="hidden" value={order.id} />
+                <input name="submissionId" type="hidden" value={order.latestSubmission.id} />
+                <textarea
+                  className="dashboard-input min-h-24"
+                  name="feedback"
+                  placeholder="What should change? Be as specific as you can."
+                  required
                 />
+                <button className="button-secondary" type="submit">
+                  Request changes
+                </button>
+              </form>
+            ) : (
+              <form action={addSubmissionCommentAction} className="space-y-3">
+                <input name="submissionId" type="hidden" value={order.latestSubmission.id} />
                 <textarea
                   className="dashboard-input min-h-24"
                   name="body"
-                  placeholder="Add a comment for the writer or editor."
+                  placeholder="Add a note for the writer."
                   required
                 />
                 <button className="button-secondary" type="submit">
                   Add comment
                 </button>
               </form>
-            </div>
-          ) : (
-            <p className="text-sm text-slate-500">No review thread yet.</p>
-          )}
-        </SectionCard>
-      </section>
-
-      <SectionCard
-        title="Brief"
-        description="Long-form brief details that the writer and editor will work from."
-      >
-        <div className="space-y-4">
-          <div className="rounded-[1.25rem] bg-white p-5 text-sm leading-7 text-slate-700">
-            {order.brief}
+            )}
           </div>
-          <div className="rounded-[1.25rem] bg-white p-5">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-              Target keywords
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {order.targetKeywords.length ? (
-                order.targetKeywords.map((keyword) => (
-                  <span key={keyword} className="dashboard-pill">
-                    {keyword}
-                  </span>
-                ))
-              ) : (
-                <p className="text-sm text-slate-500">No keywords attached.</p>
-              )}
-            </div>
+        ) : (
+          <p className="text-sm text-slate-500">No drafts yet. Conversation starts when the first draft lands.</p>
+        )}
+      </SectionCard>
+
+      <SectionCard title="Version history" description="Every delivered draft, newest first.">
+        {versions.length ? (
+          <div className="space-y-3">
+            {versions.map((version) => (
+              <div key={version.id} className="dashboard-list-row">
+                <div>
+                  <p className="font-semibold text-slate-950">
+                    {version.label} · {version.status}
+                  </p>
+                  <p className="text-sm text-slate-500">{version.date}</p>
+                </div>
+                {version.googleDocUrl ? (
+                  <Link className="text-sm font-semibold underline" href={version.googleDocUrl} target="_blank">
+                    Open ↗
+                  </Link>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">No versions yet.</p>
+        )}
+      </SectionCard>
+
+      <details className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
+        <summary className="cursor-pointer list-none text-lg font-semibold text-slate-950">
+          Show full brief
+        </summary>
+        <dl className="mt-5 grid gap-4 md:grid-cols-2">
+          <DetailItem label="Client" value={order.clientLabel} />
+          <DetailItem label="Tone of voice" value={order.toneOfVoice} />
+          <DetailItem label="Target audience" value={order.targetAudience} />
+          <DetailItem label="Primary CTA" value={order.primaryCta} />
+        </dl>
+        <div className="mt-4 rounded-[1.25rem] bg-slate-50 p-5 text-sm leading-7 text-slate-700">
+          {order.brief || "No long-form brief notes."}
+        </div>
+        <div className="mt-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Target keywords</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {order.targetKeywords.length ? (
+              order.targetKeywords.map((keyword) => (
+                <span key={keyword} className="dashboard-pill">
+                  {keyword}
+                </span>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500">No keywords attached.</p>
+            )}
           </div>
         </div>
-      </SectionCard>
+        <div className="mt-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">References</p>
+          <div className="mt-3 space-y-2">
+            {order.referenceLinks.length ? (
+              order.referenceLinks.map((link) => (
+                <Link
+                  key={link}
+                  className="block text-sm font-medium text-slate-700 underline"
+                  href={link.startsWith("http") ? link : "#"}
+                  target={link.startsWith("http") ? "_blank" : undefined}
+                >
+                  {link}
+                </Link>
+              ))
+            ) : (
+              <p className="text-sm text-slate-500">No references attached.</p>
+            )}
+          </div>
+        </div>
+      </details>
     </DashboardShell>
   );
 }
 
+function formatTier(value: string) {
+  if (value === "rank" || value === "specialist") return "Specialist";
+  if (value === "signature") return "Signature";
+  return "Standard";
+}
+
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1.25rem] bg-white p-4">
+    <div className="rounded-[1.25rem] bg-slate-50 p-4">
       <dt className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</dt>
-      <dd className="mt-2 text-sm font-medium text-slate-900">{value}</dd>
+      <dd className="mt-2 text-sm font-medium text-slate-900">{value || "Not set"}</dd>
     </div>
   );
 }

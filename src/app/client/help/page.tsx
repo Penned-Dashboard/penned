@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DashboardShell, SectionCard } from "@/components/dashboard-shell";
+import { accountManagerForClient, calendlyUrl } from "@/lib/account-manager";
 import { requireRole } from "@/lib/auth";
 import { formatUsdFromCents, pricingSettings } from "@/lib/pricing";
 
@@ -30,8 +31,20 @@ const faqs = [
   },
 ];
 
-export default async function ClientHelpPage() {
+export default async function ClientHelpPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ topic?: string }>;
+}) {
   const user = await requireRole("client");
+  const params = await searchParams;
+  const manager = accountManagerForClient(user.profileId);
+  const reason =
+    params.topic === "priority"
+      ? "Priority Account status"
+      : params.topic === "walkthrough"
+        ? "Dashboard walkthrough"
+        : undefined;
 
   return (
     <DashboardShell
@@ -42,29 +55,40 @@ export default async function ClientHelpPage() {
       userName={user.fullName}
     >
       <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <SectionCard description="Ask about orders, budgets or payment terms. Honest advice, no sales pitch." title="Your account manager">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Your account manager</p>
-          <p className="mt-3 text-2xl font-semibold text-[var(--penned-navy)]">{user.fullName.split(" ")[0] || "Penned"}</p>
-          <p className="mt-2 text-sm text-slate-500">
-            Your Penned account manager can help with writing levels, delivery and billing.
-          </p>
-          <a className="button-primary mt-6 inline-flex" href="mailto:hello@fipublishing.com">
-            Message account manager
+        <SectionCard
+          description="Ask about orders, budgets or payment terms. Honest advice, no sales pitch."
+          title="Your account manager"
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--penned-navy)] text-sm font-semibold text-white">
+              {manager.initials}
+            </div>
+            <div>
+              <p className="text-2xl font-semibold text-[var(--penned-navy)]">{manager.name}</p>
+              <p className="mt-1 text-sm text-slate-500">Your Penned account manager</p>
+            </div>
+          </div>
+          <a className="button-primary mt-6 inline-flex" href={`mailto:${manager.email}`}>
+            Message
           </a>
         </SectionCard>
 
-        <SectionCard description="A dashboard walkthrough, planning upcoming content, or feedback on a piece." title="Book a call">
+        <SectionCard
+          description="A dashboard walkthrough, planning upcoming content, or feedback on a piece."
+          title="Book a call"
+        >
           <p className="text-sm text-slate-500">Pick a time that suits you.</p>
           <a
             className="button-primary mt-6 inline-flex"
-            href="https://calendly.com/contact-howlpublishing/30min"
+            href={calendlyUrl(reason)}
             rel="noreferrer"
             target="_blank"
           >
             Choose a time
           </a>
           <p className="mt-4 text-xs text-slate-400">
-            Opens Calendly in a new tab. You can choose what you&apos;d like to cover there.
+            Opens Calendly in a new tab
+            {reason ? ` with “${reason}” pre-selected` : ""}.
           </p>
         </SectionCard>
       </section>
@@ -72,7 +96,11 @@ export default async function ClientHelpPage() {
       <SectionCard description="" title="Quick answers">
         <div className="space-y-4">
           {faqs.map((item) => (
-            <details key={item.q} className="rounded-[1.25rem] border border-slate-200 bg-white px-5 py-4">
+            <details
+              key={item.q}
+              className="rounded-[1.25rem] border border-slate-200 bg-white px-5 py-4"
+              open={params.topic === "priority" && item.q.includes("approvals") ? false : undefined}
+            >
               <summary className="cursor-pointer list-none text-base font-semibold text-[var(--penned-navy)]">
                 {item.q}
               </summary>

@@ -15,10 +15,8 @@ export default async function ClientFoldersPage({
   return (
     <DashboardShell
       role="client"
-      title="Client Folders"
-      description="Build shared end-client workspaces with reusable brand guidance, briefs, and compliance context."
-      ctaLabel="Create New Folder"
-      ctaHref="/client/folders?create=1"
+      title="Client folders"
+      description=""
       currentPath="/client/folders"
       userName={user.fullName}
     >

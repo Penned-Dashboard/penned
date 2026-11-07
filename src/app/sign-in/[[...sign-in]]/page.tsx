@@ -7,7 +7,7 @@ import { getCurrentAppUser } from "@/lib/auth";
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; oauth?: string }>;
 }) {
   const params = await searchParams;
   const user = await getCurrentAppUser();
@@ -40,7 +40,21 @@ export default async function SignInPage({
           <p className="mt-3 text-center text-base text-slate-500">
             Access your client, writer, or admin workspace
           </p>
-          <form action={signInAction} className="mt-8 space-y-5">
+          <div className="mt-8 grid gap-3">
+            <a className="button-secondary w-full text-center" href="/sign-in?oauth=google">
+              Continue with Google
+            </a>
+            <a className="button-secondary w-full text-center" href="/sign-in?oauth=microsoft">
+              Continue with Microsoft
+            </a>
+            {params.oauth ? (
+              <p className="rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                Google and Microsoft sign-in need OAuth apps configured in Supabase. Use email and password for now.
+              </p>
+            ) : null}
+          </div>
+
+          <form action={signInAction} className="mt-6 space-y-5">
             <label className="block">
               <span className="dashboard-label">Email</span>
               <input

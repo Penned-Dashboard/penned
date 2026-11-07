@@ -18,9 +18,10 @@ export async function signUpAction(formData: FormData) {
   const roleValue = String(formData.get("role") ?? "").trim();
   const companyName = String(formData.get("companyName") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const acceptedTerms = String(formData.get("acceptTerms") ?? "") === "on";
 
   // Public registration is client-only; writers are invited and sign in.
-  if (!firstName || !lastName || !email || password.length < 8 || roleValue !== "client") {
+  if (!firstName || !lastName || !email || password.length < 8 || roleValue !== "client" || !acceptedTerms) {
     redirect("/sign-up?error=invalid");
   }
 

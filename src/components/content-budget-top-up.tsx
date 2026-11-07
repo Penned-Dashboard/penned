@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AccountManagerCard } from "@/components/account-manager-card";
+import Link from "next/link";
 import { estimateArticles, getTierForAmount, topUpTiers } from "@/lib/content-budget";
+import { nextVolumeTierNudge, volumeDiscountCreditCents } from "@/lib/pricing";
 
 export function ContentBudgetTopUp({
   priorityState,
@@ -11,23 +12,26 @@ export function ContentBudgetTopUp({
 }) {
   const [amount, setAmount] = useState("");
   const parsed = Number(amount) || 0;
+  const cents = Math.round(parsed * 100);
   const tier = getTierForAmount(parsed);
-  const articles = estimateArticles(parsed);
+  const creditCents = volumeDiscountCreditCents(cents);
+  const credited = (cents + creditCents) / 100;
+  const articles = estimateArticles(credited);
   const isManaged = parsed >= 5000;
-  const dueToday = parsed;
+  const nudge = nextVolumeTierNudge(cents);
   const isPriorityActive = priorityState === "Active";
 
   const summary = useMemo(
     () => [
       { label: "Top-up amount", value: money(parsed) },
-      { label: "Content budget added to your account", value: money(parsed) },
       {
-        label: "Discount applied",
-        value: tier.discount ? `${tier.discount}% Managed` : "None",
+        label: creditCents ? `Pre-pay credit (${tier.discount}%)` : "Pre-pay credit",
+        value: creditCents ? money(creditCents / 100) : "$0.00",
       },
-      { label: "You pay today", value: money(dueToday) },
+      { label: "Added to your balance", value: money(credited) },
+      { label: "You pay today", value: money(parsed) },
     ],
-    [parsed, tier.discount, dueToday],
+    [parsed, creditCents, credited, tier.discount],
   );
 
   if (isPriorityActive) {
@@ -37,12 +41,11 @@ export function ContentBudgetTopUp({
           Priority Account is active
         </h2>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
-          Your Priority Account means you can place orders without prepaying. Your next invoice
-          will be issued at the end of the month.
+          You can place orders without prepaying. Your next invoice will be issued at the end of the month.
         </p>
-        <a className="button-primary mt-6" href="/client/new-order">
-          Continue to order →
-        </a>
+        <Link className="button-primary mt-6 inline-flex" href="/client/new-order">
+          Continue to order
+        </Link>
       </div>
     );
   }
@@ -50,12 +53,9 @@ export function ContentBudgetTopUp({
   return (
     <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
       <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
-        <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">
-          Add to your content budget
-        </h2>
+        <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">Top up</h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-          Top up your content budget at the standard rate, or prepay a larger Managed amount
-          upfront to unlock a discount on every eligible order.
+          Add to your prepaid budget. From $5,000 we add extra credit automatically.
         </p>
 
         <div className="mt-6 grid gap-3 md:grid-cols-2">
@@ -64,7 +64,7 @@ export function ContentBudgetTopUp({
             return (
               <button
                 className={`rounded-[1.25rem] border p-5 text-left transition ${
-                  selected ? "border-blue-300 bg-blue-50" : "border-slate-200 bg-white"
+                  selected ? "border-[#91B9D2] bg-[#F3F8FB]" : "border-slate-200 bg-white"
                 }`}
                 key={item.id}
                 onClick={() => setAmount(String(item.min || 500))}
@@ -85,34 +85,37 @@ export function ContentBudgetTopUp({
             inputMode="decimal"
             min={0}
             onChange={(event) => setAmount(event.target.value.replace(/[^0-9.]/g, ""))}
-            placeholder="$0"
+            placeholder="5000"
             value={amount}
           />
-          <p className="mt-2 text-sm text-slate-500">
-            {isManaged ? "Managed prepaid amount." : "Any amount. No minimum for standard top-ups."}
-          </p>
         </label>
 
+        {nudge ? (
+          <p className="mt-3 text-sm font-medium text-[var(--penned-navy)]">{nudge.message}.</p>
+        ) : null}
+
         <p className="mt-4 text-sm text-slate-600">
-          Estimated articles at $0.05/word, 800 words: {articles} articles
+          Roughly {articles} Standard articles at 1,000 words once this credit is on your balance.
         </p>
 
         {!isManaged ? (
           <div className="mt-4 rounded-[1.15rem] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-600">
-            This top-up will be added to your content budget at the standard pay-as-you-go rate.
-            Prepay $5,000 or more to unlock a discount.
+            Prepay $5,000 or more to unlock extra credit on this top-up.
           </div>
         ) : null}
 
         <p className="mt-5 text-sm leading-6 text-slate-500">
-          Prefer to order now and pay after delivery? Priority Account agencies don’t need to
-          prepay. Ask your account manager if you qualify.
+          Prefer to order now and pay after delivery?{" "}
+          <Link className="font-semibold underline" href="/client/help?topic=priority">
+            Ask about Priority Account status
+          </Link>
+          .
         </p>
       </section>
 
       <section className="grid gap-4">
         <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
-          <h3 className="text-2xl font-semibold text-slate-950">Order summary</h3>
+          <h3 className="text-2xl font-semibold text-slate-950">Payment summary</h3>
           <div className="mt-4 space-y-3">
             {summary.map((item) => (
               <div key={item.label} className="flex items-start justify-between gap-4 text-sm">
@@ -122,20 +125,11 @@ export function ContentBudgetTopUp({
             ))}
           </div>
           <a
-            className="button-primary mt-6 w-full"
-            href={parsed > 0 ? `/api/stripe/checkout?plan=basic&amount=${parsed}` : "#"}
+            className={`button-primary mt-6 w-full ${parsed > 0 ? "" : "pointer-events-none opacity-50"}`}
+            href={parsed > 0 ? `/api/stripe/checkout?amount=${parsed}` : "#"}
           >
-            Confirm and pay {money(dueToday)}
+            Confirm and pay {money(parsed)}
           </a>
-        </div>
-
-        <AccountManagerCard variant="quiet" />
-
-        <div className="grid gap-3 rounded-[1.75rem] border border-slate-200 bg-white p-6 text-sm text-slate-600 md:grid-cols-2">
-          <p>No expiry on your balance</p>
-          <p>Discount applied to every eligible order</p>
-          <p>Cancel remaining balance anytime</p>
-          <p>Invoice issued on payment</p>
         </div>
       </section>
     </div>

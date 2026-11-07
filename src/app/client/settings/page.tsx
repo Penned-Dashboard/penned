@@ -8,10 +8,8 @@ export default async function ClientSettingsPage() {
   return (
     <DashboardShell
       role="client"
-      title="Client Settings"
-      description="Manage workspace identity, team access, billing contacts, and approval controls."
-      ctaLabel="Back to dashboard"
-      ctaHref="/client"
+      title="Settings"
+      description=""
       currentPath="/client/settings"
       userName={user.fullName}
     >

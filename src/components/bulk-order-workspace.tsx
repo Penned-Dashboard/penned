@@ -64,6 +64,7 @@ export function BulkOrderWorkspace({
   const [paymentSource, setPaymentSource] = useState("wallet");
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
   function updateRow(id: string, patch: Partial<BulkRow>) {
     setRows((current) => current.map((row) => (row.id === id ? { ...row, ...patch } : row)));
@@ -94,6 +95,7 @@ export function BulkOrderWorkspace({
   }
 
   async function onSubmit() {
+    setAttemptedSubmit(true);
     if (issues.length) {
       setMessage("Fix the flagged rows before submitting this batch.");
       return;
@@ -342,18 +344,16 @@ export function BulkOrderWorkspace({
           </table>
         </div>
 
-        {issues.length ? (
+        {attemptedSubmit && issues.length ? (
           <div className="mt-4 rounded-[1.15rem] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
-            <p className="font-semibold">Validation before checkout</p>
+            <p className="font-semibold">Fix these before checkout</p>
             <ul className="mt-2 list-disc space-y-1 pl-5">
               {issues.map((issue) => (
                 <li key={issue}>{issue}</li>
               ))}
             </ul>
           </div>
-        ) : (
-          <p className="mt-4 text-sm text-emerald-700">All rows look ready for batch checkout.</p>
-        )}
+        ) : null}
       </SectionCard>
 
       <SectionCard
@@ -384,7 +384,7 @@ export function BulkOrderWorkspace({
           <p className="max-w-2xl text-sm leading-6 text-slate-500">
             Submitting creates individual orders under one parent batch ID so Penned can produce item by item while the agency tracks the batch as one submission.
           </p>
-          <button className="button-primary" disabled={pending || Boolean(issues.length)} onClick={() => void onSubmit()} type="button">
+          <button className="button-primary" disabled={pending} onClick={() => void onSubmit()} type="button">
             {pending ? "Submitting batch..." : "Submit batch"}
           </button>
         </div>

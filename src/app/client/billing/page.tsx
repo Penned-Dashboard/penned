@@ -1,95 +1,106 @@
-import { AccountManagerCard } from "@/components/account-manager-card";
+import Link from "next/link";
 import { DashboardShell, SectionCard } from "@/components/dashboard-shell";
+import { accountManagerForClient } from "@/lib/account-manager";
 import { requireRole } from "@/lib/auth";
 import { getContentBudgetSnapshot } from "@/lib/content-budget";
 import { getClientOrders, getInvoices } from "@/lib/orders";
 
-export default async function ClientBillingPage() {
+export default async function ClientBillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ checkout?: string; setup?: string }>;
+}) {
   const user = await requireRole("client");
+  const params = await searchParams;
   const [orders, invoices] = await Promise.all([
     getClientOrders(user.profileId),
     getInvoices(user.profileId),
   ]);
   const snapshot = getContentBudgetSnapshot(orders, invoices);
-  const demoInvoices = invoices.length
-    ? invoices
-    : [
-        { id: "INV-2041", date: "Jul 31, 2026", amount: "$1,250.00", status: "Paid" },
-        { id: "INV-2038", date: "Jun 30, 2026", amount: "$980.00", status: "Paid" },
-        { id: "RCP-1184", date: "Jun 12, 2026", amount: "$5,000.00", status: "Receipt" },
-      ];
+  const manager = accountManagerForClient(user.profileId);
+  const docs = invoices.slice(0, 5);
 
   return (
     <DashboardShell
       role="client"
       title="Billing"
-      description="Payment history, invoices, payment methods, and Priority Account terms live here — separate from content budget."
-      ctaLabel="View content budget"
-      ctaHref="/client/content-budget"
+      description=""
       currentPath="/client/billing"
       userName={user.fullName}
     >
+      {params.checkout === "success" ? (
+        <Alert tone="success">Payment details updated. Stripe will sync the card on file shortly.</Alert>
+      ) : null}
+      {params.setup === "stripe-missing" ? (
+        <Alert tone="warning">Stripe customer portal is not configured in this environment yet.</Alert>
+      ) : null}
+
       <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <SectionCard
-          title="Invoice access"
-          description="Download individual invoices, monthly statements, payment receipts, and VAT/tax records."
-        >
+        <SectionCard title="Invoices and receipts" description="Download paid invoices and top-up receipts.">
           <div className="space-y-3">
-            {demoInvoices.map((invoice) => (
-              <div key={invoice.id} className="dashboard-list-row">
-                <div className="min-w-0">
-                  <p className="font-semibold text-slate-950">{invoice.id}</p>
-                  <p className="text-sm text-slate-500">{invoice.date}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-slate-700">{invoice.amount}</p>
-                  <p className="text-xs text-slate-500">{invoice.status}</p>
-                </div>
-              </div>
-            ))}
+            {docs.length ? (
+              docs.map((invoice) => {
+                const isReceipt = /rcp|receipt/i.test(invoice.id) || /receipt/i.test(invoice.status);
+                return (
+                  <div key={invoice.id} className="dashboard-list-row">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-950">{invoice.id}</p>
+                      <p className="text-sm text-slate-500">
+                        {invoice.date} · {isReceipt ? "Receipt" : "Invoice"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-slate-700">{invoice.amount}</p>
+                        <p className="text-xs text-slate-500">{invoice.status}</p>
+                      </div>
+                      <a
+                        className="button-secondary"
+                        href={`data:text/plain,${encodeURIComponent(
+                          `${isReceipt ? "Receipt" : "Invoice"} ${invoice.id}\nDate: ${invoice.date}\nAmount: ${invoice.amount}\nStatus: ${invoice.status}\n`,
+                        )}`}
+                        download={`${invoice.id}.txt`}
+                      >
+                        Download
+                      </a>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-sm text-slate-500">No invoices or receipts yet.</p>
+            )}
           </div>
+          <Link className="mt-5 inline-flex text-sm font-semibold text-[var(--penned-navy)] underline" href="/client/billing/invoices">
+            See all →
+          </Link>
         </SectionCard>
 
-        <SectionCard
-          title="Payment method"
-          description="Card details and billing contact information used for top-ups and invoice collection."
-        >
+        <SectionCard title="Payment method" description="Card and billing contact for top-ups and invoices.">
           <div className="space-y-3">
             <PreferenceRow label="Card on file" value="Visa ending 4242" />
-            <PreferenceRow label="Billing contact" value={user.email} wrap />
-            <PreferenceRow label="VAT / tax records" value="Available with invoice exports" />
+            <label className="block rounded-[1rem] border border-slate-200 bg-white p-4">
+              <span className="text-sm font-medium text-slate-700">Billing contact</span>
+              <input className="dashboard-input mt-2" defaultValue={user.email} name="billingContact" />
+            </label>
             <PreferenceRow label="Account owner" value={user.fullName} />
           </div>
+          <a className="button-primary mt-5 inline-flex" href="/api/stripe/portal">
+            Update card
+          </a>
         </SectionCard>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <SectionCard
-          title="Payment terms"
-          description="Standard accounts prepay. Priority Account is only available to approved trusted agencies."
-        >
-          <PriorityAccountCard
-            notEligible={snapshot.notEligible}
-            state={snapshot.priorityState}
-          />
-          {!snapshot.notEligible ? (
-            <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <Metric label="Monthly billing limit" value="$3,000" />
-              <Metric label="Used this month" value="$2,250" />
-              <Metric label="Remaining available" value="$750" />
-              <Metric label="Next invoice date" value="End of month" />
-              <Metric label="Payment due" value="14 days after invoice date" />
-            </div>
-          ) : null}
-        </SectionCard>
-
-        <SectionCard
-          title="Account manager"
-          description="Ask about Priority Account status or invoice terms without leaving billing."
-        >
-          <AccountManagerCard />
-        </SectionCard>
-      </section>
+      <SectionCard title="Payment terms" description="Standard accounts prepay. Priority Account is for approved agencies.">
+        <PriorityAccountCard notEligible={snapshot.notEligible} state={snapshot.priorityState} />
+        <p className="mt-5 text-sm text-slate-600">
+          Questions? Ask{" "}
+          <Link className="font-semibold underline" href="/client/help?topic=priority">
+            {manager.firstName}
+          </Link>
+          .
+        </p>
+      </SectionCard>
     </DashboardShell>
   );
 }
@@ -102,10 +113,10 @@ function PriorityAccountCard({
   notEligible: boolean;
 }) {
   const copy = notEligible
-    ? "Standard payment terms apply to your account. Prepayment is required before orders are placed. Established Managed agencies may qualify for monthly billing — ask your account manager if you’d like to be considered."
+    ? "Standard payment terms apply. Prepayment is required before orders are placed. Established Managed agencies may qualify for monthly billing."
     : state === "Active"
-      ? "Priority Account is active on your account. You can place orders without prepaying. Invoices are issued on the 1st of each month for all orders placed in the previous period. Payment is due within 14 days of the invoice date."
-      : "You may be eligible for Priority Account status — monthly billing terms that let you order now and pay after delivery. Request it from your account manager and we’ll review your account.";
+      ? "Priority Account is active. You can place orders without prepaying. Invoices are issued monthly and due within 14 days."
+      : "You may be eligible for Priority Account status — order now and pay after delivery. Ask your account manager.";
 
   return (
     <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-5">
@@ -116,28 +127,25 @@ function PriorityAccountCard({
   );
 }
 
-function PreferenceRow({
-  label,
-  value,
-  wrap = false,
-}: {
-  label: string;
-  value: string;
-  wrap?: boolean;
-}) {
+function PreferenceRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-4 rounded-[1rem] border border-slate-200 bg-white p-4">
       <p className="shrink-0 font-medium text-slate-700">{label}</p>
-      <p className={`min-w-0 text-right text-slate-500 ${wrap ? "break-all" : ""}`}>{value}</p>
+      <p className="min-w-0 break-all text-right text-slate-500">{value}</p>
     </div>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[1rem] border border-slate-200 bg-white p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className="mt-2 text-lg font-semibold text-slate-950">{value}</p>
-    </div>
-  );
+function Alert({
+  children,
+  tone,
+}: {
+  children: React.ReactNode;
+  tone: "warning" | "success";
+}) {
+  const styles =
+    tone === "warning"
+      ? "border-amber-200 bg-amber-50 text-amber-900"
+      : "border-emerald-200 bg-emerald-50 text-emerald-800";
+  return <div className={`rounded-[1.25rem] border px-5 py-4 text-sm ${styles}`}>{children}</div>;
 }

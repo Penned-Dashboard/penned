@@ -54,7 +54,25 @@ export default async function SignUpPage({
             </li>
           </ol>
 
-          <form action={signUpAction} className="mt-8 space-y-5">
+          <div className="mt-8 grid gap-3">
+            <a
+              className="button-secondary w-full text-center"
+              href="/sign-in?oauth=google"
+            >
+              Continue with Google
+            </a>
+            <a
+              className="button-secondary w-full text-center"
+              href="/sign-in?oauth=microsoft"
+            >
+              Continue with Microsoft
+            </a>
+            <p className="text-center text-xs text-slate-400">
+              These connect your email only. You still complete the fields below for new accounts.
+            </p>
+          </div>
+
+          <form action={signUpAction} className="mt-6 space-y-5">
             <RolePicker defaultRole="client" />
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
@@ -85,6 +103,16 @@ export default async function SignUpPage({
                 type="password"
               />
             </label>
+            <label className="flex items-start gap-3 text-sm text-slate-600">
+              <input className="mt-1" name="acceptTerms" required type="checkbox" />
+              <span>
+                I agree to the{" "}
+                <Link className="font-semibold underline" href="/terms" target="_blank">
+                  client terms
+                </Link>
+                , including working with Penned writers only through Penned.
+              </span>
+            </label>
             {params.error ? (
               <p className="rounded-[1rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                 {params.error === "exists"
@@ -95,7 +123,7 @@ export default async function SignUpPage({
                       ? "Signup is not configured in this deployment yet. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to this Vercel Preview environment."
                       : params.error === "failed"
                         ? "Account creation failed. Most common causes: missing Supabase env vars on this Vercel preview, or the password_hash column is missing. Run the setup SQL and confirm Preview env vars, then retry."
-                        : "Please complete all fields and use a password with at least 8 characters."}
+                        : "Please complete all fields, accept the client terms, and use a password with at least 8 characters."}
               </p>
             ) : null}
             <button className="button-primary w-full" type="submit">

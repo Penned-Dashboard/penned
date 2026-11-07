@@ -168,6 +168,7 @@ export type ClientOrderDetail = {
   deadline: string;
   contentType: string;
   writer: string;
+  serviceTier: "on-demand" | "signature" | "rank";
   targetAudience: string;
   toneOfVoice: string;
   targetKeywords: string[];
@@ -672,6 +673,7 @@ export async function getClientOrderDetail(
         target_keywords,
         word_count,
         priority,
+        service_tier,
         reference_links,
         content_types(name),
         writer:profiles!orders_writer_id_fkey(full_name)
@@ -686,6 +688,12 @@ export async function getClientOrderDetail(
   }
 
   const latestSubmission = await getLatestSubmission(orderId);
+  const serviceTier =
+    order.service_tier === "rank"
+      ? "rank"
+      : order.service_tier === "signature"
+        ? "signature"
+        : "on-demand";
 
   return {
     id: order.id,
@@ -694,17 +702,24 @@ export async function getClientOrderDetail(
     status: formatOrderStatus(order.status),
     deadline: formatDeadline(order.due_date),
     contentType: readSingleRelation(order.content_types)?.name ?? "Unassigned type",
-    writer: readSingleRelation(order.writer)?.full_name ?? "Unassigned",
+    writer: writerFirstName(readSingleRelation(order.writer)?.full_name) || "Unassigned",
+    serviceTier,
     targetAudience: order.target_audience ?? "Not specified",
     toneOfVoice: order.tone_of_voice ?? "Not specified",
     targetKeywords: order.target_keywords ?? [],
-    wordCount: order.word_count ? `${order.word_count} words` : "Not specified",
+    wordCount: order.word_count ? `${order.word_count}` : "Not specified",
     priority: order.priority ? formatOrderStatus(order.priority) : "Standard",
     primaryCta: order.primary_cta ?? "Not specified",
     referenceLinks: order.reference_links ?? [],
     brief: order.brief,
     latestSubmission,
   };
+}
+
+function writerFirstName(fullName: string | null | undefined) {
+  const value = (fullName ?? "").trim();
+  if (!value) return "";
+  return value.split(/\s+/)[0] ?? "";
 }
 
 const ACTIVE_DB_STATUSES = ["claimed", "revision_requested"];

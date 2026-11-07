@@ -160,7 +160,7 @@ export default async function ClientDashboardPage({
             <Link className="rounded-[1.15rem] border border-slate-200 px-4 py-4 text-sm font-semibold text-[var(--penned-navy)]" href="/client/new-order">
               Place your first order
             </Link>
-            <Link className="rounded-[1.15rem] border border-slate-200 px-4 py-4 text-sm font-semibold text-[var(--penned-navy)]" href="/client/help">
+            <Link className="rounded-[1.15rem] border border-slate-200 px-4 py-4 text-sm font-semibold text-[var(--penned-navy)]" href="/client/help?topic=walkthrough">
               Prefer a walkthrough? Book a call
             </Link>
           </div>
