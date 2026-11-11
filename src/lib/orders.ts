@@ -10,6 +10,7 @@ import {
   orderSchema,
   type OrderFormValues,
 } from "@/lib/order-schema";
+import { clientStatusLabel } from "@/lib/order-workflow";
 import { calculateOrderPrice, isUkCompanyBilling } from "@/lib/pricing";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Role } from "@/lib/types";
@@ -3469,9 +3470,11 @@ function validateServiceFields(service: ServiceDefinition, fields: Record<string
 }
 
 function formatOrderStatus(status: string) {
+  // Prefer Liam's client-facing workflow labels when we recognise the status.
+  const workflowLabel = clientStatusLabel({ dbStatus: status, workflowStatus: null });
+  if (workflowLabel) return workflowLabel;
   const normalized = status.replaceAll("_", " ").trim().toLowerCase();
   if (!normalized) return "Unknown";
-  // Title-case so Completed filters and badges match ("accepted" → "Accepted").
   return normalized.replace(/\b\w/g, (char) => char.toUpperCase());
 }
 

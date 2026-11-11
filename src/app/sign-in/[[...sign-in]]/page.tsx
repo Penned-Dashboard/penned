@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { signInAction } from "@/app/(auth)/actions";
 import { PennedLogo } from "@/components/penned-logo";
 import { getCurrentAppUser } from "@/lib/auth";
+import { rolePath } from "@/lib/types";
 
 export default async function SignInPage({
   searchParams,
@@ -13,7 +14,7 @@ export default async function SignInPage({
   const user = await getCurrentAppUser();
 
   if (user) {
-    redirect(`/${user.role}`);
+    redirect(rolePath(user.role));
   }
 
   return (

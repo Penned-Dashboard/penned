@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { signOutAction } from "@/app/(auth)/actions";
 import { PennedLogo } from "@/components/penned-logo";
-import type { Role } from "@/lib/types";
+import { rolePath, type Role } from "@/lib/types";
 
 export function DashboardMobileNav({
   items,
@@ -42,7 +42,7 @@ export function DashboardMobileNav({
             {items.map((item) => {
               const [itemPath] = item.href.split("?");
               const isActive =
-                item.href === `/${role}`
+                item.href === rolePath(role)
                   ? currentPath === itemPath
                   : currentPath === itemPath || currentPath.startsWith(`${itemPath}/`);
               return (

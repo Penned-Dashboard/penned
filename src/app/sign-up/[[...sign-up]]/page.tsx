@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { ClientSignupFlow } from "@/components/client-signup-flow";
 import { getCurrentAppUser } from "@/lib/auth";
+import { rolePath } from "@/lib/types";
 
 export default async function SignUpPage({
   searchParams,
@@ -11,7 +12,7 @@ export default async function SignUpPage({
   const user = await getCurrentAppUser();
 
   if (user) {
-    redirect(`/${user.role}`);
+    redirect(rolePath(user.role));
   }
 
   return (

@@ -290,7 +290,7 @@ export default async function Home() {
   );
 }
 
-function resolvePlanHref(planName: string, role?: "client" | "writer" | "admin") {
+function resolvePlanHref(planName: string, role?: import("@/lib/types").Role) {
   if (!role) {
     return planName === "Starter" ? "/sign-up?role=client" : "/sign-up?role=client";
   }
@@ -303,10 +303,17 @@ function resolvePlanHref(planName: string, role?: "client" | "writer" | "admin")
     return planName === "Starter" ? "/writer" : "/contact";
   }
 
+  if (role === "account_manager") {
+    return "/account-manager";
+  }
+  if (role === "editor") {
+    return "/editor";
+  }
+
   return planName === "Starter" ? "/admin" : "/contact";
 }
 
-function resolvePlanLabel(planName: string, role?: "client" | "writer" | "admin") {
+function resolvePlanLabel(planName: string, role?: import("@/lib/types").Role) {
   if (!role) {
     return planName === "Starter" ? "Get Started Free" : "Create Client Account";
   }

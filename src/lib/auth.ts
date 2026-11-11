@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { redirect } from "next/navigation";
-import { isRole, type Role } from "@/lib/types";
+import { isRole, rolePath, type Role } from "@/lib/types";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type AppUser = {
@@ -87,7 +87,7 @@ export async function requireRole(role: Role) {
   const user = await requireAppUser();
 
   if (user.role !== role) {
-    redirect(`/${user.role}`);
+    redirect(rolePath(user.role));
   }
 
   return user;

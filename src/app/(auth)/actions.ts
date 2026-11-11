@@ -9,7 +9,7 @@ import {
   switchWorkspaceRole,
 } from "@/lib/auth";
 import { CLIENT_TERMS_VERSION } from "@/lib/client-terms";
-import { isRole } from "@/lib/types";
+import { isRole, rolePath } from "@/lib/types";
 
 export async function signUpAction(formData: FormData) {
   const firstName = String(formData.get("firstName") ?? "").trim();
@@ -101,7 +101,7 @@ export async function signInAction(formData: FormData) {
     );
   }
 
-  redirect(`/${user.role}`);
+  redirect(rolePath(user.role));
 }
 
 export async function signOutAction() {
@@ -121,8 +121,8 @@ export async function switchWorkspaceRoleAction(formData: FormData) {
     await switchWorkspaceRole(roleValue);
   } catch (error) {
     console.error("switchWorkspaceRoleAction failed", error);
-    redirect(`/${user.role}?roleSwitch=denied`);
+    redirect(`${rolePath(user.role)}?roleSwitch=denied`);
   }
 
-  redirect(`/${roleValue}`);
+  redirect(rolePath(roleValue));
 }

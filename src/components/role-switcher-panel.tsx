@@ -1,6 +1,6 @@
 import { switchWorkspaceRoleAction } from "@/app/(auth)/actions";
 import { getCurrentAppUser } from "@/lib/auth";
-import { roles, type Role } from "@/lib/types";
+import { roleLabel, roles, type Role } from "@/lib/types";
 
 export async function RoleSwitcherPanel({ currentRole }: { currentRole: Role }) {
   const currentUser = await getCurrentAppUser();
@@ -31,7 +31,7 @@ export async function RoleSwitcherPanel({ currentRole }: { currentRole: Role }) 
         >
           {roles.map((option) => (
             <option key={option} value={option}>
-              {option}
+              {roleLabel(option)}
             </option>
           ))}
         </select>

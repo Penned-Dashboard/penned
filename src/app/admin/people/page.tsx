@@ -2,7 +2,7 @@ import { updateAdminProfileAction } from "@/app/admin/actions";
 import { DashboardShell, SectionCard } from "@/components/dashboard-shell";
 import { requireRole } from "@/lib/auth";
 import { getAdminProfiles } from "@/lib/orders";
-import { roles } from "@/lib/types";
+import { roleLabel, roles } from "@/lib/types";
 
 export default async function AdminPeoplePage({
   searchParams,
@@ -23,7 +23,7 @@ export default async function AdminPeoplePage({
     <DashboardShell
       role="admin"
       title="People"
-      description="Create and edit client, writer, and admin accounts. Mark writers as Specialist so they can see Specialist jobs."
+      description="Assign Client, Writer, Admin, Account Manager or Editor. Prefer Clients and Writers pages for day-to-day."
       ctaLabel="Back to dashboard"
       ctaHref="/admin"
       currentPath="/admin/people"
@@ -72,7 +72,7 @@ export default async function AdminPeoplePage({
                   <select className="dashboard-input" defaultValue={profile.role} name="role">
                     {roles.map((role) => (
                       <option key={role} value={role}>
-                        {role}
+                        {roleLabel(role)}
                       </option>
                     ))}
                   </select>

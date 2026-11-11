@@ -32,8 +32,8 @@ export default async function WriterRankingsPage({
   return (
     <DashboardShell
       role="writer"
-      title="Rankings"
-      description="See how you compare with other Penned writers."
+      title="My standing"
+      description="Based on your client ratings. Writers higher up hear about new jobs first."
       ctaLabel="Find a job"
       ctaHref="/writer/marketplace"
       currentPath="/writer/rankings"

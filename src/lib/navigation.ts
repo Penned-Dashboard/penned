@@ -1,4 +1,5 @@
 import type { Role } from "@/lib/types";
+import { rolePath } from "@/lib/types";
 
 export const roleMeta: Record<
   Role,
@@ -27,30 +28,58 @@ export const roleMeta: Record<
   },
   writer: {
     portalTitle: "Penned",
-    portalSubtitle: "Writer Portal",
+    portalSubtitle: "Writer",
     accentClass: "from-[#17253F] to-[#DDF479]",
     nav: [
       { label: "Dashboard", href: "/writer" },
-      { label: "Assigned Jobs", href: "/writer/assigned" },
+      { label: "My jobs", href: "/writer/jobs" },
       { label: "Job board", href: "/writer/marketplace" },
-      { label: "My Jobs", href: "/writer/jobs" },
-      { label: "Rankings", href: "/writer/rankings" },
+      { label: "My standing", href: "/writer/rankings" },
       { label: "Earnings", href: "/writer/earnings" },
       { label: "Settings", href: "/writer/settings" },
     ],
   },
   admin: {
     portalTitle: "Penned",
-    portalSubtitle: "Admin Portal",
+    portalSubtitle: "Admin",
     accentClass: "from-[#17253F] to-[#91B9D2]",
     nav: [
       { label: "Dashboard", href: "/admin" },
-      { label: "All Orders", href: "/admin/orders" },
-      { label: "People", href: "/admin/people" },
-      { label: "Payouts", href: "/admin#payouts" },
-      { label: "Content Types", href: "/admin#content-types" },
-      { label: "Security notes", href: "/security" },
+      { label: "Orders", href: "/admin/orders" },
+      { label: "Messages", href: "/admin/messages" },
+      { label: "Flags", href: "/admin/flags" },
+      { label: "Clients", href: "/admin/clients" },
+      { label: "Writers", href: "/admin/writers" },
+      { label: "Payouts", href: "/admin/payouts" },
+      { label: "Pricing & services", href: "/admin/pricing" },
       { label: "Settings", href: "/admin/settings" },
+    ],
+  },
+  account_manager: {
+    portalTitle: "Penned",
+    portalSubtitle: "Account Manager",
+    accentClass: "from-[#17253F] to-[#91B9D2]",
+    nav: [
+      { label: "Today", href: rolePath("account_manager") },
+      { label: "Briefs to check", href: `${rolePath("account_manager")}/briefs` },
+      { label: "Messages", href: `${rolePath("account_manager")}/messages` },
+      { label: "Flags", href: `${rolePath("account_manager")}/flags` },
+      { label: "Orders", href: `${rolePath("account_manager")}/orders` },
+      { label: "My clients", href: `${rolePath("account_manager")}/clients` },
+      { label: "Writers", href: `${rolePath("account_manager")}/writers` },
+      { label: "Settings", href: `${rolePath("account_manager")}/settings` },
+    ],
+  },
+  editor: {
+    portalTitle: "Penned",
+    portalSubtitle: "Editor",
+    accentClass: "from-[#17253F] to-[#91B9D2]",
+    nav: [
+      { label: "Edit queue", href: "/editor" },
+      { label: "My edits", href: "/editor/my-edits" },
+      { label: "Done", href: "/editor/done" },
+      { label: "Earnings", href: "/editor/earnings" },
+      { label: "Settings", href: "/editor/settings" },
     ],
   },
 };

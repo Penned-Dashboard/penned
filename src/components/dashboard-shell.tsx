@@ -5,7 +5,7 @@ import { DashboardMobileNav } from "@/components/dashboard-mobile-nav";
 import { PennedLogo } from "@/components/penned-logo";
 import { RoleSwitcherPanel } from "@/components/role-switcher-panel";
 import { roleMeta } from "@/lib/navigation";
-import type { Role } from "@/lib/types";
+import { rolePath, type Role } from "@/lib/types";
 import type { ReactNode } from "react";
 
 export { SectionCard, StatCard } from "@/components/dashboard-cards";
@@ -42,8 +42,8 @@ export function DashboardShell({
   const showHeaderCta = Boolean(ctaLabel && ctaHref);
   const showDescription = Boolean(description?.trim());
   const meta = roleMeta[role];
-  const workspaceHref = `/${role}`;
-  const settingsHref = `/${role}/settings`;
+  const workspaceHref = rolePath(role);
+  const settingsHref = `${rolePath(role)}/settings`;
   const initials = userName
     .split(" ")
     .map((part) => part[0])
@@ -52,7 +52,7 @@ export function DashboardShell({
     .join("")
     .toUpperCase();
 
-  const logoHref = role === "client" ? "https://penned.io" : `/${role}`;
+  const logoHref = role === "client" ? "https://penned.io" : rolePath(role);
 
   return (
     <main className="min-h-screen bg-[var(--background)]">
@@ -69,7 +69,7 @@ export function DashboardShell({
 
           <nav className="mt-8 space-y-2">
             {meta.nav.map((item) => {
-              const workspaceRoot = `/${role}`;
+              const workspaceRoot = rolePath(role);
               const [itemPath, itemQuery = ""] = item.href.split("?");
               const [itemPathNoHash] = itemPath.split("#");
               const isHashOnly = item.href.includes("#");
