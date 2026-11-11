@@ -23,8 +23,9 @@ type BulkRow = {
 };
 
 const orderableServices = serviceCatalog.filter((service) => service.isOrderable);
+/** Liam’s live template — clients should File → Make a copy. Price is calculated in the dashboard, never from a sheet price column. */
 const GOOGLE_SHEET_TEMPLATE =
-  "https://docs.google.com/spreadsheets/d/1penned-bulk-order-template/copy";
+  "https://docs.google.com/spreadsheets/d/1gbRV6wFDnwAcYdX3HvDVcXqpaQfAXJ2nxE8v0NLeapc/copy";
 
 function emptyRow(): BulkRow {
   return {
@@ -54,9 +55,11 @@ function isFilledRow(row: BulkRow) {
 export function BulkOrderWorkspace({
   contentTypes,
   folders,
+  applyUkVat = false,
 }: {
   contentTypes: ContentTypeOption[];
   folders: ClientFolder[];
+  applyUkVat?: boolean;
 }) {
   const [rows, setRows] = useState<BulkRow[]>([emptyRow(), emptyRow(), emptyRow()]);
   const [pasteValue, setPasteValue] = useState("");
@@ -72,7 +75,10 @@ export function BulkOrderWorkspace({
 
   const filledRows = useMemo(() => rows.filter(isFilledRow), [rows]);
   const issues = useMemo(() => validateRows(filledRows, folders), [filledRows, folders]);
-  const summary = useMemo(() => summarizeRows(filledRows, contentTypes), [filledRows, contentTypes]);
+  const summary = useMemo(
+    () => summarizeRows(filledRows, contentTypes, applyUkVat),
+    [filledRows, contentTypes, applyUkVat],
+  );
   const walletBalance = 3750;
   const remainingAfterBatch = Math.max(0, walletBalance - summary.estimatedTotal);
 
@@ -186,6 +192,7 @@ export function BulkOrderWorkspace({
           </div>
           <p className="mt-3 text-xs text-slate-500">
             Only rows with content are counted. Empty starter rows are ignored until you fill them in.
+            {applyUkVat ? " Totals include 20% UK VAT." : ""} Prices are calculated in the dashboard — the Sheet price column is ignored.
           </p>
         </SectionCard>
       </section>
@@ -428,7 +435,7 @@ function validateRows(rows: BulkRow[], folders: ClientFolder[]) {
   return issues;
 }
 
-function summarizeRows(rows: BulkRow[], contentTypes: ContentTypeOption[]) {
+function summarizeRows(rows: BulkRow[], contentTypes: ContentTypeOption[], applyUkVat = false) {
   const totalOrders = rows.length;
   const totalWords = rows.reduce((sum, row) => sum + (Number(row.wordCount) || 0), 0);
   const standardCount = rows.filter((row) => row.tier === "on-demand").length;
@@ -445,6 +452,7 @@ function summarizeRows(rows: BulkRow[], contentTypes: ContentTypeOption[]) {
         delivery: row.delivery,
         industry: row.industry,
         contentTypeKey: service?.key,
+        applyUkVat,
       }).totalCents
     );
   }, 0);

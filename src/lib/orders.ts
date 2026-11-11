@@ -10,7 +10,7 @@ import {
   orderSchema,
   type OrderFormValues,
 } from "@/lib/order-schema";
-import { calculateOrderPrice } from "@/lib/pricing";
+import { calculateOrderPrice, isUkCompanyBilling } from "@/lib/pricing";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Role } from "@/lib/types";
 import {
@@ -469,6 +469,67 @@ export async function getContentTypeOptions({
   return [...deduped.values()].sort(
     (left, right) => left.orderIndex - right.orderIndex || left.name.localeCompare(right.name),
   );
+}
+
+export async function getClientBillingFlags(clientProfileId: string) {
+  const supabase = createServerSupabaseClient();
+  if (!supabase) {
+    return { applyUkVat: false, isUkCompany: false, billingCountry: null as string | null };
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("is_uk_company, billing_country")
+    .eq("id", clientProfileId)
+    .maybeSingle();
+
+  if (error || !data) {
+    // Columns may not exist until supabase/client-terms-and-vat.sql is applied.
+    return { applyUkVat: false, isUkCompany: false, billingCountry: null as string | null };
+  }
+
+  const isUkCompany = Boolean(data.is_uk_company);
+  const billingCountry = (data.billing_country as string | null) ?? null;
+  return {
+    applyUkVat: isUkCompanyBilling({ isUkCompany, billingCountry }),
+    isUkCompany,
+    billingCountry,
+  };
+}
+
+export async function updateClientBillingFlags(
+  clientProfileId: string,
+  values: { isUkCompany: boolean; billingCountry?: string | null; vatNumber?: string | null },
+) {
+  const supabase = createServerSupabaseClient();
+  if (!supabase) {
+    return { ok: false as const, message: "Supabase is not configured." };
+  }
+
+  const billingCountry = values.isUkCompany
+    ? values.billingCountry?.trim() || "United Kingdom"
+    : values.billingCountry?.trim() || null;
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      is_uk_company: values.isUkCompany,
+      billing_country: billingCountry,
+      ...(values.vatNumber !== undefined ? { vat_number: values.vatNumber?.trim() || null } : {}),
+    })
+    .eq("id", clientProfileId);
+
+  if (error) {
+    return {
+      ok: false as const,
+      message: error.message.includes("is_uk_company")
+        ? "Run supabase/client-terms-and-vat.sql in Supabase, then try again."
+        : error.message,
+    };
+  }
+
+  revalidateApp();
+  return { ok: true as const, message: "Billing details saved." };
 }
 
 export async function getClientFolders(clientProfileId: string): Promise<ClientFolder[]> {
@@ -2155,14 +2216,17 @@ export async function createOrder(values: OrderFormValues) {
       : payload.serviceTier === "signature"
         ? "signature"
         : "standard";
-  const budgetCents = calculateOrderPrice({
+  const billing = await getClientBillingFlags(user.profileId);
+  const price = calculateOrderPrice({
     words: wordCount,
     tier: writingTier,
     language: payload.language,
     delivery: payload.priority,
     industry: payload.industry ?? "",
     contentTypeKey: service.key,
-  }).totalCents;
+    applyUkVat: billing.applyUkVat,
+  });
+  const budgetCents = price.totalCents;
   const folderName = payload.clientFolderId
     ? (await getClientFolders(user.profileId)).find((folder) => folder.id === payload.clientFolderId)?.name
     : "";
@@ -2191,9 +2255,13 @@ export async function createOrder(values: OrderFormValues) {
       ...(payload.industry ? { industry: payload.industry } : {}),
       pricing_snapshot: {
         tier: writingTier,
+        subtotal_cents: price.subtotalCents,
+        vat_cents: price.vatCents,
+        vat_percent: price.vatPercent,
         total_cents: budgetCents,
         language: payload.language,
         delivery: payload.priority,
+        uk_vat: billing.applyUkVat,
       },
     },
     status: "open",
@@ -3303,6 +3371,7 @@ export async function createBulkOrders(
 
   const contentTypes = await getContentTypeOptions();
   const folders = await getClientFolders(user.profileId);
+  const billing = await getClientBillingFlags(user.profileId);
   const batchId = `B${Date.now().toString().slice(-6)}`;
   const payloads = [];
 
@@ -3326,6 +3395,7 @@ export async function createBulkOrders(
       delivery,
       industry: row.industry,
       contentTypeKey: contentType.key,
+      applyUkVat: billing.applyUkVat,
     });
     payloads.push({
       client_id: user.profileId,
@@ -3353,8 +3423,12 @@ export async function createBulkOrders(
         pricing_snapshot: {
           tier: writingTier,
           delivery,
+          subtotal_cents: price.subtotalCents,
+          vat_cents: price.vatCents,
+          vat_percent: price.vatPercent,
           total_cents: price.totalCents,
           delivery_hours: price.deliveryHours,
+          uk_vat: billing.applyUkVat,
         },
       },
       status: "open",

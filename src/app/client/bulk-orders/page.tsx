@@ -1,13 +1,14 @@
 import { BulkOrderWorkspace } from "@/components/bulk-order-workspace";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { requireRole } from "@/lib/auth";
-import { getClientFolders, getContentTypeOptions } from "@/lib/orders";
+import { getClientBillingFlags, getClientFolders, getContentTypeOptions } from "@/lib/orders";
 
 export default async function ClientBulkOrdersPage() {
   const user = await requireRole("client");
-  const [contentTypes, folders] = await Promise.all([
+  const [contentTypes, folders, billing] = await Promise.all([
     getContentTypeOptions({ includeInactive: true }),
     getClientFolders(user.profileId),
+    getClientBillingFlags(user.profileId),
   ]);
 
   return (
@@ -18,7 +19,11 @@ export default async function ClientBulkOrdersPage() {
       currentPath="/client/bulk-orders"
       userName={user.fullName}
     >
-      <BulkOrderWorkspace contentTypes={contentTypes} folders={folders} />
+      <BulkOrderWorkspace
+        applyUkVat={billing.applyUkVat}
+        contentTypes={contentTypes}
+        folders={folders}
+      />
     </DashboardShell>
   );
 }

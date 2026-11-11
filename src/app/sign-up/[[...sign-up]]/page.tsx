@@ -1,8 +1,5 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { signUpAction } from "@/app/(auth)/actions";
-import { PennedLogo } from "@/components/penned-logo";
-import { RolePicker } from "@/components/role-picker";
+import { ClientSignupFlow } from "@/components/client-signup-flow";
 import { getCurrentAppUser } from "@/lib/auth";
 
 export default async function SignUpPage({
@@ -29,113 +26,28 @@ export default async function SignUpPage({
         }}
       />
       <div className="relative mx-auto flex min-h-screen max-w-6xl items-center justify-center px-6 py-12 lg:px-10">
-        <div className="w-full max-w-md rounded-[2rem] border border-white/15 bg-white p-8 shadow-[0_30px_70px_rgba(0,0,0,0.35)]">
-          <div className="flex justify-center">
-            <Link href="/">
-              <PennedLogo />
-            </Link>
-          </div>
-          <h1 className="mt-8 text-center text-4xl font-semibold tracking-[-0.05em] text-[var(--penned-navy)]">
-            Create your account
-          </h1>
-          <p className="mt-3 text-center text-base text-slate-500">
-            Register as a client to order and manage content
-          </p>
-
-          <ol className="mt-6 space-y-2 rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-            <li>
-              <span className="font-semibold text-[var(--penned-navy)]">1.</span> Create your client account
-            </li>
-            <li>
-              <span className="font-semibold text-[var(--penned-navy)]">2.</span> Sign in anytime at /sign-in
-            </li>
-            <li>
-              <span className="font-semibold text-[var(--penned-navy)]">3.</span> Land in your workspace
-            </li>
-          </ol>
-
-          <div className="mt-8 grid gap-3">
-            <a
-              className="button-secondary w-full text-center"
-              href="/sign-in?oauth=google"
-            >
-              Continue with Google
-            </a>
-            <a
-              className="button-secondary w-full text-center"
-              href="/sign-in?oauth=microsoft"
-            >
-              Continue with Microsoft
-            </a>
-            <p className="text-center text-xs text-slate-400">
-              These connect your email only. You still complete the fields below for new accounts.
+        <div className="grid w-full items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+          <aside className="hidden text-white lg:block">
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-white/60">
+              For agencies
             </p>
-          </div>
-
-          <form action={signUpAction} className="mt-6 space-y-5">
-            <RolePicker defaultRole="client" />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="dashboard-label">First name</span>
-                <input className="dashboard-input" name="firstName" placeholder="John" required type="text" />
-              </label>
-              <label className="block">
-                <span className="dashboard-label">Last name</span>
-                <input className="dashboard-input" name="lastName" placeholder="Doe" required type="text" />
-              </label>
-            </div>
-            <label className="block">
-              <span className="dashboard-label">Email</span>
-              <input className="dashboard-input" name="email" placeholder="you@company.com" required type="email" />
-            </label>
-            <label className="block">
-              <span className="dashboard-label">Company or brand</span>
-              <input className="dashboard-input" name="companyName" placeholder="Penned Labs" type="text" />
-            </label>
-            <label className="block">
-              <span className="dashboard-label">Password</span>
-              <input
-                className="dashboard-input"
-                minLength={8}
-                name="password"
-                placeholder="At least 8 characters"
-                required
-                type="password"
-              />
-            </label>
-            <label className="flex items-start gap-3 text-sm text-slate-600">
-              <input className="mt-1" name="acceptTerms" required type="checkbox" />
-              <span>
-                I agree to the{" "}
-                <Link className="font-semibold underline" href="/terms" target="_blank">
-                  client terms
-                </Link>
-                , including working with Penned writers only through Penned.
-              </span>
-            </label>
-            {params.error ? (
-              <p className="rounded-[1rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                {params.error === "exists"
-                  ? "That email already has an account. Sign in instead."
-                  : params.error === "setup"
-                    ? "Password auth needs the latest Supabase SQL applied (password_hash column). Run supabase/setup-auth-and-writer-p0.sql, then try again."
-                    : params.error === "env"
-                      ? "Signup is not configured in this deployment yet. Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to this Vercel Preview environment."
-                      : params.error === "failed"
-                        ? "Account creation failed. Most common causes: missing Supabase env vars on this Vercel preview, or the password_hash column is missing. Run the setup SQL and confirm Preview env vars, then retry."
-                        : "Please complete all fields, accept the client terms, and use a password with at least 8 characters."}
-              </p>
-            ) : null}
-            <button className="button-primary w-full" type="submit">
-              Create account
-            </button>
-          </form>
-          <p className="mt-6 text-center text-sm text-slate-500">
-            Already have an account?{" "}
-            <Link className="font-semibold text-[var(--penned-navy)]" href="/sign-in">
-              Sign in
-            </Link>
-          </p>
+            <h2 className="mt-4 max-w-lg text-4xl font-semibold tracking-[-0.04em]">
+              Content ops without chasing writers
+            </h2>
+            <ul className="mt-8 space-y-4 text-base leading-7 text-white/80">
+              <li>Writers matched to your clients’ industries</li>
+              <li>Every piece edited by a human before delivery</li>
+              <li>Free samples by industry, any time</li>
+            </ul>
+            <blockquote className="mt-10 max-w-md border-l-2 border-white/30 pl-5 text-sm leading-7 text-white/75">
+              “I used to chase writers for updates. Now, I just get a Slack ping when my content is
+              ready.”
+              <footer className="mt-3 text-xs uppercase tracking-[0.2em] text-white/50">
+                Emily D., Content Manager
+              </footer>
+            </blockquote>
+          </aside>
+          <ClientSignupFlow error={params.error} />
         </div>
       </div>
     </main>

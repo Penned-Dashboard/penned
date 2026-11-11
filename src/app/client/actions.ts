@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { getCurrentAppUser } from "@/lib/auth";
 import {
   acceptSubmission,
   addSubmissionComment,
@@ -9,6 +10,7 @@ import {
   createOrder,
   requestRevision,
   seedWorkspaceReviewData,
+  updateClientBillingFlags,
 } from "@/lib/orders";
 import {
   initialOrderFormState,
@@ -111,6 +113,25 @@ export async function submitBulkOrdersAction(payload: {
   }[];
 }) {
   return createBulkOrders(payload.rows, payload.paymentSource);
+}
+
+export async function updateClientBillingAction(formData: FormData) {
+  const user = await getCurrentAppUser();
+  if (!user || user.role !== "client") {
+    redirect("/sign-in");
+  }
+
+  const result = await updateClientBillingFlags(user.profileId, {
+    isUkCompany: String(formData.get("isUkCompany") ?? "") === "on",
+    billingCountry: String(formData.get("billingCountry") ?? ""),
+    vatNumber: String(formData.get("vatNumber") ?? ""),
+  });
+
+  redirect(
+    result.ok
+      ? "/client/settings?billing=saved"
+      : `/client/settings?billing=error&message=${encodeURIComponent(result.message)}`,
+  );
 }
 
 export async function createClientFolderAction(formData: FormData) {

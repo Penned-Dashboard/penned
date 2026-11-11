@@ -60,16 +60,26 @@ export default async function ClientHelpPage({
           title="Your account manager"
         >
           <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--penned-navy)] text-sm font-semibold text-white">
-              {manager.initials}
+            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-[var(--penned-navy)] text-sm font-semibold text-white">
+              {manager.photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img alt="" className="h-full w-full object-cover" src={manager.photoUrl} />
+              ) : (
+                manager.initials
+              )}
             </div>
             <div>
               <p className="text-2xl font-semibold text-[var(--penned-navy)]">{manager.name}</p>
               <p className="mt-1 text-sm text-slate-500">Your Penned account manager</p>
             </div>
           </div>
-          <a className="button-primary mt-6 inline-flex" href={`mailto:${manager.email}`}>
-            Message
+          <a
+            className="button-primary mt-6 inline-flex"
+            href={manager.messageUrl}
+            rel="noreferrer"
+            target="_blank"
+          >
+            Message {manager.firstName}
           </a>
         </SectionCard>
 

@@ -38,7 +38,32 @@ export const pricingSettings = {
     "email-sequence": 10_000, // per email when live
     "case-study": 10_000, // when live
   } as Record<string, number>,
+  /** UK agencies that add UK company info are charged VAT on content writing bills. */
+  ukVatPercent: 20,
 };
+
+export function isUkCompanyBilling(input?: {
+  isUkCompany?: boolean | null;
+  billingCountry?: string | null;
+} | null) {
+  if (!input) return false;
+  if (input.isUkCompany) return true;
+  const country = (input.billingCountry ?? "").trim().toLowerCase();
+  return (
+    country === "uk" ||
+    country === "united kingdom" ||
+    country === "gb" ||
+    country === "great britain" ||
+    country === "england" ||
+    country === "scotland" ||
+    country === "wales" ||
+    country === "northern ireland"
+  );
+}
+
+export function ukVatCents(subtotalCents: number) {
+  return Math.round((subtotalCents * pricingSettings.ukVatPercent) / 100);
+}
 
 export const MEDICAL_LEGAL_INDUSTRY_HINTS = [
   "medical",
@@ -150,6 +175,8 @@ export type OrderPriceInput = {
   delivery?: DeliveryOption;
   industry?: string | null;
   contentTypeKey?: string | null;
+  /** Charge 20% UK VAT on top when the client is a UK company. */
+  applyUkVat?: boolean;
 };
 
 export type OrderPriceBreakdown = {
@@ -160,6 +187,8 @@ export type OrderPriceBreakdown = {
   rushSurchargeCents: number;
   ratePerWordCents: number;
   subtotalCents: number;
+  vatCents: number;
+  vatPercent: number;
   isFlat: boolean;
   flatPriceCents: number | null;
   totalCents: number;
@@ -171,8 +200,16 @@ export function calculateOrderPrice(input: OrderPriceInput): OrderPriceBreakdown
   const delivery = input.delivery ?? "standard";
   const words = Math.max(0, Math.round(input.words || 0));
   const flat = input.contentTypeKey ? getFlatPriceCents(input.contentTypeKey) : null;
+  const applyUkVat = Boolean(input.applyUkVat);
 
   if (flat != null) {
+    const vatCents = applyUkVat ? ukVatCents(flat) : 0;
+    const lines: Array<{ label: string; amountCents: number }> = [
+      { label: "Flat price", amountCents: flat },
+    ];
+    if (vatCents > 0) {
+      lines.push({ label: `UK VAT (${pricingSettings.ukVatPercent}%)`, amountCents: vatCents });
+    }
     return {
       words,
       tier: input.tier,
@@ -181,11 +218,13 @@ export function calculateOrderPrice(input: OrderPriceInput): OrderPriceBreakdown
       rushSurchargeCents: 0,
       ratePerWordCents: 0,
       subtotalCents: flat,
+      vatCents,
+      vatPercent: applyUkVat ? pricingSettings.ukVatPercent : 0,
       isFlat: true,
       flatPriceCents: flat,
-      totalCents: flat,
+      totalCents: flat + vatCents,
       deliveryHours: pricingSettings.deliveryHours[delivery],
-      lines: [{ label: "Flat price", amountCents: flat }],
+      lines,
     };
   }
 
@@ -196,7 +235,8 @@ export function calculateOrderPrice(input: OrderPriceInput): OrderPriceBreakdown
   const languageSurchargeCents = getLanguageSurchargeCents(input.tier, input.language);
   const rushSurchargeCents = getRushSurchargeCents(input.tier, delivery);
   const ratePerWordCents = tierRateCents + languageSurchargeCents + rushSurchargeCents;
-  const totalCents = words * ratePerWordCents;
+  const subtotalCents = words * ratePerWordCents;
+  const vatCents = applyUkVat ? ukVatCents(subtotalCents) : 0;
 
   const lines: Array<{ label: string; amountCents: number }> = [
     {
@@ -216,6 +256,12 @@ export function calculateOrderPrice(input: OrderPriceInput): OrderPriceBreakdown
       amountCents: words * rushSurchargeCents,
     });
   }
+  if (vatCents > 0) {
+    lines.push({
+      label: `UK VAT (${pricingSettings.ukVatPercent}%)`,
+      amountCents: vatCents,
+    });
+  }
 
   return {
     words,
@@ -224,10 +270,12 @@ export function calculateOrderPrice(input: OrderPriceInput): OrderPriceBreakdown
     languageSurchargeCents,
     rushSurchargeCents,
     ratePerWordCents,
-    subtotalCents: totalCents,
+    subtotalCents,
+    vatCents,
+    vatPercent: applyUkVat ? pricingSettings.ukVatPercent : 0,
     isFlat: false,
     flatPriceCents: null,
-    totalCents,
+    totalCents: subtotalCents + vatCents,
     deliveryHours: pricingSettings.deliveryHours[delivery],
     lines,
   };

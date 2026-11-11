@@ -27,12 +27,14 @@ export function OrderForm({
   folders,
   presetContentTypeId,
   budgetRemainingCents = 0,
+  applyUkVat = false,
 }: {
   contentTypes: ContentTypeOption[];
   folders: ClientFolder[];
   presetContentTypeId?: string;
   hideContentTypeSelect?: boolean;
   budgetRemainingCents?: number;
+  applyUkVat?: boolean;
 }) {
   const orderableTypes = useMemo(
     () => contentTypes.filter((type) => type.isOrderable),
@@ -68,6 +70,7 @@ export function OrderForm({
     delivery: flatPriced ? "standard" : priority,
     industry: flatPriced ? "" : industry,
     contentTypeKey: selectedType?.key,
+    applyUkVat,
   });
   const remainingAfter = Math.max(0, budgetRemainingCents - pricePreview.totalCents);
   const visibleServiceFields = (selectedType?.fields ?? []).filter((field) => {
@@ -441,6 +444,7 @@ export function OrderForm({
 
           <p className="mt-4 text-xs leading-5 text-slate-500">
             Paid from your budget. {formatUsdFromCents(remainingAfter)} left after this order.
+            {applyUkVat ? " Includes 20% UK VAT." : ""}
           </p>
 
           {state.message && state.success ? (

@@ -42,7 +42,7 @@ export function AccountManagerCard({
         Honest advice on writing levels, delivery and billing — no sales pitch.
       </p>
       <div className="mt-5 flex flex-wrap gap-3">
-        <a className="button-primary" href={`mailto:${ACCOUNT_MANAGER.email}`}>
+        <a className="button-primary" href={ACCOUNT_MANAGER.messageUrl} rel="noreferrer" target="_blank">
           Message
         </a>
         <Link className="button-secondary" href="/client/help?topic=priority">

@@ -32,7 +32,7 @@ export const roleMeta: Record<
     nav: [
       { label: "Dashboard", href: "/writer" },
       { label: "Assigned Jobs", href: "/writer/assigned" },
-      { label: "Job Marketplace", href: "/writer/marketplace" },
+      { label: "Job board", href: "/writer/marketplace" },
       { label: "My Jobs", href: "/writer/jobs" },
       { label: "Rankings", href: "/writer/rankings" },
       { label: "Earnings", href: "/writer/earnings" },

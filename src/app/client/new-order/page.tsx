@@ -3,7 +3,13 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { OrderForm } from "@/components/order-form";
 import { requireRole } from "@/lib/auth";
 import { getContentBudgetSnapshot } from "@/lib/content-budget";
-import { getClientFolders, getClientOrders, getContentTypeOptions, getInvoices } from "@/lib/orders";
+import {
+  getClientBillingFlags,
+  getClientFolders,
+  getClientOrders,
+  getContentTypeOptions,
+  getInvoices,
+} from "@/lib/orders";
 import type { ContentTypeOption } from "@/lib/orders";
 
 const WRITE_KEYS = new Set([
@@ -56,11 +62,12 @@ export default async function ClientNewOrderPage({
 }) {
   const user = await requireRole("client");
   const params = await searchParams;
-  const [contentTypes, folders, orders, invoices] = await Promise.all([
+  const [contentTypes, folders, orders, invoices, billing] = await Promise.all([
     getContentTypeOptions({ includeInactive: true }),
     getClientFolders(user.profileId),
     getClientOrders(user.profileId),
     getInvoices(user.profileId),
+    getClientBillingFlags(user.profileId),
   ]);
   const selectedType = contentTypes.find((item) => item.id === params.type) ?? null;
   const budget = getContentBudgetSnapshot(orders, invoices);
@@ -158,6 +165,7 @@ export default async function ClientNewOrderPage({
               </Link>
             </div>
             <OrderForm
+              applyUkVat={billing.applyUkVat}
               budgetRemainingCents={Math.round(budget.remaining * 100)}
               contentTypes={contentTypes}
               folders={folders}

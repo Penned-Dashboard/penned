@@ -65,7 +65,7 @@ export default async function WriterMarketplacePage({
   return (
     <DashboardShell
       role="writer"
-      title="Job Marketplace"
+      title="Job board"
       description="Open jobs you can claim right now. The list refreshes automatically."
       ctaLabel="View assigned jobs"
       ctaHref="/writer/assigned"

@@ -99,12 +99,22 @@ export async function createWorkspaceUser({
   role,
   companyName,
   password,
+  termsAcceptedAt,
+  termsVersion,
+  isUkCompany,
+  billingCountry,
+  onboardingAnswers,
 }: {
   email: string;
   fullName: string;
   role: Role;
   companyName?: string;
   password: string;
+  termsAcceptedAt?: string | null;
+  termsVersion?: string | null;
+  isUkCompany?: boolean;
+  billingCountry?: string | null;
+  onboardingAnswers?: Record<string, unknown> | null;
 }) {
   const supabase = createServerSupabaseClient();
   const normalizedEmail = email.toLowerCase();
@@ -178,12 +188,20 @@ export async function createWorkspaceUser({
         role: resolvedRole,
         company_name: companyName || null,
         password_hash: hashPassword(password),
+        ...termsFields({
+          termsAcceptedAt,
+          termsVersion,
+          isUkCompany,
+          billingCountry,
+          onboardingAnswers,
+        }),
       })
       .eq("id", existing.id)
       .select("id, role, email, full_name")
       .single();
 
     if (updateError || !updated) {
+      ensureTermsColumns(updateError?.message ?? null);
       throw new Error(updateError?.message ?? "Could not finish account setup.");
     }
 
@@ -206,12 +224,20 @@ export async function createWorkspaceUser({
       role: resolvedRole,
       company_name: companyName || null,
       password_hash: hashPassword(password),
+      ...termsFields({
+        termsAcceptedAt,
+        termsVersion,
+        isUkCompany,
+        billingCountry,
+        onboardingAnswers,
+      }),
     })
     .select("id, role, email, full_name")
     .single();
 
   if (error || !data) {
     ensurePasswordSupport(null, error?.message ?? null);
+    ensureTermsColumns(error?.message ?? null);
     throw new Error(error?.message ?? "Could not create user.");
   }
 
@@ -496,5 +522,41 @@ function ensurePasswordSupport(
     (data && !Object.prototype.hasOwnProperty.call(data, "password_hash"))
   ) {
     throw new Error(PASSWORD_SETUP_MESSAGE);
+  }
+}
+
+function termsFields({
+  termsAcceptedAt,
+  termsVersion,
+  isUkCompany,
+  billingCountry,
+  onboardingAnswers,
+}: {
+  termsAcceptedAt?: string | null;
+  termsVersion?: string | null;
+  isUkCompany?: boolean;
+  billingCountry?: string | null;
+  onboardingAnswers?: Record<string, unknown> | null;
+}) {
+  return {
+    ...(termsAcceptedAt ? { terms_accepted_at: termsAcceptedAt } : {}),
+    ...(termsVersion ? { terms_version: termsVersion } : {}),
+    ...(typeof isUkCompany === "boolean" ? { is_uk_company: isUkCompany } : {}),
+    ...(billingCountry !== undefined ? { billing_country: billingCountry || null } : {}),
+    ...(onboardingAnswers ? { onboarding_answers: onboardingAnswers } : {}),
+  };
+}
+
+function ensureTermsColumns(errorMessage: string | null) {
+  if (
+    errorMessage?.includes("terms_accepted_at") ||
+    errorMessage?.includes("terms_version") ||
+    errorMessage?.includes("is_uk_company") ||
+    errorMessage?.includes("billing_country") ||
+    errorMessage?.includes("onboarding_answers")
+  ) {
+    throw new Error(
+      "Client terms / VAT columns are missing. Run supabase/client-terms-and-vat.sql, then try again.",
+    );
   }
 }

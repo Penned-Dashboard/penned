@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { updateClientBillingAction } from "@/app/client/actions";
 import { SectionCard } from "@/components/dashboard-cards";
 
 const teamRoles = [
@@ -9,7 +10,7 @@ const teamRoles = [
     detail: "Billing, users, all clients, and all orders",
   },
   {
-    name: "Account manager",
+    name: "Manager",
     detail: "Create orders, approve spend, and view assigned clients",
   },
   {
@@ -37,9 +38,17 @@ type TeamMember = {
 export function ClientSettingsWorkspace({
   fullName,
   email,
+  isUkCompany = false,
+  billingCountry = "",
+  vatNumber = "",
+  billingNotice,
 }: {
   fullName: string;
   email: string;
+  isUkCompany?: boolean;
+  billingCountry?: string;
+  vatNumber?: string;
+  billingNotice?: string | null;
 }) {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("Content manager");
@@ -47,6 +56,7 @@ export function ClientSettingsWorkspace({
   const [savedMessage, setSavedMessage] = useState("");
   const [walletThreshold, setWalletThreshold] = useState("500");
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [ukCompany, setUkCompany] = useState(isUkCompany);
   const [team, setTeam] = useState<TeamMember[]>([
     { id: "owner", name: fullName, email, role: "Owner", status: "active" },
   ]);
@@ -97,6 +107,50 @@ export function ClientSettingsWorkspace({
             </label>
           </div>
         </div>
+      </SectionCard>
+
+      <SectionCard
+        description="UK companies are charged 20% VAT on content writing bills."
+        title="Billing country & VAT"
+      >
+        <form action={updateClientBillingAction} className="grid gap-4 md:grid-cols-2">
+          <label className="flex items-start gap-3 md:col-span-2">
+            <input
+              checked={ukCompany}
+              className="mt-1"
+              name="isUkCompany"
+              onChange={(event) => setUkCompany(event.target.checked)}
+              type="checkbox"
+            />
+            <span className="text-sm text-slate-600">
+              This is a UK company. Content writing bills include 20% UK VAT on top.
+            </span>
+          </label>
+          <label>
+            <span className="dashboard-label">Billing country</span>
+            <input
+              className="dashboard-input"
+              defaultValue={billingCountry || (ukCompany ? "United Kingdom" : "")}
+              name="billingCountry"
+              placeholder="United Kingdom"
+              type="text"
+            />
+          </label>
+          <label>
+            <span className="dashboard-label">VAT number (optional)</span>
+            <input
+              className="dashboard-input"
+              defaultValue={vatNumber}
+              name="vatNumber"
+              placeholder="GB123456789"
+              type="text"
+            />
+          </label>
+          <button className="button-primary md:col-span-2 md:w-fit" type="submit">
+            Save billing details
+          </button>
+        </form>
+        {billingNotice ? <p className="mt-3 text-sm font-medium text-emerald-700">{billingNotice}</p> : null}
       </SectionCard>
 
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">

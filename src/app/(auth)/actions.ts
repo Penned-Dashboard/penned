@@ -8,6 +8,7 @@ import {
   signOutWorkspaceUser,
   switchWorkspaceRole,
 } from "@/lib/auth";
+import { CLIENT_TERMS_VERSION } from "@/lib/client-terms";
 import { isRole } from "@/lib/types";
 
 export async function signUpAction(formData: FormData) {
@@ -19,6 +20,18 @@ export async function signUpAction(formData: FormData) {
   const companyName = String(formData.get("companyName") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const acceptedTerms = String(formData.get("acceptTerms") ?? "") === "on";
+  const isUkCompany = String(formData.get("isUkCompany") ?? "") === "on";
+  const billingCountry = isUkCompany ? "United Kingdom" : String(formData.get("billingCountry") ?? "").trim();
+  const contentNeeds = String(formData.get("onboardingContentNeeds") ?? "")
+    .split("|")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const industries = String(formData.get("onboardingIndustries") ?? "")
+    .split("|")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const contentSource = String(formData.get("onboardingContentSource") ?? "").trim();
+  const typeformStatus = String(formData.get("onboardingTypeform") ?? "").trim();
 
   // Public registration is client-only; writers are invited and sign in.
   if (!firstName || !lastName || !email || password.length < 8 || roleValue !== "client" || !acceptedTerms) {
@@ -34,6 +47,18 @@ export async function signUpAction(formData: FormData) {
       role: "client",
       companyName,
       password,
+      termsAcceptedAt: new Date().toISOString(),
+      termsVersion: CLIENT_TERMS_VERSION,
+      isUkCompany,
+      billingCountry: billingCountry || null,
+      onboardingAnswers: {
+        agencyName: companyName || null,
+        contentNeeds,
+        industries,
+        contentSource: contentSource || null,
+        typeformStatus: typeformStatus || null,
+        completedAt: new Date().toISOString(),
+      },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
@@ -41,7 +66,7 @@ export async function signUpAction(formData: FormData) {
     redirect(
       message.includes("already exists")
         ? "/sign-up?error=exists"
-        : message.includes("password sign-in")
+        : message.includes("password sign-in") || message.includes("terms / VAT columns")
           ? "/sign-up?error=setup"
           : message.includes("Supabase must be configured")
             ? "/sign-up?error=env"
@@ -49,7 +74,7 @@ export async function signUpAction(formData: FormData) {
     );
   }
 
-  redirect(`/${user.role}`);
+  redirect(`/sign-up/welcome?name=${encodeURIComponent(firstName)}`);
 }
 
 export async function signInAction(formData: FormData) {
