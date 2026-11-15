@@ -5,8 +5,7 @@ export const DEFAULT_ACCOUNT_MANAGER = {
   initials: "FA",
   /** Slack DM deep link — opens a message to Fairmay in the client hub. */
   messageUrl: "https://penned-clienthub.slack.com/team/U08T7E3E6DP",
-  /** Photo pending from Liam — null falls back to initials. */
-  photoUrl: null as string | null,
+  photoUrl: "/brand/fairmay-alcobendras.jpg",
 };
 
 export function accountManagerForClient(_clientProfileId?: string) {
