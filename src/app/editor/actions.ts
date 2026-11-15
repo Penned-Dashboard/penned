@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
+import { acceptWriterEditorTerms } from "@/lib/orders";
 import { setOrderWorkflowStatus } from "@/lib/team-data";
 
 export async function startEditingAction(formData: FormData) {
@@ -32,4 +33,13 @@ export async function sendBackToWriterAction(formData: FormData) {
   revalidatePath("/editor");
   revalidatePath("/editor/my-edits");
   redirect("/editor/my-edits");
+}
+
+export async function acceptEditorTermsAction() {
+  const result = await acceptWriterEditorTerms();
+  const params = new URLSearchParams({
+    notice: result.ok ? "success" : "error",
+    noticeMessage: result.message,
+  });
+  redirect(`/editor/settings?${params.toString()}`);
 }

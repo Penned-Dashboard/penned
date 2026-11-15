@@ -1,14 +1,16 @@
 import { BulkOrderWorkspace } from "@/components/bulk-order-workspace";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { requireRole } from "@/lib/auth";
+import { getClientWalletAvailableCents } from "@/lib/content-budget";
 import { getClientBillingFlags, getClientFolders, getContentTypeOptions } from "@/lib/orders";
 
 export default async function ClientBulkOrdersPage() {
   const user = await requireRole("client");
-  const [contentTypes, folders, billing] = await Promise.all([
+  const [contentTypes, folders, billing, availableCents] = await Promise.all([
     getContentTypeOptions({ includeInactive: true }),
     getClientFolders(user.profileId),
     getClientBillingFlags(user.profileId),
+    getClientWalletAvailableCents(user.profileId),
   ]);
 
   return (
@@ -23,6 +25,7 @@ export default async function ClientBulkOrdersPage() {
         applyUkVat={billing.applyUkVat}
         contentTypes={contentTypes}
         folders={folders}
+        walletBalance={availableCents / 100}
       />
     </DashboardShell>
   );

@@ -32,8 +32,8 @@ export function MarketingPageShell({
             <Link className="button-primary" href="/sign-up?role=client">
               Start Ordering
             </Link>
-            <Link className="button-secondary" href="/sign-up?role=writer">
-              Join as Writer
+            <Link className="button-secondary" href="/contact">
+              Apply to write
             </Link>
           </div>
         </div>

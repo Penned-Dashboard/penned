@@ -41,6 +41,14 @@ For the current implementation audit, deployment recommendation, and short-term 
 
 For environment setup and deployment steps, see [DEPLOYMENT.md](/Users/dinaldholiya/All Projects/penned/DEPLOYMENT.md).
 
+## Launch SQL (before real money)
+
+Run these in the Supabase SQL editor if not already applied:
+
+1. `supabase/client-terms-and-vat.sql`
+2. `supabase/team-roles-and-workflow.sql`
+3. `supabase/security-launch-hardening.sql` — webhook idempotency, writer approval + terms columns, client wallets / ledger
+
 ## Recommended next build steps
 
 1. Run the latest Supabase upgrade SQL and seed data against the active project.

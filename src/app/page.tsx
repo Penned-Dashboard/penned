@@ -278,7 +278,7 @@ export default async function Home() {
             links={[
               { label: "Privacy", href: "/privacy" },
               { label: "Terms", href: "/terms" },
-              { label: "Security", href: "/security" },
+              { label: "Writer & editor terms", href: "/writer-terms" },
             ]}
           />
         </div>

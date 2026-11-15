@@ -1,0 +1,458 @@
+Penned Writer and Editor Terms of Service
+Version 1.0 · Last updated 16 November 2026
+
+1. About these terms 
+1.1 These terms (the Terms) are an agreement between Howl Publishing Limited, trading as 
+Penned, a company registered in England and Wales under company number 12700992, 
+whose registered office is at 67 Cecile Park, London, N8 9AT, United Kingdom (Penned, we, 
+us, our), and the individual or business that registers as a writer or editor with us (you, 
+your). They set out how you provide writing and editing services to us through our website 
+and dashboard. 
+1.2 How you accept. You accept these Terms when you tick the box at sign-up and create 
+your Account. If you register on behalf of a business, such as your own company, you 
+confirm that you are authorised to bind it, and "you" then includes that business. You must 
+be at least 18 years old. 
+1.3 What makes up the agreement. Our agreement with you (the Agreement) is made up 
+of these Terms and each Assignment you accept. If they conflict, the details of an 
+Assignment as shown in the Dashboard come first, then these Terms, then the Brief. Any 
+terms you send us, including on an invoice, do not form part of the Agreement. 
+1.4 Contact. You can reach us about these Terms at support@penned.io. 
+2. Definitions 
+Term 
+Meaning 
+Account 
+Your account on the Dashboard. 
+Assignment 
+A piece of writing, editing, transcreation or review work that we offer 
+you through the Dashboard and you accept under clause 5. 
+Brief 
+The written instructions for an Assignment, including any style guide, 
+keywords, sources, examples and compliance requirements. 
+Client 
+A business that buys content from us. 
+
+Client Materials 
+Anything a Client or End Client gives us for an Assignment, such as 
+Briefs, documents, data, quotes and access to their systems. 
+Confidential 
+Information 
+Information that is marked as confidential, or that a reasonable person 
+would understand to be confidential, including the information listed in 
+clause 9.2. 
+Dashboard 
+Our online platform for registering, accepting Assignments, delivering 
+work, messaging and getting paid. 
+Data Protection Law 
+The UK GDPR, the Data Protection Act 2018, the EU GDPR where it 
+applies, and any other law on personal data that applies to the 
+Services. 
+Deliverable 
+The written content, edits or other work you deliver to us under an 
+Assignment, including any revised versions. 
+End Client 
+A Client's own client, for whom the content is ultimately written. 
+Fee 
+The amount payable to you for an Assignment, as set out in clause 7. 
+Generative AI Tool 
+Any software that generates or rewrites text using artificial intelligence, 
+such as a large language model. 
+Services 
+The writing, editing and related services you provide to us under the 
+Agreement. 
+Signature, Specialist 
+and Standard 
+Our service tiers, which are described in our Client Terms and in the 
+Assignment. 
+Work Product 
+Everything you create in providing the Services, including each 
+Deliverable, drafts, notes and research, and all rights in them. 
+3. Your Account and the Dashboard 
+3.1 Your details. You must give us accurate information when you register and keep it up to 
+date, including your name, country, languages, areas of expertise and payment details. You 
+may only have one Account. 
+
+3.2 Approval. Registering an Account does not guarantee that we will give you work. We 
+may review your application, ask for writing samples or a test piece, and approve or decline 
+you at our discretion. We may ask for identity and right-to-work information where the law or 
+a Client requires it. 
+3.3 Keeping your Account secure. You are responsible for everything done through your 
+Account. Keep your login details secure, do not share them, and tell us promptly if you 
+suspect anyone else has used your Account. You may not let anyone else use your Account 
+or do your Assignments. 
+3.4 Availability. We aim to keep the Dashboard working well, but we do not promise it will 
+be uninterrupted or error-free. We may carry out maintenance and make changes to it. 
+3.5 Fair use of the Dashboard. You must not copy or scrape the Dashboard or Client 
+Materials, try to access parts of it you are not meant to, upload anything harmful, or use it for 
+anything other than doing Assignments for us. 
+4. You are an independent contractor 
+4.1 Independent contractor. You provide the Services as an independent contractor. 
+Nothing in the Agreement makes you our employee, worker, partner or agent, or gives you 
+the right to bind us. You have no right to holiday pay, sick pay, pension contributions or other 
+employee benefits from us. 
+4.2 No guaranteed work. We are not obliged to offer you any Assignments, and you are not 
+obliged to accept any. Each Assignment you accept is a separate contract. We may offer 
+Assignments to other writers and editors, and you may work for others. 
+4.3 How you work. You decide when, where and how you do an Assignment, so long as 
+you meet the Brief and the deadline. You provide your own equipment, software and internet 
+connection. We will not tell you when to work or how many hours to work. 
+4.4 Substitutes. You must do each Assignment yourself, and may not pass it to anyone else 
+without our written agreement, because of our confidentiality and quality commitments to 
+Clients. If you have your own company with employees, they may only work on an 
+Assignment if you tell us first and we agree, and they are bound by terms at least as strict as 
+these Terms. 
+4.5 Tax and insurance. You are responsible for your own tax, national insurance or 
+equivalent, and any registration or insurance your work needs, in the country where you are 
+based. If any authority treats us as liable for tax or social security on your Fees, you will 
+repay us what we have to pay, to the extent the law allows. We do not give tax advice. 
+4.6 Right to work. You are responsible for making sure you are allowed to do the Services 
+where you are based. 
+5. Assignments 
+
+5.1 Offers. We offer Assignments through the Dashboard. Each offer shows the type of 
+work, the tier, the language, the word count, the deadline, the Fee, and the Brief. 
+5.2 Accepting. An Assignment becomes binding when you accept it in the Dashboard. You 
+should only accept an Assignment if you can meet the Brief and the deadline. 
+5.3 Deadlines. You must deliver by the deadline in the Assignment. If you think you will be 
+late, tell us as soon as you know, through the Dashboard or your account manager. Our 
+Clients rely on our delivery times, so we may reassign an Assignment if you will be late. 
+5.4 Questions about the Brief. If the Brief is unclear, ask through the Dashboard before 
+you start or as soon as you notice. If we take time to answer, your deadline moves by the 
+same amount. Do not contact a Client or End Client directly. 
+5.5 Standards. Each Deliverable must be accurate, original, well written, in the right 
+language and market, and in line with the Brief and any style guide. It must be free of 
+spelling and grammar errors and ready for our editors to check, and must meet the 
+standards for its tier set out in clause 6. 
+5.6 Revisions. If we or the Client ask for changes within the scope of the original Brief, you 
+will make them promptly and free of charge, within the time we give you. A request that adds 
+new requirements to the Brief is a new Assignment, and we will tell you if we treat it as one. 
+If a Deliverable still does not meet the Brief after two rounds of revisions, we may give it to 
+another writer or editor, and we may reduce or withhold your Fee for that Assignment in 
+proportion to the shortfall. 
+5.7 Cancelling. We may cancel an Assignment at any time. If we cancel after you have 
+started work, we will pay you a fair part of the Fee for the work you have done, which will be 
+at least 50% of the Fee if you had completed a draft. You may only withdraw from an 
+Assignment you have accepted if there is a genuine reason, and you must tell us promptly 
+so that we can reassign it. 
+6. How you write 
+6.1 Human-written work. Signature and Specialist Deliverables must be written entirely by 
+you. You must not use any Generative AI Tool to write, rewrite, paraphrase, translate or 
+expand any part of them, and must not use text that was produced by one. You may use 
+tools that do not generate text, such as search engines, research databases, dictionaries, 
+translation reference tools used only to look up single words, and spelling and grammar 
+checkers. 
+6.2 Standard work. Standard assignments may involve editing or transcreating a draft that 
+we give you. You may only use a Generative AI Tool on a Standard Assignment if the 
+Assignment or our written instructions say you may, and only the tools we approve. Where 
+the Assignment says the work is to be human-written, clause 6.1 applies. 
+6.3 Original work. Every Deliverable must be your own original work, written for us. You 
+must not copy, spin or closely paraphrase anyone else's work, reuse work you have 
+
+delivered to anyone else, or reuse your own earlier work, unless the Brief says you may. You 
+may quote short passages from other sources only where the Brief allows it and you give a 
+clear citation. 
+6.4 Sources and facts. Check your facts against reliable sources, and cite them where the 
+Brief asks. Do not invent quotes, statistics, studies, sources, testimonials or reviews. Where 
+a Brief asks for claims about health, money, legal rights or other regulated topics, follow the 
+Brief's compliance instructions exactly and tell us if you think a claim may be wrong or 
+misleading. 
+6.5 Brief and brand. Follow the Brief, the style guide and the Client's brand voice. Do not 
+add your own name, links, or promotional material, and do not mention Penned in a 
+Deliverable unless the Brief says to. 
+6.6 Checks. We check Deliverables for originality and use of Generative AI Tools, using 
+plagiarism and AI-detection software and human review. AI-detection software is not 
+perfectly reliable, so a person reviews any flag, and we will tell you about the result and give 
+you a fair chance to respond before we withhold payment or end the Agreement because of 
+it. On request, you must give us evidence that you wrote the work, such as your drafting 
+history, notes and sources. If we find a breach of clause 6.1 or 6.3, we may reject the 
+Deliverable, withhold the Fee for it, and treat it as a breach under clause 14. 
+6.7 Content we do not write. You must not write, and we will not ask you to write, content 
+that is unlawful, defamatory, discriminatory, hateful, sexually explicit or violent; that infringes 
+anyone's rights; that is a fake review or testimonial; that is academic work to be submitted as 
+someone else's own; or that is designed to mislead people about an election or a matter of 
+public safety. If a Brief asks for any of this, tell us rather than writing it. You may decline an 
+Assignment on these grounds. 
+7. Payment 
+7.1 Fees. The Fee for each Assignment is shown in the Dashboard when we offer it, and is a 
+fixed amount in US dollars, usually calculated per word. The Fee you accept is the Fee you 
+are paid for that Assignment, and it covers everything you do for it, including revisions under 
+clause 5.6. We may change the rates we offer for future Assignments, but not for an 
+Assignment you have already accepted. 
+7.2 How we pay. We pay your Fees through a payment method we offer in the Dashboard. 
+You are responsible for giving us correct payment details, and for any bank, transfer or 
+currency conversion charges on your side. 
+7.3 When we pay. We pay the Fee for an Assignment within 14 days after we accept the 
+Deliverable. We accept a Deliverable when we confirm it in the Dashboard, or when it has 
+passed our checks and is not rejected within 7 days after delivery. If a Client has asked for 
+revisions, the Deliverable is accepted when the revised version is accepted. 
+7.4 Invoices. Unless you tell us you want to send invoices, the Dashboard will generate a 
+statement of what we owe you. If you are required to charge VAT or a similar tax, you must 
+
+tell us and give us a valid tax invoice. Fees are inclusive of any such tax unless we agree 
+otherwise in writing. 
+7.5 Late delivery. If you deliver late, for a reason that is not caused by us or a Client, and a 
+Client is entitled to a credit as a result, we may reduce your Fee for that Assignment by up to 
+25%. 
+7.6 Reducing or withholding payment. We may withhold or reduce a Fee only as clauses 
+5.6, 6.6 and 7.5 allow, or where you have breached the Agreement for that Assignment. We 
+will tell you what we are withholding and why. We may set off any amount you owe us under 
+the Agreement against what we owe you. 
+7.7 Disputes. If you disagree with a payment, tell us in writing within 30 days and we will 
+look into it promptly. We will pay any part you do not dispute. 
+7.8 Tax. If the law requires us to withhold tax from a payment to you, we will pay you the net 
+amount and give you any certificate the law requires. You are responsible for declaring and 
+paying your own tax. 
+8. Ownership of your work 
+8.1 Assignment of rights. In return for the Fee, you assign to us, with full title guarantee, all 
+copyright and other intellectual property rights in the Work Product, including future rights, 
+worldwide and for the full period of those rights. This happens automatically when the Work 
+Product is created, and no further payment is due for it beyond the Fee. If any right cannot 
+be assigned under the law that applies to you, you grant us an exclusive, perpetual, 
+worldwide, irrevocable, royalty-free, transferable licence to use it in any way, with the right to 
+sub-license. 
+8.2 Moral rights. To the fullest extent the law allows, you unconditionally and irrevocably 
+waive all moral rights in the Work Product, including the right to be named as its author and 
+the right to object to changes to it. You agree that we and our Clients may publish the Work 
+Product without naming you, edit it, and publish it under another name. 
+8.3 Further steps. At our request and cost, you will sign anything and do anything else that 
+is reasonably needed to give us the rights described in this clause, and, to the extent the law 
+allows, you appoint us as your attorney to do so if you do not. This continues after the 
+Agreement ends. 
+8.4 Your own materials. You keep ownership of your pre-existing materials, such as your 
+own skills, knowledge, methods and tools. If any of them are part of a Deliverable, you grant 
+us a perpetual, worldwide, royalty-free licence to use them as part of it. 
+8.5 Where the rights go. We will assign rights in the Deliverable to the Client as set out in 
+our Client Terms. You have no claim against us or any Client over how a Deliverable is used. 
+8.6 Portfolio and samples. Because we deliver work under our Clients' brands, you must 
+not publish or show a Deliverable, name a Client or End Client, or claim a Deliverable as 
+your own, without our prior written consent. You may say in general terms that you write 
+
+content for agencies, and that you work as a writer with Penned, as long as you do not 
+identify any Client, End Client or Deliverable. If you want to use a piece as a sample, ask us 
+first. We may offer you a version with identifying details removed. 
+8.7 Using the work. We may use Work Product, and drafts and notes you have given us, for 
+our business. This includes using Deliverables, with identifying details removed, as private 
+samples for prospective Clients, as set out in our Client Terms. 
+9. Confidentiality 
+9.1 Keeping things confidential. You must keep our Confidential Information confidential, 
+use it only to do the Services, and not share it with anyone else, unless we agree in writing. 
+This applies while the Agreement is in force and for 5 years after it ends, and for as long as 
+the information remains a trade secret. 
+9.2 What it covers. Confidential Information includes the identity of our Clients and End 
+Clients, Briefs, Client Materials, Deliverables until they are published, the fact that a Client 
+uses Penned, our rates, prices and terms, our Writers' identities and contact details, our 
+processes, templates, style guides and tools, and the contents of the Dashboard. 
+9.3 White-label anonymity. Our Clients publish content under their own brands. Subject to 
+clause 8.6, you must never reveal that Penned or you wrote a Deliverable, or that a Client 
+uses us, to anyone, including on social media, in portfolios, on job sites or on professional 
+networks, unless we agree in writing first. 
+9.4 Exceptions. This clause does not apply to information that is or becomes public other 
+than through your breach, that you already had or developed independently, or that you 
+lawfully received from someone else without a duty of confidence. You may disclose 
+Confidential Information where the law or a regulator requires it, and you will tell us first 
+where the law allows. 
+9.5 Whistleblowing and legal rights. Nothing in this clause stops you from reporting a 
+crime or a breach of the law to the authorities, or from making a protected disclosure, or from 
+seeking legal advice. 
+9.6 Return and deletion. When an Assignment ends, or the Agreement ends, you must 
+delete or return our Confidential Information and Client Materials on request, except where 
+the law requires you to keep them. 
+9.7 Security. Do not store Client Materials in your personal accounts, on shared computers, 
+or in public tools. Do not paste Client Materials or Confidential Information into a Generative 
+AI Tool or any online service we have not approved. Use a strong, unique password, keep 
+your devices updated and protected, and tell us straight away if you think any Confidential 
+Information has been lost or seen by someone who should not see it. 
+10. Working only through Penned 
+
+10.1 Stay on the platform. All communication about Assignments, Briefs, Deliverables, 
+Fees and Clients must go through the Dashboard or your account manager. You must not 
+share your personal contact details with a Client or End Client, or ask for theirs, or arrange 
+or accept work or payment outside the Dashboard. 
+10.2 No going around us. You must not offer or provide writing, editing or similar services 
+directly to, or through another business for, any Client or End Client you first learned of 
+through Penned, in place of working through us. 
+10.3 Not approaching our Clients. While the Agreement is in force and for 12 months after 
+your last Assignment, you will not, directly or through anyone else, solicit or approach any 
+Client or End Client you learned of through the Services, or accept work from any of them, 
+for writing, editing or similar services outside Penned. This does not stop you from working 
+for a business that is not a Client or End Client, including our competitors, and it is not a 
+breach if a business approaches you without any contact from you, as long as you tell us 
+promptly and decline the work. 
+10.4 If you breach this clause. If you breach clause 10.1, 10.2 or 10.3, you will pay us, at 
+our choice, either the Fees we would have charged the Client for that work at our rates when 
+it was done, or, where you only approached a Client or End Client and no work was done, a 
+fixed sum of US$1,000 for each one approached. You will not owe us both for the same 
+breach. This is a fair estimate of our loss and protects our legitimate interest in our Client 
+relationships. 
+10.5 Tell us. If a Client, End Client, or anyone else approaches you about work outside 
+Penned that is connected with the Services, you must tell us promptly. 
+10.6 Other work and Penned's team. You are free to work for others. But you must not use 
+our Confidential Information to do so, and while the Agreement is in force and for 12 months 
+after it ends, you must not encourage any other Penned writer or editor to stop working with 
+us. This does not stop general job adverts, or someone choosing to work for others on their 
+own. 
+10.7 Each restriction stands alone. Each part of this clause is separate. If a court decides 
+that any part is wider than is reasonable, it will apply to the extent the court considers 
+reasonable, and the rest of the clause is unaffected. 
+10.8 Remedies. We may suspend your Account and end the Agreement immediately if you 
+breach this clause 10. You agree that damages alone may not be enough to protect us, and 
+that we may ask a court for an injunction or other urgent relief to stop a breach without 
+having to prove actual loss. 
+11. Data protection 
+11.1 Your own data. We use your personal data as the controller, as explained in our 
+Privacy Policy, which includes a section for writers and applicants. 
+
+11.2 Personal data in Assignments. Briefs and Client Materials may include personal data, 
+such as the names, job titles and quotes of people mentioned in content. For that data, we 
+are the Client's processor and you are our sub-processor. When you handle it, you must: 
+●​ (a) use it only to do the Assignment and follow our written instructions; 
+●​ (b) keep it confidential and secure, as clause 9.7 requires; 
+●​ (c) not share it with anyone else, or move it to any other tool or account, without our 
+written permission; 
+●​ (d) tell us without undue delay, and within 24 hours, if you become aware that any of 
+it has been lost, stolen, shared by mistake or accessed without permission; 
+●​ (e) help us to meet our duties to Clients and individuals, such as finding or deleting 
+data on request; 
+●​ (f) delete or return it when the Assignment ends, as we ask, unless the law requires 
+you to keep it; and 
+●​ (g) only process it in a country outside the UK or the European Economic Area where 
+we have told you that is allowed. 
+11.3 Special category data. Do not put special category data, such as health information 
+about identifiable people, in a Deliverable unless the Brief requires it and we have agreed in 
+writing. 
+11.4 Your obligations. You must follow Data Protection Law where it applies to you. If you 
+are asked about personal data in connection with the Services by anyone other than us, you 
+must tell us promptly and not respond without our agreement, unless the law requires you to. 
+11.5 Writers outside the UK. If you are based in a country that the UK does not treat as 
+providing adequate data protection, then before we send you any Brief that contains 
+personal data, you agree to sign the UK's International Data Transfer Agreement, or the UK 
+Addendum to the EU Standard Contractual Clauses, in the form we send you. We will not 
+send you personal data until you have done so, and you must not accept an Assignment that 
+involves personal data until then. 
+12. Your promises and our promises 
+12.1 Your promises. You promise that: 
+●​ (a) you are at least 18 and allowed to do the Services where you are based; 
+●​ (b) the information you give us, including about your skills, languages, qualifications 
+and experience, is accurate; 
+●​ (c) each Deliverable is your own original work and will not infringe anyone's 
+intellectual property, privacy or other rights; 
+●​ (d) you have the right to give us the rights in clause 8, and have not given them to 
+anyone else; 
+●​ (e) Deliverables will comply with clause 6 and the law, and will not be defamatory or 
+misleading; 
+●​ (f) you will keep to the Agreement and any compliance requirements in the Brief; and 
+●​ (g) you will tell us promptly if anything you have told us changes or you can no longer 
+meet an Assignment. 
+
+12.2 Our promises. We promise to give you clear Briefs, to answer your questions promptly, 
+to pay you as clause 7 sets out, to treat your personal data as our Privacy Policy sets out, 
+and to treat you with respect. 
+12.3 What we do not promise. We do not promise that you will receive any amount of work 
+or income, that a Client will accept or publish any Deliverable, or that the Dashboard will 
+always be available. Briefs are written by Clients and we are not responsible for their 
+accuracy. 
+12.4 Nothing else implied. Apart from the promises in these Terms, all other warranties, 
+conditions and terms implied by law are excluded to the fullest extent the law allows. 
+13. Liability and indemnity 
+13.1 What is never limited. Nothing in the Agreement limits or excludes either party's 
+liability for death or personal injury caused by negligence, for fraud or fraudulent 
+misrepresentation, or for anything else that cannot lawfully be limited or excluded. 
+13.2 Overall cap. Subject to clauses 13.1 and 13.3, each party's total liability to the other 
+under or in connection with the Agreement, whether in contract, tort (including negligence), 
+breach of statutory duty or otherwise, is limited to the greater of: (a) the total Fees paid and 
+payable to you in the 12 months before the event giving rise to the claim; and (b) US$1,000. 
+This cap does not apply to Fees we owe you, or to amounts you owe us under clause 10.4. 
+13.3 Higher cap. For your breach of clause 6.1, 6.3, 9 (Confidentiality), 10 (Working only 
+through Penned) or 11 (Data protection), or for a claim under clause 13.4, your total liability 
+is limited to the greater of: (a) US$10,000; and (b) the total Fees paid and payable to you in 
+the 12 months before the event giving rise to the claim. 
+13.4 Your indemnity. You will pay us for any damages, fines, costs and reasonable legal 
+fees we have to pay a third party, including a Client, End Client or regulator, to the extent 
+they arise from your breach of clause 6.1, 6.3, 8 or 9, or from a Deliverable that infringes 
+another person's rights because you copied or took it from somewhere else. This does not 
+apply to the extent the claim arises from the Brief, Client Materials, or changes made by 
+anyone other than you. We will tell you promptly about any claim, let you help with its 
+defence, and not settle it without telling you first. 
+13.5 Losses neither of us is liable for. Subject to clause 13.1, neither of us is liable to the 
+other for any loss of profits, revenue, business, contracts, goodwill or reputation, or for any 
+indirect or consequential loss. This does not affect your duty to pay amounts under clause 
+10.4, and does not stop us recovering the amounts Clients or authorities claim from us for 
+your breach, which are direct losses. 
+13.6 Insurance. You are responsible for any insurance you want or the law requires for your 
+work, such as professional indemnity insurance. We do not provide insurance for you. 
+14. Suspension and ending the agreement 
+
+14.1 You can leave at any time. There is no minimum term. You may close your Account at 
+any time in the Dashboard or by email. If you have an Assignment in progress, you should 
+finish it or tell us promptly so that we can reassign it. We will pay you for work we have 
+accepted. 
+14.2 We can end the Agreement on notice. We may end the Agreement and close your 
+Account for any reason by giving you at least 14 days' notice in writing. We may stop offering 
+you Assignments at any time, since we do not promise to give you work. 
+14.3 Ending the Agreement for serious problems. Either of us may end the Agreement 
+immediately by written notice if the other materially breaches it and, where the breach can 
+be fixed, does not fix it within 7 days of being asked in writing. We may also end the 
+Agreement immediately, without giving you a chance to fix it, if you: 
+●​ (a) breach clause 6.1 (human-written work) or 6.3 (original work); 
+●​ (b) breach clause 9, 10 or 11; 
+●​ (c) are dishonest with us, including about your identity, qualifications or experience; 
+●​ (d) are convicted of a serious offence involving dishonesty, or lose the right to work; 
+or 
+●​ (e) behave in a way that puts our reputation, a Client or our other Writers at serious 
+risk. 
+14.4 Suspension. We may suspend your Account and pause your Assignments while we 
+look into a suspected breach of clause 6, 9, 10 or 11, or where we reasonably suspect fraud 
+or a security risk. We will tell you why and give you a fair chance to respond, and will restore 
+your access if the suspicion is not borne out. 
+14.5 What happens when the Agreement ends. 
+●​ (a) We will pay Fees due for Deliverables we have accepted, subject to clause 7.6. 
+●​ (b) You must stop working on Assignments and delete or return Confidential 
+Information and Client Materials, as clause 9.6 says. 
+●​ (c) The rights we hold in Work Product stay with us, and you must still help us as 
+clause 8.3 says. 
+●​ (d) You lose access to your Account. 
+14.6 Clauses that continue. Clauses 4.5, 7 (for amounts owed), 8, 9, 10, 11, 13, 14.5 and 
+15, and any other clause meant to continue, remain in force after the Agreement ends. 
+15. Changes, general terms and governing law 
+15.1 Changes to these Terms. We may update these Terms. For any change that materially 
+affects you, we will give you at least 30 days' notice by email and in the Dashboard. We may 
+make changes needed to comply with the law, or that do not disadvantage you, on shorter 
+notice. Updated Terms apply to Assignments you accept after they take effect, and 
+Assignments already accepted stay under the Terms that applied when you accepted them. 
+If you do not agree to a change, you may close your Account before it takes effect. 
+
+15.2 Events outside our control. Neither of us is liable for delay or failure caused by 
+events beyond our reasonable control, such as natural disasters, war, internet or power 
+outages, or failures of third-party platforms. This does not apply to payment obligations. 
+15.3 Transfer. You may not transfer your rights or obligations under the Agreement without 
+our written consent. We may transfer the Agreement to a group company or to a buyer of all 
+or part of our business, and will tell you if we do. 
+15.4 Bribery and sanctions. Each of us will comply with anti-bribery and anti-corruption 
+laws. You confirm that you are not subject to sanctions imposed by the UK, the EU, the 
+United Nations or the United States, and that you are not working from a country or region 
+where we cannot lawfully pay you. 
+15.5 Notices. Notices under the Agreement must be in writing. We will send notices to the 
+email address on your Account or through the Dashboard. You should send notices to 
+support@penned.io. An email notice is treated as received at 9am on the next business day 
+in England after it is sent. 
+15.6 Entire agreement. The Agreement is the whole agreement between us about its 
+subject and replaces anything said or written before it. Neither of us has relied on any 
+statement that is not set out in the Agreement. This does not limit liability for fraud. 
+15.7 Waiver and severance. If either of us does not enforce a right straight away, that does 
+not stop us enforcing it later. If a court finds any part of the Agreement invalid or 
+unenforceable, the rest stays in force and the affected part will apply with the minimum 
+change needed to make it valid. 
+15.8 Third-party rights. No one other than you and us, including our Clients and End 
+Clients, has any right to enforce the Agreement, whether under the Contracts (Rights of 
+Third Parties) Act 1999 or otherwise. 
+15.9 Electronic acceptance and records. The Agreement is formed electronically, and our 
+electronic records of your acceptance and of your Assignments are evidence of them. 
+15.10 Talk to us first. If a dispute arises, either of us may raise it in writing. Your account 
+manager and our founder will try in good faith to resolve it within 14 days before either of us 
+starts court proceedings. 
+15.11 Governing law and courts. The Agreement, and any dispute or claim arising out of or 
+in connection with it, including non-contractual disputes or claims, is governed by the law of 
+England and Wales, and the courts of England and Wales have exclusive jurisdiction. 
+However, either of us may seek urgent relief, such as an injunction, in any court, and nothing 
+in this clause removes any rights you have under the mandatory laws of the country where 
+you live. 
+15.12 Version. These Terms were last updated on 16 November 2026. Version 1.0.

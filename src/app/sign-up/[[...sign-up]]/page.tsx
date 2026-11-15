@@ -15,6 +15,11 @@ export default async function SignUpPage({
     redirect(rolePath(user.role));
   }
 
+  // Public signup is client-only; writers/editors are invited.
+  if (params.role && params.role !== "client") {
+    redirect("/contact");
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[var(--penned-navy)]">
       <div

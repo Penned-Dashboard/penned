@@ -327,6 +327,11 @@ export async function signOutWorkspaceUser() {
 }
 
 export async function switchWorkspaceRole(nextRole: Role) {
+  const { allowDemoTools } = await import("@/lib/env");
+  if (!allowDemoTools()) {
+    throw new Error("Role switching is disabled in production.");
+  }
+
   const user = await getCurrentAppUser();
 
   if (!user) {

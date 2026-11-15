@@ -3,7 +3,8 @@ import { loadSampleClientOrdersAction } from "@/app/client/actions";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { WorkspaceAutoRefresh } from "@/components/workspace-auto-refresh";
 import { requireRole } from "@/lib/auth";
-import { getContentBudgetSnapshot } from "@/lib/content-budget";
+import { getClientWalletAvailableCents, getContentBudgetSnapshot } from "@/lib/content-budget";
+import { allowDemoTools } from "@/lib/env";
 import { getClientFolders, getClientOrders, getClientReviewQueue, getInvoices } from "@/lib/orders";
 
 export default async function ClientDashboardPage({
@@ -22,11 +23,12 @@ export default async function ClientDashboardPage({
         : null;
   const sampleMessage = params.sampleMessage?.trim() ?? "";
 
-  const [liveOrders, reviewQueue, invoices, folders] = await Promise.all([
+  const [liveOrders, reviewQueue, invoices, folders, availableCents] = await Promise.all([
     getClientOrders(user.profileId),
     getClientReviewQueue(user.profileId),
     getInvoices(user.profileId),
     getClientFolders(user.profileId),
+    getClientWalletAvailableCents(user.profileId),
   ]);
 
   const workspaceTitle = `Welcome back, ${user.fullName.split(" ")[0] || user.fullName}`;
@@ -47,7 +49,10 @@ export default async function ClientDashboardPage({
     (item) => `${item.clientLabel} ${item.title} ${item.writer} ${item.status}`,
   );
 
-  const budget = getContentBudgetSnapshot(liveOrders, invoices);
+  const budget = getContentBudgetSnapshot(liveOrders, invoices, {
+    availableCents,
+    allowDemoFigures: allowDemoTools(),
+  });
   const estimatedRemaining = budget.remaining;
 
   const metrics = [
@@ -76,7 +81,7 @@ export default async function ClientDashboardPage({
       href: "/client/content-budget",
     },
   ];
-  const showSampleLoader = process.env.NODE_ENV !== "production" || Boolean(user.canSwitchRoles);
+  const showSampleLoader = allowDemoTools() && Boolean(user.canSwitchRoles);
 
   return (
     <DashboardShell

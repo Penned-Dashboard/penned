@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import {
+  acceptWriterEditorTerms,
   claimOrder,
   markJobInProgress,
   requestPayout,
@@ -67,6 +68,11 @@ export async function requestPayoutAction(formData: FormData) {
   const amount = Number(formData.get("amount") ?? "0");
   const result = await requestPayout(amount);
   redirectWithNotice("/writer/earnings", result.ok, result.message);
+}
+
+export async function acceptWriterTermsAction() {
+  const result = await acceptWriterEditorTerms();
+  redirectWithNotice("/writer/settings", result.ok, result.message);
 }
 
 export async function updateWriterSettingsAction(formData: FormData) {

@@ -56,10 +56,13 @@ export function BulkOrderWorkspace({
   contentTypes,
   folders,
   applyUkVat = false,
+  walletBalance = 0,
 }: {
   contentTypes: ContentTypeOption[];
   folders: ClientFolder[];
   applyUkVat?: boolean;
+  /** Real prepaid balance in USD. Defaults to 0 — never invent demo funds. */
+  walletBalance?: number;
 }) {
   const [rows, setRows] = useState<BulkRow[]>([emptyRow(), emptyRow(), emptyRow()]);
   const [pasteValue, setPasteValue] = useState("");
@@ -79,7 +82,6 @@ export function BulkOrderWorkspace({
     () => summarizeRows(filledRows, contentTypes, applyUkVat),
     [filledRows, contentTypes, applyUkVat],
   );
-  const walletBalance = 3750;
   const remainingAfterBatch = Math.max(0, walletBalance - summary.estimatedTotal);
 
   async function importDelimited(text: string) {

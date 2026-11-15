@@ -1,8 +1,14 @@
 import { switchWorkspaceRoleAction } from "@/app/(auth)/actions";
 import { getCurrentAppUser } from "@/lib/auth";
+import { allowDemoTools } from "@/lib/env";
 import { roleLabel, roles, type Role } from "@/lib/types";
 
 export async function RoleSwitcherPanel({ currentRole }: { currentRole: Role }) {
+  // Liam security notes: Test as role only in test/preview environments — never on live.
+  if (!allowDemoTools()) {
+    return null;
+  }
+
   const currentUser = await getCurrentAppUser();
   const canSwitchRoles = Boolean(
     currentUser?.canSwitchRoles ||
@@ -43,7 +49,7 @@ export async function RoleSwitcherPanel({ currentRole }: { currentRole: Role }) 
         </button>
       </form>
       <p className="mt-2 px-1 text-[11px] leading-4 text-slate-300">
-        This only changes what you see for testing. Pick admin again any time to come back.
+        Preview only. This changes what you see for testing, not the account&apos;s real role in the database.
       </p>
     </div>
   );

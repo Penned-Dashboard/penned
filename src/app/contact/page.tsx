@@ -25,14 +25,14 @@ export default function ContactPage() {
             Start a workspace
           </h2>
           <p className="mt-4 text-base leading-8 text-slate-500">
-            New clients can create access immediately and writers can join the marketplace flow from the main onboarding path.
+            New clients can create a workspace right away. Writers and editors are invited by the Penned team — use the form above if you want to apply.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link className="button-primary" href="/sign-up?role=client">
               Client sign-up
             </Link>
-            <Link className="button-secondary" href="/sign-up?role=writer">
-              Writer sign-up
+            <Link className="button-secondary" href="/sign-in">
+              Team / writer sign-in
             </Link>
           </div>
         </article>

@@ -53,7 +53,10 @@ export default async function WriterMarketplacePage({
     length,
     sort,
   };
-  const { jobs, categories, totalOpen } = await getWriterMarketplace(user.profileId, filters);
+  const { jobs, categories, totalOpen, approvalBlocked } = await getWriterMarketplace(
+    user.profileId,
+    filters,
+  );
 
   const returnParams = new URLSearchParams();
   for (const [key, value] of Object.entries({ q: params.q, category: params.category, minPay: params.minPay, length, sort })) {
@@ -77,6 +80,16 @@ export default async function WriterMarketplacePage({
       <WorkspaceAutoRefresh intervalMs={25000} />
       <Notice notice={params.notice} noticeMessage={params.noticeMessage} />
 
+      {approvalBlocked ? (
+        <SectionCard title="Your account is being reviewed" description="">
+          <p className="text-sm text-slate-600">
+            We’ll email you when you’re approved and can start taking jobs. You can’t see open briefs until then.
+          </p>
+        </SectionCard>
+      ) : null}
+
+      {!approvalBlocked ? (
+        <>
       <SectionCard title="Filter & sort" description={`${jobs.length} of ${totalOpen} open jobs shown.`}>
         <form action="/writer/marketplace" className="grid gap-4 md:grid-cols-2 xl:grid-cols-5" method="get">
           <label className="xl:col-span-1">
@@ -217,6 +230,8 @@ export default async function WriterMarketplacePage({
           />
         )}
       </SectionCard>
+        </>
+      ) : null}
     </DashboardShell>
   );
 }

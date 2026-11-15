@@ -127,6 +127,8 @@ export type MarketplaceResult = {
   jobs: MarketplaceOrder[];
   categories: string[];
   totalOpen: number;
+  /** Writer account is pending admin approval — hide jobs server-side. */
+  approvalBlocked?: boolean;
 };
 
 export type WriterJob = {
@@ -304,6 +306,8 @@ export type WriterSettings = {
   notificationPrefs: NotificationPrefs;
   avatarUrl: string;
   writerTier: "standard" | "specialist";
+  writerTermsAcceptedAt: string | null;
+  writerTermsVersion: string | null;
   /** False when supabase/writer-p0-upgrade.sql has not been applied yet. */
   schemaReady: boolean;
 };
@@ -820,18 +824,36 @@ export async function getWriterMarketplace(
     .is("writer_id", null)
     .order("created_at", { ascending: false });
 
-  // writer_tier may be missing until supabase/writer-tier-and-avatar.sql is applied.
-  let writerProfile: { writer_tier?: string | null; niche_tags?: string[] | null } | null = null;
-  const withTier = await supabase
+  // writer_tier / approval_status may be missing until SQL upgrades are applied.
+  let writerProfile: {
+    writer_tier?: string | null;
+    niche_tags?: string[] | null;
+    approval_status?: string | null;
+  } | null = null;
+  const withTiers = await supabase
     .from("profiles")
-    .select("writer_tier, niche_tags")
+    .select("writer_tier, niche_tags, approval_status")
     .eq("id", writerProfileId)
     .maybeSingle();
-  if (withTier.error) {
-    const fallback = await supabase.from("profiles").select("niche_tags").eq("id", writerProfileId).maybeSingle();
-    writerProfile = fallback.data;
+  if (withTiers.error) {
+    const fallback = await supabase
+      .from("profiles")
+      .select("writer_tier, niche_tags")
+      .eq("id", writerProfileId)
+      .maybeSingle();
+    if (fallback.error) {
+      const nicheOnly = await supabase.from("profiles").select("niche_tags").eq("id", writerProfileId).maybeSingle();
+      writerProfile = nicheOnly.data;
+    } else {
+      writerProfile = fallback.data;
+    }
   } else {
-    writerProfile = withTier.data;
+    writerProfile = withTiers.data;
+  }
+
+  const approvalStatus = (writerProfile?.approval_status ?? "approved").toLowerCase();
+  if (approvalStatus === "pending" || approvalStatus === "paused") {
+    return { jobs: [], categories: [], totalOpen: 0, approvalBlocked: true as const };
   }
 
   const writerIsSpecialist =
@@ -1484,6 +1506,8 @@ const EMPTY_SETTINGS = (fullName: string, email: string): WriterSettings => ({
   notificationPrefs: normalizeNotificationPrefs({}),
   avatarUrl: "",
   writerTier: "standard",
+  writerTermsAcceptedAt: null,
+  writerTermsVersion: null,
   schemaReady: false,
 });
 
@@ -1499,7 +1523,9 @@ export async function getWriterSettings(
 
   let { data, error } = await supabase
     .from("profiles")
-    .select("full_name, email, bio, niche_tags, available, payment_info, tax_info, notification_prefs, avatar_url, writer_tier")
+    .select(
+      "full_name, email, bio, niche_tags, available, payment_info, tax_info, notification_prefs, avatar_url, writer_tier, writer_terms_accepted_at, writer_terms_version",
+    )
     .eq("id", writerProfileId)
     .maybeSingle();
 
@@ -1517,19 +1543,66 @@ export async function getWriterSettings(
     return EMPTY_SETTINGS(fallback.fullName, fallback.email);
   }
 
+  const row = data as {
+    full_name?: string | null;
+    email?: string | null;
+    bio?: string | null;
+    niche_tags?: string[] | null;
+    available?: boolean | null;
+    payment_info?: string | null;
+    tax_info?: string | null;
+    notification_prefs?: unknown;
+    avatar_url?: string | null;
+    writer_tier?: string | null;
+    writer_terms_accepted_at?: string | null;
+    writer_terms_version?: string | null;
+  };
+
   return {
-    fullName: data.full_name ?? fallback.fullName,
-    email: data.email ?? fallback.email,
-    bio: data.bio ?? "",
-    nicheTags: data.niche_tags ?? [],
-    available: data.available ?? true,
-    paymentInfo: data.payment_info ?? "",
-    taxInfo: data.tax_info ?? "",
-    notificationPrefs: normalizeNotificationPrefs(data.notification_prefs),
-    avatarUrl: data.avatar_url ?? "",
-    writerTier: (data as { writer_tier?: string }).writer_tier === "specialist" ? "specialist" : "standard",
+    fullName: row.full_name ?? fallback.fullName,
+    email: row.email ?? fallback.email,
+    bio: row.bio ?? "",
+    nicheTags: row.niche_tags ?? [],
+    available: row.available ?? true,
+    paymentInfo: row.payment_info ?? "",
+    taxInfo: row.tax_info ?? "",
+    notificationPrefs: normalizeNotificationPrefs(row.notification_prefs),
+    avatarUrl: row.avatar_url ?? "",
+    writerTier: row.writer_tier === "specialist" ? "specialist" : "standard",
+    writerTermsAcceptedAt: row.writer_terms_accepted_at ?? null,
+    writerTermsVersion: row.writer_terms_version ?? null,
     schemaReady: true,
   };
+}
+
+export async function acceptWriterEditorTerms() {
+  const supabase = createServerSupabaseClient();
+  const user = await getCurrentAppUser();
+  const { WRITER_EDITOR_TERMS_VERSION } = await import("@/lib/writer-editor-terms");
+
+  if (!supabase || !user || (user.role !== "writer" && user.role !== "editor")) {
+    return { ok: false as const, message: "Writer or editor access is required." };
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      writer_terms_accepted_at: new Date().toISOString(),
+      writer_terms_version: WRITER_EDITOR_TERMS_VERSION,
+    })
+    .eq("id", user.profileId);
+
+  if (error) {
+    if (/writer_terms_/i.test(error.message)) {
+      return {
+        ok: false as const,
+        message: "Run supabase/security-launch-hardening.sql, then try again.",
+      };
+    }
+    return { ok: false as const, message: error.message };
+  }
+
+  return { ok: true as const, message: "Writer and editor terms accepted." };
 }
 
 export async function saveWriterSettings(values: {
@@ -2297,11 +2370,27 @@ const WRITER_SAMPLE_TITLES = [
 ] as const;
 
 export async function seedWorkspaceReviewData(): Promise<SeedWorkspaceDataResult> {
+  const { allowDemoTools } = await import("@/lib/env");
+  if (!allowDemoTools()) {
+    return {
+      ok: false,
+      message: "Sample data loaders are disabled in production.",
+    };
+  }
+
   const supabase = createServerSupabaseClient();
   const user = await getCurrentAppUser();
 
   if (!supabase || !user) {
     return { ok: false, message: "Sign in before loading review data." };
+  }
+
+  // Only review/admin switcher accounts may seed demo data — never ordinary clients/writers.
+  if (!user.canSwitchRoles) {
+    return {
+      ok: false,
+      message: "Sample loaders are only available on review accounts.",
+    };
   }
 
   if (user.role === "client") {
@@ -2782,6 +2871,32 @@ async function ensureAcceptedOrderCredit({
 
 export const RESERVE_MINUTES = 10;
 
+async function assertWriterApproved(writerProfileId: string) {
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return { ok: false as const, message: "Database is not configured." };
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("approval_status")
+    .eq("id", writerProfileId)
+    .maybeSingle();
+
+  // Column missing → treat as approved so older DBs keep working until SQL is applied.
+  if (error && /approval_status/i.test(error.message)) {
+    return { ok: true as const };
+  }
+
+  const status = ((data as { approval_status?: string | null } | null)?.approval_status ?? "approved").toLowerCase();
+  if (status === "pending" || status === "paused") {
+    return {
+      ok: false as const,
+      message: "Your writer account is still under review. You’ll be able to take jobs once approved.",
+    };
+  }
+
+  return { ok: true as const };
+}
+
 export async function reserveOrder(orderId: string) {
   const supabase = createServerSupabaseClient();
   const user = await getCurrentAppUser();
@@ -2789,6 +2904,9 @@ export async function reserveOrder(orderId: string) {
   if (!supabase || !user || user.role !== "writer") {
     return { ok: false as const, message: "Writer access is required." };
   }
+
+  const approval = await assertWriterApproved(user.profileId);
+  if (!approval.ok) return approval;
 
   const { data: order } = await supabase
     .from("orders")
@@ -2837,6 +2955,9 @@ export async function claimOrder(orderId: string) {
   if (!supabase || !user || user.role !== "writer") {
     return { ok: false as const, message: "Writer access is required." };
   }
+
+  const approval = await assertWriterApproved(user.profileId);
+  if (!approval.ok) return approval;
 
   const { data: order } = await supabase
     .from("orders")

@@ -1,8 +1,12 @@
 import { DashboardShell, SectionCard } from "@/components/dashboard-shell";
 import { Notice, type NoticeParams } from "@/components/writer-ui";
-import { updateWriterSettingsAction } from "@/app/writer/actions";
+import { acceptWriterTermsAction, updateWriterSettingsAction } from "@/app/writer/actions";
 import { requireRole } from "@/lib/auth";
 import { getWriterSettings, getWriterWallet } from "@/lib/orders";
+import {
+  WRITER_EDITOR_TERMS_UPDATED,
+  WRITER_EDITOR_TERMS_VERSION,
+} from "@/lib/writer-editor-terms";
 import { NOTIFICATION_CHANNELS, NOTIFICATION_EVENTS } from "@/lib/writer-status";
 
 export default async function WriterSettingsPage({
@@ -35,6 +39,38 @@ export default async function WriterSettingsPage({
           Profile settings are not available yet. Run supabase/writer-p0-upgrade.sql in Supabase, then reload.
         </div>
       )}
+
+      <SectionCard
+        title="Writer & editor terms"
+        description={`Version ${WRITER_EDITOR_TERMS_VERSION} · Updated ${WRITER_EDITOR_TERMS_UPDATED}`}
+      >
+        {settings.writerTermsAcceptedAt ? (
+          <p className="text-sm text-slate-600">
+            Accepted {new Date(settings.writerTermsAcceptedAt).toLocaleString("en-GB")}
+            {settings.writerTermsVersion ? ` · v${settings.writerTermsVersion}` : ""}.{" "}
+            <a className="font-semibold underline" href="/writer-terms" target="_blank" rel="noreferrer">
+              Read terms
+            </a>
+          </p>
+        ) : (
+          <form action={acceptWriterTermsAction} className="space-y-4">
+            <p className="text-sm text-slate-600">
+              Please accept the{" "}
+              <a className="font-semibold underline" href="/writer-terms" target="_blank" rel="noreferrer">
+                Writer and Editor Terms of Service
+              </a>{" "}
+              before taking paid work.
+            </p>
+            <label className="flex items-start gap-3 text-sm text-slate-700">
+              <input className="mt-1" name="acceptWriterTerms" required type="checkbox" />
+              <span>I have read and agree to the Writer and Editor Terms of Service.</span>
+            </label>
+            <button className="button-primary" type="submit">
+              Accept terms
+            </button>
+          </form>
+        )}
+      </SectionCard>
 
       <form action={updateWriterSettingsAction} className="grid gap-4">
         <section className="grid gap-4 xl:grid-cols-2">

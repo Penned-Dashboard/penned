@@ -2,6 +2,7 @@ import Link from "next/link";
 import { DashboardShell, SectionCard } from "@/components/dashboard-shell";
 import { EmptyState, MetricCard, Notice, type NoticeParams } from "@/components/writer-ui";
 import { requireRole } from "@/lib/auth";
+import { allowDemoTools } from "@/lib/env";
 import { getWriterHomeSnapshot, type WriterActivityItem } from "@/lib/orders";
 import { formatRelativeTime } from "@/lib/writer-status";
 import { loadSampleWriterOrdersAction } from "@/app/writer/actions";
@@ -31,6 +32,7 @@ export default async function WriterDashboardPage({
     ? snapshot.activityFeed.filter((item) => item.text.toLowerCase().includes(query))
     : snapshot.activityFeed;
   const action = snapshot.nextAction;
+  const showSampleLoader = allowDemoTools() && Boolean(user.canSwitchRoles);
 
   return (
     <DashboardShell
@@ -135,38 +137,40 @@ export default async function WriterDashboardPage({
         )}
       </SectionCard>
 
-      <section
-        className={`rounded-[1.5rem] border px-5 py-4 ${
-          sampleState === "error"
-            ? "border-rose-200 bg-rose-50"
-            : sampleState === "success"
-              ? "border-emerald-200 bg-emerald-50"
-              : "border-slate-200 bg-white"
-        }`}
-      >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Review Setup</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
-              Load sample jobs for stakeholder review
-            </h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              Add one completed assignment, one active assignment, and one open marketplace job so the writer flow is
-              ready for feedback immediately.
-            </p>
-            {sampleMessage ? (
-              <p className={`mt-3 text-sm font-medium ${sampleState === "error" ? "text-rose-700" : "text-emerald-700"}`}>
-                {sampleMessage}
+      {showSampleLoader ? (
+        <section
+          className={`rounded-[1.5rem] border px-5 py-4 ${
+            sampleState === "error"
+              ? "border-rose-200 bg-rose-50"
+              : sampleState === "success"
+                ? "border-emerald-200 bg-emerald-50"
+                : "border-slate-200 bg-white"
+          }`}
+        >
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Demo only</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
+                Load sample jobs for stakeholder review
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                Add one completed assignment, one active assignment, and one open marketplace job so the writer flow is
+                ready for feedback immediately.
               </p>
-            ) : null}
+              {sampleMessage ? (
+                <p className={`mt-3 text-sm font-medium ${sampleState === "error" ? "text-rose-700" : "text-emerald-700"}`}>
+                  {sampleMessage}
+                </p>
+              ) : null}
+            </div>
+            <form action={loadSampleWriterOrdersAction}>
+              <button className="button-secondary" type="submit">
+                Load sample writer jobs
+              </button>
+            </form>
           </div>
-          <form action={loadSampleWriterOrdersAction}>
-            <button className="button-secondary" type="submit">
-              Load sample writer jobs
-            </button>
-          </form>
-        </div>
-      </section>
+        </section>
+      ) : null}
     </DashboardShell>
   );
 }

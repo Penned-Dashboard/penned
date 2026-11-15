@@ -2,7 +2,8 @@ import Link from "next/link";
 import { DashboardShell, SectionCard } from "@/components/dashboard-shell";
 import { accountManagerForClient } from "@/lib/account-manager";
 import { requireRole } from "@/lib/auth";
-import { getContentBudgetSnapshot } from "@/lib/content-budget";
+import { getClientWalletAvailableCents, getContentBudgetSnapshot } from "@/lib/content-budget";
+import { allowDemoTools } from "@/lib/env";
 import { getClientOrders, getInvoices } from "@/lib/orders";
 
 export default async function ContentBudgetPage({
@@ -12,11 +13,15 @@ export default async function ContentBudgetPage({
 }) {
   const user = await requireRole("client");
   const params = await searchParams;
-  const [orders, invoices] = await Promise.all([
+  const [orders, invoices, availableCents] = await Promise.all([
     getClientOrders(user.profileId),
     getInvoices(user.profileId),
+    getClientWalletAvailableCents(user.profileId),
   ]);
-  const snapshot = getContentBudgetSnapshot(orders, invoices);
+  const snapshot = getContentBudgetSnapshot(orders, invoices, {
+    availableCents,
+    allowDemoFigures: allowDemoTools(),
+  });
   const manager = accountManagerForClient(user.profileId);
   const activity = snapshot.recentActivity.slice(0, 5);
 
@@ -33,7 +38,7 @@ export default async function ContentBudgetPage({
       {params.setup === "stripe-missing" ? (
         <Alert tone="warning">
           Stripe keys or price IDs are missing in this environment. Add `STRIPE_SECRET_KEY` and the
-          top-up price IDs, or use the demo payment path for preview.
+          top-up price IDs before taking live payments.
         </Alert>
       ) : null}
       {params.checkout === "cancelled" ? (
