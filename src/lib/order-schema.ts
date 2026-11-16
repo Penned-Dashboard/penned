@@ -6,9 +6,11 @@ export const orderSchema = z.object({
     .trim()
     .max(120, "Client name is too long.")
     .default(""),
-  clientFolderId: z.string().uuid().optional().or(z.literal("")),
+  // z.guid() accepts any 8-4-4-4-12 id. Zod 4's uuid() also checks the RFC
+  // version and variant, which the seeded ids (aaaaaaaa-aaaa-…) do not pass.
+  clientFolderId: z.guid().optional().or(z.literal("")),
   title: z.string().trim().min(5, "Title must be at least 5 characters."),
-  contentTypeId: z.string().uuid("Choose a valid content type."),
+  contentTypeId: z.guid("Choose a valid content type."),
   serviceTier: z.enum(["on-demand", "signature", "rank"], {
     error: "Select a valid tier.",
   }),
