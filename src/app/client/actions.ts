@@ -52,6 +52,7 @@ export async function submitOrderAction(
     referenceLinks: String(formData.get("referenceLinks") ?? ""),
     brief: String(formData.get("brief") ?? ""),
     serviceFields: collectServiceFields(formData),
+    preferredWriter: String(formData.get("preferredWriter") ?? ""),
   });
 
   if (!result.ok) {
