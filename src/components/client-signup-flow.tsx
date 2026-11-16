@@ -43,9 +43,9 @@ export function ClientSignupFlow({ error }: { error?: string }) {
 
   const stepIndex = steps.indexOf(step);
   const progressLabel = useMemo(() => {
-    if (step === "email") return "Step 1 of 4 · Work email";
+    if (step === "email") return "Step 1 of 4 · Email";
     if (step === "details") return "Step 2 of 4 · Your details";
-    if (step === "agency") return "Step 3 of 4 · About your agency";
+    if (step === "agency") return "Step 3 of 4 · Your agency";
     return "Step 4 of 4 · What brought you here";
   }, [step]);
 
@@ -65,7 +65,7 @@ export function ClientSignupFlow({ error }: { error?: string }) {
 
   function goToAgency() {
     if (!firstName.trim() || !lastName.trim() || password.length < 8) {
-      setLocalError("Add your name and a password with at least 8 characters.");
+      setLocalError("Add your first name, last name and a password of 8 characters or more.");
       return;
     }
     setLocalError("");
@@ -102,7 +102,7 @@ export function ClientSignupFlow({ error }: { error?: string }) {
             Create your Penned account
           </h1>
           <p className="mt-3 text-center text-base text-slate-500">
-            Free to join. Order your first piece in about a minute.
+            Free to join. You only pay when you place an order.
           </p>
 
           <div className="mt-8 grid gap-3">
@@ -113,7 +113,7 @@ export function ClientSignupFlow({ error }: { error?: string }) {
               Continue with Microsoft
             </a>
             <p className="text-center text-xs text-slate-400">
-              These connect your email only. You still complete the steps below for new accounts.
+              We only use this to confirm your email. You’ll add a few details next.
             </p>
           </div>
 
@@ -135,13 +135,10 @@ export function ClientSignupFlow({ error }: { error?: string }) {
           </label>
           {(localError || error) && <ErrorBox message={localError || mapError(error)} />}
           <button className="button-primary mt-5 w-full" onClick={goToDetails} type="button">
-            Start my content engine
+            Continue with email
           </button>
-          <p className="mt-3 text-center text-xs text-slate-500">
-            Free to create. Pay only when you place an order.
-          </p>
           <p className="mt-4 text-center text-xs leading-5 text-slate-500">
-            By continuing you agree to our{" "}
+            By continuing, you agree to our{" "}
             <Link className="font-semibold underline" href="/terms" target="_blank">
               Terms
             </Link>{" "}
@@ -157,10 +154,10 @@ export function ClientSignupFlow({ error }: { error?: string }) {
       {step === "details" ? (
         <>
           <h1 className="mt-3 text-center text-4xl font-semibold tracking-[-0.05em] text-[var(--penned-navy)]">
-            Almost there
+            Your name and a password
           </h1>
           <p className="mt-3 text-center text-base text-slate-500">
-            Add your name and choose a password.
+            This is how you’ll log in.
           </p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <label className="block">
@@ -168,7 +165,6 @@ export function ClientSignupFlow({ error }: { error?: string }) {
               <input
                 className="dashboard-input"
                 onChange={(event) => setFirstName(event.target.value)}
-                placeholder="John"
                 type="text"
                 value={firstName}
               />
@@ -178,7 +174,6 @@ export function ClientSignupFlow({ error }: { error?: string }) {
               <input
                 className="dashboard-input"
                 onChange={(event) => setLastName(event.target.value)}
-                placeholder="Doe"
                 type="text"
                 value={lastName}
               />
@@ -190,10 +185,10 @@ export function ClientSignupFlow({ error }: { error?: string }) {
               className="dashboard-input"
               minLength={8}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="At least 8 characters"
               type="password"
               value={password}
             />
+            <span className="mt-2 block text-xs text-slate-400">8 characters or more.</span>
           </label>
           <label className="mt-4 flex items-start gap-3 text-sm text-slate-600">
             <input
@@ -202,7 +197,10 @@ export function ClientSignupFlow({ error }: { error?: string }) {
               onChange={(event) => setIsUkCompany(event.target.checked)}
               type="checkbox"
             />
-            <span>This is a UK company. Content writing bills will include 20% UK VAT.</span>
+            <span>
+              My company is based in the UK.
+              <span className="block text-xs text-slate-400">We add 20% VAT to UK invoices.</span>
+            </span>
           </label>
           {localError ? <ErrorBox message={localError} /> : null}
           <div className="mt-5 flex gap-3">
@@ -222,20 +220,21 @@ export function ClientSignupFlow({ error }: { error?: string }) {
             Tell us about your agency
           </h1>
           <p className="mt-3 text-center text-base text-slate-500">
-            Four quick questions so we can match the right writers and tier. About 30 seconds.
+            Four quick questions so we can match you with the right writers. It takes about 30 seconds.
           </p>
           <label className="mt-8 block">
             <span className="dashboard-label">Agency name</span>
             <input
               className="dashboard-input"
               onChange={(event) => setAgencyName(event.target.value)}
-              placeholder="Your agency"
               type="text"
               value={agencyName}
             />
           </label>
           <fieldset className="mt-5">
-            <legend className="dashboard-label">What do your clients need most?</legend>
+            <legend className="dashboard-label">What do your clients need most?{" "}
+              <span className="font-normal normal-case tracking-normal text-slate-400">Pick any that apply.</span>
+            </legend>
             <div className="mt-3 grid gap-2">
               {CONTENT_NEED_OPTIONS.map((option) => (
                 <label key={option} className="flex items-center gap-3 text-sm text-slate-600">
@@ -250,7 +249,9 @@ export function ClientSignupFlow({ error }: { error?: string }) {
             </div>
           </fieldset>
           <fieldset className="mt-5">
-            <legend className="dashboard-label">Which industries do you write for?</legend>
+            <legend className="dashboard-label">Which industries are your clients in?{" "}
+              <span className="font-normal normal-case tracking-normal text-slate-400">Pick any that apply.</span>
+            </legend>
             <div className="mt-3 grid gap-2">
               {INDUSTRY_OPTIONS.map((option) => (
                 <label key={option} className="flex items-center gap-3 text-sm text-slate-600">
@@ -265,13 +266,13 @@ export function ClientSignupFlow({ error }: { error?: string }) {
             </div>
           </fieldset>
           <label className="mt-5 block">
-            <span className="dashboard-label">Where do you get content today?</span>
+            <span className="dashboard-label">Where does your content come from today?</span>
             <select
               className="dashboard-input"
               onChange={(event) => setContentSource(event.target.value)}
               value={contentSource}
             >
-              <option value="">Select one</option>
+              <option value="">Choose one</option>
               {CONTENT_SOURCE_OPTIONS.map((option) => (
                 <option key={option} value={option}>
                   {option}
@@ -376,14 +377,14 @@ function ErrorBox({ message }: { message: string }) {
 function mapError(error?: string) {
   if (error === "exists") return "You already have an account with this email. Log in instead.";
   if (error === "setup") {
-    return "Password auth or terms/VAT columns need the latest Supabase SQL. Run the setup scripts, then try again.";
+    return "We couldn’t create your account just now. Please try again in a few minutes.";
   }
   if (error === "env") {
-    return "Signup is not configured in this deployment yet. Add Supabase env vars to this Vercel Preview environment.";
+    return "We couldn’t create your account just now. Please try again in a few minutes.";
   }
   if (error === "failed") return "Something went wrong on our end. Try again in a moment.";
   if (error === "invalid") {
-    return "Please complete all fields, accept the client terms, and use a password with at least 8 characters.";
+    return "Fill in every field, tick the client terms box, and use a password of 8 characters or more.";
   }
   return error || "";
 }
