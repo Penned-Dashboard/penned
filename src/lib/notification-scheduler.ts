@@ -21,6 +21,7 @@
 
 import { emailConfigured, sendEmails, type OutgoingEmail } from "@/lib/email";
 import * as templates from "@/lib/email-templates";
+import { addInAppNotifications } from "@/lib/in-app-notifications";
 import type { EmailLink, SummarySection } from "@/lib/email-templates";
 import {
   build,
@@ -30,6 +31,7 @@ import {
   getOrderTeam,
   getPeopleWithRole,
   getPerson,
+  getTeamProfiles,
   sendDailySummaries,
   urls,
   writerWantsEmail,
@@ -148,11 +150,13 @@ export async function runNotificationTick(now: Date = new Date()): Promise<TickR
 
   const outbox: OutgoingEmail[] = [];
 
-  async function once(key: string, make: () => Promise<OutgoingEmail[]>) {
+  /** `bell` adds the matching in-app notifications, once, when the key is first claimed. */
+  async function once(key: string, make: () => Promise<OutgoingEmail[]>, bell?: () => Promise<void>) {
     const emails = await make();
-    if (!emails.length) return;
+    if (!emails.length && !bell) return;
     if (!(await claimNotificationKey(key))) return;
     outbox.push(...emails);
+    if (bell) await bell();
   }
 
   async function alertTeam(key: string, subject: string, lead: string, order: Row, details: string[], alsoAdmin = false) {
@@ -177,6 +181,19 @@ export async function runNotificationTick(now: Date = new Date()): Promise<TickR
             }),
           ),
         );
+    }, async () => {
+      const profiles = await getTeamProfiles();
+      await addInAppNotifications(
+        profiles
+          .filter((person) => alsoAdmin || person.role === "account_manager" || !profiles.some((p) => p.role === "account_manager"))
+          .map((person) => ({
+            profileId: person.id,
+            title: subject,
+            body: details[0] ?? "",
+            href: new URL(teamOrderUrl(person, str(order.id))).pathname,
+            kind: key.split(":")[0],
+          })),
+      );
     });
   }
 
@@ -248,34 +265,60 @@ export async function runNotificationTick(now: Date = new Date()): Promise<TickR
       }
 
       if (writer && left > 0 && left <= 2 * HOUR) {
-        await once(`writer_final:${id}:${due}`, async () => [
-          build(
-            writer.email,
-            templates.writerDeadlineReminder({
-              firstName: writer.firstName,
-              orderTitle: title,
-              dueLabel,
-              hoursLeft: Math.max(1, Math.round(left / HOUR)),
-              isRevision,
-              orderUrl: urls.writerOrder(id),
-            }),
-          ),
-        ]);
+        await once(
+          `writer_final:${id}:${due}`,
+          async () => [
+            build(
+              writer.email,
+              templates.writerDeadlineReminder({
+                firstName: writer.firstName,
+                orderTitle: title,
+                dueLabel,
+                hoursLeft: Math.max(1, Math.round(left / HOUR)),
+                isRevision,
+                orderUrl: urls.writerOrder(id),
+              }),
+            ),
+          ],
+          async () =>
+            addInAppNotifications([
+              {
+                profileId: writer.id,
+                title: `Due in 2 hours: ${title}`,
+                body: `Due by ${dueLabel}.`,
+                href: `/writer/orders/${id}`,
+                kind: "deadline",
+              },
+            ]),
+        );
       }
 
       if (left <= 0) {
         if (writer) {
-          await once(`writer_overdue:${id}:${due}`, async () => [
-            build(
-              writer.email,
-              templates.writerOverdue({
-                firstName: writer.firstName,
-                orderTitle: title,
-                dueLabel,
-                orderUrl: urls.writerOrder(id),
-              }),
-            ),
-          ]);
+          await once(
+            `writer_overdue:${id}:${due}`,
+            async () => [
+              build(
+                writer.email,
+                templates.writerOverdue({
+                  firstName: writer.firstName,
+                  orderTitle: title,
+                  dueLabel,
+                  orderUrl: urls.writerOrder(id),
+                }),
+              ),
+            ],
+            async () =>
+              addInAppNotifications([
+                {
+                  profileId: writer.id,
+                  title: `Overdue: ${title}`,
+                  body: `It was due by ${dueLabel}.`,
+                  href: `/writer/orders/${id}`,
+                  kind: "overdue",
+                },
+              ]),
+          );
         }
         await alertTeam(
           `writer_missed:${id}:${due}`,

@@ -24,6 +24,7 @@ import {
   notifyOrderClaimed,
   notifyOrdersPlaced,
   notifyPayoutApproved,
+  notifyPayoutRequested,
   notifyRevisionRequested,
   notifyRoleChanged,
   queueNotification,
@@ -3381,7 +3382,9 @@ export async function requestPayout(amountDollars: number) {
     return { ok: false as const, message: error.message };
   }
 
-  // Admin sees pending payout requests in the morning summary.
+  // Admins see it in the bell now and in the morning summary email.
+  const payoutWriterId = user.profileId;
+  queueNotification(() => notifyPayoutRequested(payoutWriterId, amountCents));
   revalidateApp();
   return { ok: true as const, message: "Payout request submitted for approval." };
 }
