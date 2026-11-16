@@ -37,6 +37,22 @@ Accepting a brief (`waiting_for_writer`) sets `client_due_at` (72 hours, 48 for 
 
 Actions now keep `workflow_status` in step: claim → `being_written`, submit → `in_review` (drafts go straight to the client until the editor step is connected), change request → `changes_requested`, approval → `completed`.
 
+## In-app notifications (the bell)
+
+`src/components/notification-bell.tsx` sits in the top bar of `DashboardShell` for every role. It fetches `/api/notifications` on load, once a minute while the tab is visible, and when the tab comes back into view. `/notifications` lists the latest 100 with an Unread tab. Opening an item goes through `/api/notifications/open?id=…`, which marks it read and redirects to its page. Storage and helpers: `src/lib/in-app-notifications.ts`; table `public.notifications` (`supabase/in-app-notifications.sql` adds `href`, `kind` and an index).
+
+Rule: the bell shows things that need the person's attention, never a confirmation of something they just did. It is independent of email settings; writers' per-event "In-app" settings are respected.
+
+| Who | Bell notifications |
+| --- | --- |
+| Client | Brief accepted (with due time), draft ready, revised draft ready, order cancelled |
+| Writer | Assigned, editor sent back, client asked for changes, approved, payout approved, new comment, due in 2 hours, overdue, order cancelled |
+| Editor | Assigned, draft ready to edit, resubmitted |
+| Account managers | New order to check, changes requested, and the timed alerts (brief unchecked, no writer, writer missed deadline, at risk, client deadline missed) |
+| Admin | New client, new order, changes requested, payout requested, client deadline missed (and the account manager alerts while there are no account managers) |
+
+Items clear themselves when the person deals with them: a client's "draft ready" when they approve or ask for changes; a writer's order notifications when they submit.
+
 ## Assigning writers and editors
 
 Account managers (Orders page) and admins (order page) can assign or change the writer and editor (`src/app/assign-actions.ts`, `assignOrderWriter` / `assignOrderEditor` in `src/lib/team-data.ts`). A writer can only be assigned once the brief is accepted (so the deadline is running), must have the writer role and not be pending or paused. Assigning to an unclaimed order moves it to `being_written`; reassigning keeps the deadline. The editor is stored in `orders.editor_id`, and editor emails and queue reminders then go only to that editor. The client's "Preferred writer" from the order form is saved in `intake_details.preferred_writer` and shown next to the controls.
