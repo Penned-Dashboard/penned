@@ -3,6 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
+import {
+  notifyEditorApproved,
+  notifyEditorSentBack,
+  queueNotification,
+} from "@/lib/notifications";
 import { acceptWriterEditorTerms } from "@/lib/orders";
 import { setOrderWorkflowStatus } from "@/lib/team-data";
 
@@ -19,7 +24,8 @@ export async function approveDraftAction(formData: FormData) {
   await requireRole("editor");
   const orderId = String(formData.get("orderId") ?? "");
   if (!orderId) redirect("/editor");
-  await setOrderWorkflowStatus(orderId, "in_review");
+  const approved = await setOrderWorkflowStatus(orderId, "in_review");
+  if (approved.ok) queueNotification(() => notifyEditorApproved(orderId));
   revalidatePath("/editor");
   revalidatePath("/editor/done");
   redirect("/editor/done");
@@ -29,7 +35,8 @@ export async function sendBackToWriterAction(formData: FormData) {
   await requireRole("editor");
   const orderId = String(formData.get("orderId") ?? "");
   if (!orderId) redirect("/editor");
-  await setOrderWorkflowStatus(orderId, "sent_back_by_editor");
+  const sentBack = await setOrderWorkflowStatus(orderId, "sent_back_by_editor");
+  if (sentBack.ok) queueNotification(() => notifyEditorSentBack(orderId));
   revalidatePath("/editor");
   revalidatePath("/editor/my-edits");
   redirect("/editor/my-edits");
