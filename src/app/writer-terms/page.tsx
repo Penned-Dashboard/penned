@@ -1,15 +1,12 @@
-import { readFileSync } from "fs";
 import Link from "next/link";
 import { AppAuthBar } from "@/components/app-auth-bar";
 import {
-  getWriterEditorTermsPath,
   WRITER_EDITOR_TERMS_UPDATED,
   WRITER_EDITOR_TERMS_VERSION,
 } from "@/lib/writer-editor-terms";
+import writerEditorTermsBody from "@/content/penned-writer-editor-terms.txt";
 
 export default function WriterEditorTermsPage() {
-  const body = readFileSync(getWriterEditorTermsPath(), "utf8");
-
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#f7f9fd] text-slate-900">
       <AppAuthBar />
@@ -35,7 +32,7 @@ export default function WriterEditorTermsPage() {
           .
         </p>
         <article className="mt-10 whitespace-pre-wrap rounded-[2rem] border border-white/80 bg-white/90 p-8 text-[15px] leading-7 text-slate-700 shadow-[0_24px_60px_rgba(25,38,63,0.06)]">
-          {body}
+          {writerEditorTermsBody}
         </article>
       </div>
     </main>
