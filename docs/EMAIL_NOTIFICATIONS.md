@@ -1,66 +1,84 @@
 # Email notifications
 
-The dashboard sends its own emails through [Resend](https://resend.com). There is no Zapier step.
+The dashboard sends its own emails through [Resend](https://resend.com). There is no Zapier step. Copy and timings were approved by Penned on 16 Nov 2026.
 
 ## Files
 
 | File | What it does |
 | --- | --- |
 | `src/lib/email.ts` | Sends through Resend's batch API with `fetch`. Never throws. |
-| `src/lib/email-templates.ts` | Copy and HTML/text layout for every email. |
-| `src/lib/notifications.ts` | One `notify…` function per event: who is told, and the bulk-order rules. |
+| `src/lib/email-templates.ts` | Copy and HTML/text layout for every email (logo header, lime button). |
+| `src/lib/notifications.ts` | Instant emails: one `notify…` function per event, recipients, bulk-order grouping. |
+| `src/lib/notification-scheduler.ts` | Timed emails: deadline reminders, team alerts, 08:00 UK summaries. |
 | `src/lib/email-prefs.ts` | Client email settings, stored in `profiles.notification_prefs.client_email`. |
-| `src/app/api/cron/daily-summary/route.ts` | Daily summary job, scheduled in `vercel.json` (08:00 UTC). |
+| `src/lib/order-workflow.ts` | Deadline rules (`timingChangesForStatus`, `revisionFixBy`). |
+| `src/app/api/cron/tick/route.ts` | Runs the timed emails. Needs `Authorization: Bearer $CRON_SECRET`. |
+| `src/lib/email-samples.ts`, `src/app/api/email-samples/route.ts` | Preview-only: sends one sample of every email for review. 404 on Production. |
+| `supabase/notification-log.sql` | `notification_log` table that stops timed emails repeating. |
 
-Each action calls `queueNotification(() => notify…())` after its database write. That runs after the response (`after()` from `next/server`), so email can't slow down or break the action.
+Actions call `queueNotification(() => notify…())` after their database write. That runs after the response (`after()` from `next/server`), so email can't slow down or break the action.
 
 ## Environment variables
 
 | Name | Needed | Notes |
 | --- | --- | --- |
 | `RESEND_API_KEY` | yes | Without it nothing is sent. |
-| `EMAIL_FROM` | yes | For example `Penned <notifications@mail.penned.io>`. The domain must be verified in Resend. |
+| `EMAIL_FROM` | yes | `Penned <notifications@mail.penned.io>`. `mail.penned.io` is verified in Resend. |
 | `EMAIL_REPLY_TO` | no | Where replies go. |
-| `EMAIL_ALLOWLIST` | no | Comma-separated addresses. Until `EMAIL_MODE=live`, only these receive email. |
-| `EMAIL_MODE` | no | Set to `live` to send to everyone. |
-| `CRON_SECRET` | for the summary | Vercel Cron sends it as a bearer token. Without it the cron route returns 401. |
+| `EMAIL_ALLOWLIST` | until live | Comma-separated. Until `EMAIL_MODE=live`, only these addresses receive email. |
+| `EMAIL_MODE` | to go live | `live` sends to everyone. |
+| `ADMIN_NOTIFICATION_EMAILS` | no | Where admin emails go (support@penned.io). Without it, every admin account. |
+| `CRON_SECRET` | for timed emails | Sent by the scheduler as a bearer token. Without it the tick route returns 401. |
+| `EMAIL_SAMPLES_TOKEN` | no | Preview only, for the sample route. Delete after use. |
 
-With a key but no allow-list and no `EMAIL_MODE=live`, nothing is sent. That is deliberate.
+## Deadlines
 
-## What is sent
+Accepting a brief (`waiting_for_writer`) sets `client_due_at` (72 hours, 48 for rush) and `writer_due_at` (6 hours earlier, for editing). Waiting on the client after acceptance pauses the clock (`pause_started_at`, `total_paused_minutes`) and both deadlines move back when it resumes. A client change request sets `writer_due_at` to 24 hours later (12 for rush); an editor send-back aims for 2 hours before the client deadline. Orders accepted before this existed have no deadline and get no reminders.
+
+Actions now keep `workflow_status` in step: claim → `being_written`, submit → `in_review` (drafts go straight to the client until the editor step is connected), change request → `changes_requested`, approval → `completed`.
+
+## Instant emails
 
 | Event | Where it is called | Emails |
 | --- | --- | --- |
-| Client signs up | `signUpAction` | Welcome to the client; "New client" to admins and account managers |
+| Client signs up | `signUpAction` | Welcome to the client; "New client" to admin |
 | Admin changes a role | `updateAdminProfile` | Welcome to a new writer or editor |
-| Order placed | `createOrder`, `createBulkOrders` | Receipt to the client (one per batch); "New order" to account managers (admins if there are none) |
-| Writer claims | `claimOrder` | Confirmation to the writer |
+| Order placed | `createOrder`, `createBulkOrders` | Receipt to the client (one per batch); "New order" to account managers |
+| Brief accepted | `acceptBriefAction` | "Brief accepted, due …" to the client (one per bulk batch) |
+| Writer claims | `claimOrder` | Confirmation with deadline to the writer |
 | Writer submits | `submitDraft` | Editors if the order is `with_editor`; otherwise "draft ready" to the client |
-| Editor approves | `approveDraftAction` | "Draft ready" to the client |
-| Editor sends back | `sendBackToWriterAction` | To the writer |
-| Client asks for changes | `requestRevision` | To the writer (with the note) and account managers |
-| Client approves | `acceptSubmission` | To the writer and the client |
-| Comment on a draft | `addSubmissionComment` | To the writer, unless they wrote it |
-| Order cancelled | `refundOrderToClientBudget` | To the client (always) |
-| Top-up paid | Stripe webhook | To the client (always) and admins |
-| Payout requested / approved | `requestPayout`, `approvePayout` | To admins / to the writer |
+| Editor approves / sends back | `approveDraftAction`, `sendBackToWriterAction` | Client draft ready / writer with fix-by time |
+| Client asks for changes | `requestRevision` | Writer (note and fix-by time); account managers from the second round |
+| Client approves | `acceptSubmission` | Writer; client only when a whole bulk batch is done |
+| Comment on a draft | `addSubmissionComment` | Writer, unless they wrote it |
+| Order cancelled | `refundOrderToClientBudget` | Client (always) |
+| Top-up paid | Stripe webhook | Client (always) |
+| Payout approved | `approvePayout` | Writer |
 
-Not sent yet: "We have a question about your brief" (the question text isn't stored), password reset, deadline reminders, "new order available" to writers.
+"Account managers" falls back to the admin recipients while nobody has the `account_manager` role. Client notes and comments quoted to writers go through `redactContactDetails`.
+
+## Timed emails (`runNotificationTick`)
+
+| Who | When |
+| --- | --- |
+| Writer | 12 hours before `writer_due_at` (8 for rush; follows their "deadline reminders" setting), 2 hours before, and when overdue |
+| Account managers | Brief unchecked 4 hours after the order (1 for rush); no writer 6 hours after acceptance (2 for rush); writer missed their deadline; at risk 12 hours before `client_due_at` (6 for rush) with nothing delivered and no draft with an editor; client deadline missed |
+| Admin | Client deadline missed |
+| Editors | Draft in the queue 2 hours; account managers told at 4 hours |
+| Everyone | From 08:00 UK, once a day: account manager summary, admin summary (new clients, top-ups, payout requests, late orders), client daily summaries |
+
+Each timed email has a key in `notification_log` (for example `writer_final:<order>:<writer_due_at>`), so it is sent once; a new deadline gets fresh reminders.
+
+**Scheduling:** Supabase `pg_cron` calls `https://app.penned.io/api/cron/tick` every 15 minutes with the bearer token. `vercel.json` also calls it daily at 08:00 UTC as a fallback (Vercel Hobby only allows daily jobs).
 
 ## Client settings and bulk orders
 
-Clients can turn order updates off, or choose one daily summary, in Settings. A missing value means on. Payment, cancellation and welcome emails ignore the setting. Writers' existing email preferences are respected for the three events they cover (`revision_requested`, `submission_approved`, `payout_update`).
+Clients can turn order updates off, or choose one daily summary, in Settings. A missing value means on. Payment, cancellation and welcome emails ignore the setting.
 
-Orders that share `intake_details._batchId` are a bulk order and never send one email per piece:
-
-1. One receipt for the batch.
-2. "The first of your N drafts is ready", straight away.
-3. One daily summary while more drafts arrive (skipped if nothing is new).
-4. "All N drafts are ready", straight away.
-5. "Your bulk order is complete" when every piece is approved or cancelled.
+Orders that share `intake_details._batchId` are a bulk order and never send one email per piece: one receipt, one "brief accepted", "the first of your N drafts is ready", one daily summary while more arrive, "all N drafts are ready", and "your bulk order is complete".
 
 ## Things to know
 
-- Notes and comments quoted to writers go through `redactContactDetails`, the same as the order page.
 - "Draft ready" counts any submitted draft. Once drafts go to the editor queue first (`with_editor`), `getClientDraftStates` should count only drafts the client can see.
-- Vercel Cron runs on production deployments only.
+- The "we have a question about your brief" email isn't built: the question text isn't stored yet.
+- Vercel Cron and the tick only reach Production; preview builds sit behind Vercel's login.
