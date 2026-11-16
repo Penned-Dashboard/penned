@@ -47,7 +47,7 @@ Account managers (Orders page) and admins (order page) can assign or change the 
 | --- | --- | --- |
 | Client signs up | `signUpAction` | Welcome to the client; "New client" to admin |
 | Admin changes a role | `updateAdminProfile` | Welcome to a new writer or editor |
-| Order placed | `createOrder`, `createBulkOrders` | Receipt to the client (one per batch); "New order" to account managers |
+| Order placed | `createOrder`, `createBulkOrders` | Receipt to the client (one per batch); "New order" to account managers and admin |
 | Brief accepted | `acceptBriefAction` | "Brief accepted, due …" to the client (one per bulk batch) |
 | Writer claims | `claimOrder` | Confirmation with deadline to the writer |
 | Writer assigned | `assignWriterAction` (account manager orders page, admin order page) | "You've been assigned: …" with deadline to the writer |
@@ -72,10 +72,15 @@ Account managers (Orders page) and admins (order page) can assign or change the 
 | Admin | Client deadline missed |
 | Editors | Draft in the queue 2 hours; account managers told at 4 hours |
 | Everyone | From 08:00 UK, once a day: account manager summary, admin summary (new clients, top-ups, payout requests, late orders), client daily summaries |
+| Signature and Specialist writers | From 08:00 UK, once a day, only if new work arrived: Signature and Specialist jobs that reached the marketplace in the last 24 hours and are still unclaimed (status `open`, no writer). Signature writers get Signature jobs; Specialist writers (`writer_tier` "specialist" or the "specialist" niche tag) get both. Follows the writer's "new matching jobs" setting; skips pending or paused writers. |
 
 Each timed email has a key in `notification_log` (for example `writer_final:<order>:<writer_due_at>`), so it is sent once; a new deadline gets fresh reminders.
 
 **Scheduling:** Supabase `pg_cron` calls `https://app.penned.io/api/cron/tick` every 15 minutes with the bearer token. `vercel.json` also calls it daily at 08:00 UTC as a fallback (Vercel Hobby only allows daily jobs).
+
+## Writer tiers
+
+`profiles.writer_tier` is "standard", "signature" or "specialist", set by admin on the People page. Order tiers are `orders.service_tier`: "on-demand" (Standard), "signature", "rank" (Specialist). The marketplace hides Specialist jobs from non-specialists; Signature jobs are shown to every writer (labelled Standard there).
 
 ## Client settings and bulk orders
 
