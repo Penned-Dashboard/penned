@@ -36,10 +36,10 @@ export default async function SignInPage({
             </Link>
           </div>
           <h1 className="mt-8 text-center text-4xl font-semibold tracking-[-0.05em] text-[var(--penned-navy)]">
-            Sign in
+            Log in
           </h1>
           <p className="mt-3 text-center text-base text-slate-500">
-            Access your client, writer, or admin workspace
+            Welcome back.
           </p>
           <div className="mt-8 grid gap-3">
             <a className="button-secondary w-full text-center" href="/sign-in?oauth=google">
@@ -50,7 +50,7 @@ export default async function SignInPage({
             </a>
             {params.oauth ? (
               <p className="rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                Google and Microsoft sign-in need OAuth apps configured in Supabase. Use email and password for now.
+                Google and Microsoft log-in are coming soon. Use your email and password for now.
               </p>
             ) : null}
           </div>
@@ -61,7 +61,7 @@ export default async function SignInPage({
               <input
                 className="dashboard-input"
                 name="email"
-                placeholder="you@company.com"
+                placeholder="you@youragency.com"
                 required
                 type="email"
               />
@@ -72,7 +72,6 @@ export default async function SignInPage({
                 className="dashboard-input"
                 minLength={8}
                 name="password"
-                placeholder="Your password"
                 required
                 type="password"
               />
@@ -80,24 +79,24 @@ export default async function SignInPage({
             {params.error ? (
               <p className="rounded-[1rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                 {params.error === "setup"
-                  ? "Password sign-in is not ready yet. Run supabase/setup-auth-and-writer-p0.sql in Supabase first."
+                  ? "We can’t log you in right now. Please try again in a few minutes."
                   : params.error === "env"
-                    ? "Sign-in is not configured in this deployment yet. Add the Supabase server env vars to this Vercel environment."
-                    : "Incorrect email or password."}
+                    ? "We can’t log you in right now. Please try again in a few minutes."
+                    : "That email and password don’t match. Check them and try again."}
               </p>
             ) : null}
             <button className="button-primary w-full" type="submit">
-              Enter workspace
+              Log in
             </button>
           </form>
           <p className="mt-6 text-center text-sm text-slate-500">
-            New client?{" "}
+            New to Penned?{" "}
             <Link className="font-semibold text-[var(--penned-navy)]" href="/sign-up">
               Create your account
             </Link>
           </p>
           <p className="mt-2 text-center text-xs text-slate-400">
-            Writers use an invited login — no public writer signup.
+            Writers: use the log-in link in your invitation email.
           </p>
         </div>
       </div>
