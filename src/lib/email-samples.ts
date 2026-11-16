@@ -266,6 +266,20 @@ export function buildEmailSamples(): EmailSample[] {
         clientsUrl: `${APP}/admin/clients`,
       }),
     },
+    // Writer daily digest (added 17 Nov)
+    {
+      audience: "Writer (Specialist)",
+      content: t.writerDailyDigest({
+        firstName: "Will",
+        tierLabel: "Signature and Specialist",
+        jobs: [
+          "Clinical trial recruitment explained · Specialist · Technical Article · 2,000 words · English (UK)",
+          "Founder story for a SaaS launch · Signature · Expert Writing / Thought Leadership · 1,200 words · English (UK)",
+        ],
+        otherOpen: 1,
+        marketplaceUrl: `${APP}/writer/marketplace`,
+      }),
+    },
     // Assignments (added 17 Nov)
     {
       audience: "Writer",

@@ -80,6 +80,7 @@ export const urls = {
   writerHome: () => appUrl("/writer"),
   writerOrder: (orderId: string) => appUrl(`/writer/orders/${orderId}`),
   writerEarnings: () => appUrl("/writer/earnings"),
+  writerMarketplace: () => appUrl("/writer/marketplace"),
   editorHome: () => appUrl("/editor"),
   teamBriefs: (role: string) =>
     appUrl(role === "admin" ? "/admin/orders" : "/account-manager/briefs"),
@@ -503,7 +504,16 @@ export async function notifyOrdersPlaced(orderIds: string[]) {
     }
   }
 
-  for (const member of await getOrderTeam()) {
+  // Account managers and admin are both told (once each, even if they overlap).
+  const seen = new Set<string>();
+  const recipients = [...(await getOrderTeam()), ...(await getAdminRecipients())].filter((person) => {
+    const email = person.email.toLowerCase();
+    if (seen.has(email)) return false;
+    seen.add(email);
+    return true;
+  });
+
+  for (const member of recipients) {
     emails.push(
       build(
         member.email,
