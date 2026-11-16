@@ -11,6 +11,19 @@ import {
   type OrderFormValues,
 } from "@/lib/order-schema";
 import { clientStatusLabel } from "@/lib/order-workflow";
+import {
+  notifyComment,
+  notifyDraftSubmitted,
+  notifyOrderApproved,
+  notifyOrderCancelled,
+  notifyOrderClaimed,
+  notifyOrdersPlaced,
+  notifyPayoutApproved,
+  notifyPayoutRequested,
+  notifyRevisionRequested,
+  notifyRoleChanged,
+  queueNotification,
+} from "@/lib/notifications";
 import { calculateOrderPrice, isUkCompanyBilling } from "@/lib/pricing";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Role } from "@/lib/types";
@@ -2004,6 +2017,7 @@ export async function refundOrderToClientBudget(orderId: string) {
     return { ok: false as const, message: error.message };
   }
 
+  queueNotification(() => notifyOrderCancelled(orderId));
   revalidateApp();
   return {
     ok: true as const,
@@ -2062,6 +2076,12 @@ export async function updateAdminProfile(values: {
     return { ok: false as const, message: "Admin access is required." };
   }
 
+  const { data: previousProfile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", values.profileId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from("profiles")
     .update({
@@ -2078,6 +2098,11 @@ export async function updateAdminProfile(values: {
         ? "Run supabase/writer-tier-and-avatar.sql first, then retry."
         : error.message,
     };
+  }
+
+  if (previousProfile?.role) {
+    const previousRole = String(previousProfile.role);
+    queueNotification(() => notifyRoleChanged(values.profileId, previousRole, values.role));
   }
 
   revalidateApp();
@@ -2306,7 +2331,7 @@ export async function createOrder(values: OrderFormValues) {
     : "";
   const clientLabel = payload.clientLabel.trim() || folderName || "Unnamed client";
 
-  const { error } = await supabase.from("orders").insert({
+  const { data: createdOrder, error } = await supabase.from("orders").insert({
     client_id: user.profileId,
     client_label: clientLabel,
     client_folder_id: payload.clientFolderId || null,
@@ -2339,7 +2364,7 @@ export async function createOrder(values: OrderFormValues) {
       },
     },
     status: "open",
-  });
+  }).select("id").maybeSingle();
 
   if (error) {
     return {
@@ -2347,6 +2372,11 @@ export async function createOrder(values: OrderFormValues) {
       message: error.message,
       errors: {},
     };
+  }
+
+  if (createdOrder?.id) {
+    const createdOrderId = String(createdOrder.id);
+    queueNotification(() => notifyOrdersPlaced([createdOrderId]));
   }
 
   revalidateApp();
@@ -3000,6 +3030,7 @@ export async function claimOrder(orderId: string) {
 
   await ensureWallet(user.profileId);
   await ensureRanking(user.profileId);
+  queueNotification(() => notifyOrderClaimed(orderId));
   revalidateApp();
   return { ok: true as const, message: "Job claimed. It is now in your assigned jobs." };
 }
@@ -3129,6 +3160,7 @@ export async function submitDraft(
     })
     .eq("id", orderId);
 
+  queueNotification(() => notifyDraftSubmitted(orderId));
   revalidateApp();
   return { ok: true as const, message: "Draft submitted for review." };
 }
@@ -3151,6 +3183,8 @@ export async function addSubmissionComment(submissionId: string, body: string) {
     return { ok: false as const, message: error.message };
   }
 
+  const commentAuthorId = user.profileId;
+  queueNotification(() => notifyComment(submissionId, commentAuthorId, body));
   revalidateApp();
   return { ok: true as const, message: "Comment added." };
 }
@@ -3188,6 +3222,7 @@ export async function requestRevision(
     })
     .eq("id", orderId);
 
+  queueNotification(() => notifyRevisionRequested(orderId, feedback));
   revalidateApp();
   return { ok: true as const, message: "Revision requested." };
 }
@@ -3259,6 +3294,7 @@ export async function acceptSubmission(orderId: string, submissionId: string) {
     })
     .eq("id", ranking.id);
 
+  queueNotification(() => notifyOrderApproved(orderId));
   revalidateApp();
   return { ok: true as const, message: "Submission accepted and writer credited." };
 }
@@ -3296,6 +3332,8 @@ export async function requestPayout(amountDollars: number) {
     return { ok: false as const, message: error.message };
   }
 
+  const payoutWriterId = user.profileId;
+  queueNotification(() => notifyPayoutRequested(payoutWriterId, amountCents));
   revalidateApp();
   return { ok: true as const, message: "Payout request submitted for approval." };
 }
@@ -3351,6 +3389,9 @@ export async function approvePayout(payoutRequestId: string) {
     amount_cents: -request.amount_cents,
   });
 
+  const approvedWriterId = String(request.writer_id);
+  const approvedAmountCents = Number(request.amount_cents);
+  queueNotification(() => notifyPayoutApproved(approvedWriterId, approvedAmountCents));
   revalidateApp();
   return { ok: true as const, message: "Payout approved and balance updated." };
 }
@@ -3557,9 +3598,14 @@ export async function createBulkOrders(
     });
   }
 
-  const { error } = await supabase.from("orders").insert(payloads);
+  const { data: createdOrders, error } = await supabase.from("orders").insert(payloads).select("id");
   if (error) {
     return { ok: false as const, message: error.message };
+  }
+
+  const createdOrderIds = (createdOrders ?? []).map((order) => String(order.id));
+  if (createdOrderIds.length) {
+    queueNotification(() => notifyOrdersPlaced(createdOrderIds));
   }
 
   revalidateApp();
