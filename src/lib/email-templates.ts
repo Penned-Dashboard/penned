@@ -27,6 +27,11 @@ export type EmailContent = {
 
 const NAVY = "#17253f";
 const LIME = "#ddf479";
+/**
+ * Logo images are always loaded from the live dashboard, so they also work in
+ * emails sent from preview builds. PNG, because many inboxes block SVG.
+ */
+const BRAND_ASSETS = "https://app.penned.io/brand";
 const PAGE = "#f4f7fb";
 const MUTED = "#5b6678";
 const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
@@ -113,13 +118,20 @@ export function renderEmail(content: EmailContent) {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PAGE};">
 <tr><td align="center" style="padding:24px 12px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
-<tr><td style="padding:0 4px 16px;font-family:${FONT};font-size:22px;font-weight:700;letter-spacing:-0.3px;color:${NAVY};">Penned</td></tr>
-<tr><td style="background:#ffffff;border-radius:12px;padding:32px 28px 16px;font-family:${FONT};">
+<tr><td bgcolor="${NAVY}" style="background:${NAVY};border-radius:12px 12px 0 0;padding:20px 28px;">
+<a href="https://penned.io" style="text-decoration:none;">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr>
+<td style="padding:0 12px 0 0;vertical-align:middle;"><img src="${BRAND_ASSETS}/penned-mark.png" width="36" height="36" alt="" style="display:block;border:0;width:36px;height:36px;"></td>
+<td style="vertical-align:middle;"><img src="${BRAND_ASSETS}/penned-wordmark-light.png" width="100" height="26" alt="Penned" style="display:block;border:0;width:100px;height:26px;font-family:${FONT};font-size:22px;font-weight:700;color:#ffffff;"></td>
+</tr></table>
+</a>
+</td></tr>
+<tr><td bgcolor="#ffffff" style="background:#ffffff;border-radius:0 0 12px 12px;padding:32px 28px 16px;font-family:${FONT};">
 ${greeting ? `<p style="margin:0 0 16px;font-size:16px;line-height:24px;color:${NAVY};">${escapeHtml(greeting)}</p>` : ""}
 ${content.blocks.map(blockHtml).join("\n")}
 ${
   content.button
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 24px;"><tr><td style="background:${NAVY};border-radius:8px;"><a href="${escapeHtml(content.button.url)}" style="display:inline-block;padding:12px 22px;font-family:${FONT};font-size:16px;font-weight:600;color:#ffffff;text-decoration:none;">${escapeHtml(content.button.label)}</a></td></tr></table>`
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 24px;"><tr><td bgcolor="${LIME}" style="background:${LIME};border-radius:999px;"><a href="${escapeHtml(content.button.url)}" style="display:inline-block;padding:13px 26px;font-family:${FONT};font-size:16px;font-weight:700;color:${NAVY};text-decoration:none;border-radius:999px;">${escapeHtml(content.button.label)}</a></td></tr></table>`
     : ""
 }
 ${(content.afterButton ?? []).map(blockHtml).join("\n")}
