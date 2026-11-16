@@ -80,8 +80,9 @@ export default async function AdminPeoplePage({
                 <label className="lg:w-40">
                   <span className="dashboard-label">Writer tier</span>
                   <select className="dashboard-input" defaultValue={profile.writerTier} name="writerTier">
-                    <option value="standard">standard</option>
-                    <option value="specialist">specialist</option>
+                    <option value="standard">Standard</option>
+                    <option value="signature">Signature</option>
+                    <option value="specialist">Specialist</option>
                   </select>
                 </label>
                 <label className="lg:w-52">

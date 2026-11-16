@@ -360,6 +360,9 @@ export async function runNotificationTick(now: Date = new Date()): Promise<TickR
     if (await claimNotificationKey(`summary_admin:${london.dateKey}`)) {
       outbox.push(...(await buildAdminSummary(orders, now, london.label)));
     }
+    if (await claimNotificationKey(`summary_writers:${london.dateKey}`)) {
+      outbox.push(...(await buildWriterDigests(now)));
+    }
     if (await claimNotificationKey(`summary_clients:${london.dateKey}`)) {
       const clients = await sendDailySummaries();
       result.sent += clients.sent;
@@ -518,4 +521,88 @@ async function buildAdminSummary(orders: Row[], now: Date, dateLabel: string): P
       }),
     ),
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* Writer daily digest                                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Signature and Specialist writers get one email a day listing the Signature
+ * and Specialist jobs that reached the marketplace in the last 24 hours and are
+ * still unclaimed. No new jobs for a writer: no email.
+ * - Signature writers: Signature jobs.
+ * - Specialist writers (writer_tier "specialist", or the "specialist" niche tag
+ *   the marketplace also uses): Signature and Specialist jobs.
+ * Follows the writer's "new matching jobs" email setting.
+ */
+async function buildWriterDigests(now: Date): Promise<OutgoingEmail[]> {
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return [];
+
+  const { data: jobData } = await supabase
+    .from("orders")
+    .select("id, title, service_tier, word_count, language, created_at, reserved_by, reserved_until, content_types(name)")
+    .eq("status", "open")
+    .is("writer_id", null)
+    .in("service_tier", ["signature", "rank"])
+    .order("created_at", { ascending: false })
+    .limit(200);
+  const jobs = (jobData ?? []) as Row[];
+  if (!jobs.length) return [];
+
+  const since = now.getTime() - 24 * HOUR;
+  const isNew = (job: Row) => (timeOf(job.created_at) ?? 0) >= since;
+  if (!jobs.some(isNew)) return [];
+
+  const { data: writerData } = await supabase
+    .from("profiles")
+    .select("id, writer_tier, niche_tags, approval_status")
+    .eq("role", "writer")
+    .limit(500);
+
+  const describe = (job: Row) => {
+    const type = (job.content_types as { name?: string } | null)?.name ?? "";
+    const tier = str(job.service_tier) === "rank" ? "Specialist" : "Signature";
+    const words = Number(job.word_count ?? 0);
+    return [
+      str(job.title) || "Untitled",
+      tier,
+      type,
+      words ? `${words.toLocaleString("en-GB")} words` : "",
+      str(job.language),
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  };
+
+  const emails: OutgoingEmail[] = [];
+  for (const row of (writerData ?? []) as Row[]) {
+    if (["pending", "paused"].includes(str(row.approval_status ?? "approved").toLowerCase())) continue;
+    const tags = Array.isArray(row.niche_tags) ? row.niche_tags.map((tag) => str(tag).toLowerCase()) : [];
+    const specialist = str(row.writer_tier) === "specialist" || tags.includes("specialist");
+    const signature = str(row.writer_tier) === "signature";
+    if (!specialist && !signature) continue;
+
+    const eligible = jobs.filter((job) => specialist || str(job.service_tier) === "signature");
+    const fresh = eligible.filter(isNew);
+    if (!fresh.length) continue;
+
+    const writer = await getPerson(str(row.id));
+    if (!writer || !writerWantsEmail(writer, "new_matching_job")) continue;
+
+    emails.push(
+      build(
+        writer.email,
+        templates.writerDailyDigest({
+          firstName: writer.firstName,
+          tierLabel: specialist ? "Signature and Specialist" : "Signature",
+          jobs: fresh.slice(0, 25).map(describe),
+          otherOpen: eligible.length - fresh.length,
+          marketplaceUrl: urls.writerMarketplace(),
+        }),
+      ),
+    );
+  }
+  return emails;
 }

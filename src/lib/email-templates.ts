@@ -1024,3 +1024,47 @@ export function editorAssigned(input: {
     button: { label: "Open the queue", url: input.queueUrl },
   };
 }
+
+/* ------------------------------------------------------------------ */
+/* Writer daily digest                                                 */
+/* ------------------------------------------------------------------ */
+
+export function writerDailyDigest(input: {
+  firstName: string;
+  tierLabel: string;
+  jobs: string[];
+  otherOpen: number;
+  marketplaceUrl: string;
+}): EmailContent {
+  const count = input.jobs.length;
+  return {
+    subject:
+      count === 1
+        ? `1 new ${input.tierLabel} job in the marketplace`
+        : `${count} new ${input.tierLabel} jobs in the marketplace`,
+    greetingName: input.firstName,
+    blocks: [
+      {
+        kind: "p",
+        text:
+          count === 1
+            ? `This ${input.tierLabel} job arrived in the last 24 hours and nobody has claimed it yet:`
+            : `These ${input.tierLabel} jobs arrived in the last 24 hours and nobody has claimed them yet:`,
+      },
+      { kind: "list", items: input.jobs },
+      ...(input.otherOpen > 0
+        ? [
+            {
+              kind: "p" as const,
+              text:
+                input.otherOpen === 1
+                  ? "There's also 1 earlier job still open for you."
+                  : `There are also ${input.otherOpen} earlier jobs still open for you.`,
+            },
+          ]
+        : []),
+      { kind: "p", text: "Jobs go to whoever claims them first." },
+    ],
+    button: { label: "Open the marketplace", url: input.marketplaceUrl },
+  };
+}

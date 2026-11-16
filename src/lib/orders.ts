@@ -2081,14 +2081,16 @@ export async function getAdminProfiles(): Promise<AdminProfileRow[]> {
     email: profile.email ?? "",
     role: profile.role ?? "client",
     companyName: profile.company_name ?? "—",
-    writerTier: (profile as { writer_tier?: string }).writer_tier === "specialist" ? "specialist" : "standard",
+    writerTier: ["specialist", "signature"].includes(String((profile as { writer_tier?: string }).writer_tier))
+      ? String((profile as { writer_tier?: string }).writer_tier)
+      : "standard",
   }));
 }
 
 export async function updateAdminProfile(values: {
   profileId: string;
   role: Role;
-  writerTier: "standard" | "specialist";
+  writerTier: "standard" | "signature" | "specialist";
   companyName: string;
 }) {
   const supabase = createServerSupabaseClient();
