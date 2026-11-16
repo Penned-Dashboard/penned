@@ -18,6 +18,10 @@ export type TeamOrderRow = {
   delivery: string;
   priceCents: number;
   writerName: string | null;
+  writerId: string | null;
+  editorId: string | null;
+  /** What the client typed in "Preferred writer" on the order form. */
+  preferredWriter: string;
   dueLabel: string;
   dbStatus: string;
   workflowStatus: WorkflowStatus;
@@ -55,7 +59,7 @@ export async function getTeamOrders(filters?: {
   let query = supabase
     .from("orders")
     .select(
-      "id, title, client_label, status, workflow_status, priority, language, word_count, budget_cents, service_tier, due_date, client_due_at, created_at, writer_id, content_types(name), profiles!orders_client_id_fkey(full_name, company_name)",
+      "id, title, client_label, status, workflow_status, priority, language, word_count, budget_cents, service_tier, due_date, client_due_at, created_at, writer_id, editor_id, intake_details, content_types(name), profiles!orders_client_id_fkey(full_name, company_name)",
     )
     .order("created_at", { ascending: false })
     .limit(filters?.limit ?? 100);
@@ -107,6 +111,11 @@ function mapTeamOrder(order: Record<string, unknown>): TeamOrderRow {
     delivery,
     priceCents: Number(order.budget_cents ?? 0),
     writerName: null,
+    writerId: order.writer_id ? String(order.writer_id) : null,
+    editorId: order.editor_id ? String(order.editor_id) : null,
+    preferredWriter: String(
+      ((order.intake_details as Record<string, unknown> | null) ?? {}).preferred_writer ?? "",
+    ),
     dueLabel: formatDue(
       (order.client_due_at as string | null) ?? (order.due_date as string | null),
     ),
@@ -211,4 +220,128 @@ export async function setOrderWorkflowStatus(orderId: string, workflowStatus: Wo
   }
 
   return { ok: true as const };
+}
+
+export async function getTeamEditors() {
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, full_name, email")
+    .eq("role", "editor")
+    .order("full_name", { ascending: true })
+    .limit(100);
+  return data ?? [];
+}
+
+/** Stages where a writer can be assigned: brief accepted, or already being written (reassign). */
+export const WRITER_ASSIGNABLE: WorkflowStatus[] = [
+  "waiting_for_writer",
+  "being_written",
+  "changes_requested",
+  "sent_back_by_editor",
+];
+
+/**
+ * An account manager or admin gives an order to a writer. The brief must be
+ * accepted first, so the deadline is already running. Reassigning keeps the
+ * deadline.
+ */
+export async function assignOrderWriter(orderId: string, writerId: string) {
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return { ok: false as const, message: "Supabase is not configured." };
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("id, status, workflow_status, writer_id")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (!order) return { ok: false as const, message: "Order not found." };
+
+  const stage = resolveWorkflowStatus({
+    dbStatus: String(order.status ?? ""),
+    workflowStatus: order.workflow_status ? String(order.workflow_status) : null,
+  });
+  if (stage === "brief_check" || stage === "waiting_on_client") {
+    return { ok: false as const, message: "Accept the brief first, so the delivery clock starts." };
+  }
+  if (!WRITER_ASSIGNABLE.includes(stage)) {
+    return { ok: false as const, message: "This order is past the writing stage." };
+  }
+  if (String(order.writer_id ?? "") === writerId) {
+    return { ok: true as const, message: "That writer is already on this order.", changed: false };
+  }
+
+  const { data: writer } = await supabase
+    .from("profiles")
+    .select("id, role, approval_status")
+    .eq("id", writerId)
+    .maybeSingle();
+  const writerRow = writer as { role?: string; approval_status?: string | null } | null;
+  if (!writerRow || writerRow.role !== "writer") {
+    return { ok: false as const, message: "Choose a writer account." };
+  }
+  if (["pending", "paused"].includes(String(writerRow.approval_status ?? "approved").toLowerCase())) {
+    return { ok: false as const, message: "That writer isn't approved yet." };
+  }
+
+  const fresh = stage === "waiting_for_writer";
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      writer_id: writerId,
+      reserved_by: null,
+      reserved_until: null,
+      ...(fresh ? { status: "claimed", workflow_status: "being_written" } : {}),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", orderId);
+  if (error) return { ok: false as const, message: error.message };
+
+  return {
+    ok: true as const,
+    message: order.writer_id ? "Writer changed and told." : "Writer assigned and told.",
+    changed: true,
+  };
+}
+
+/** An account manager or admin chooses the editor for an order. */
+export async function assignOrderEditor(orderId: string, editorId: string) {
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return { ok: false as const, message: "Supabase is not configured." };
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("id, status, workflow_status, editor_id")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (!order) return { ok: false as const, message: "Order not found." };
+
+  const stage = resolveWorkflowStatus({
+    dbStatus: String(order.status ?? ""),
+    workflowStatus: order.workflow_status ? String(order.workflow_status) : null,
+  });
+  if (stage === "completed" || stage === "cancelled") {
+    return { ok: false as const, message: "This order is already finished." };
+  }
+  if (String(order.editor_id ?? "") === editorId) {
+    return { ok: true as const, message: "That editor is already on this order.", changed: false };
+  }
+
+  const { data: editor } = await supabase.from("profiles").select("id, role").eq("id", editorId).maybeSingle();
+  if (!editor || (editor as { role?: string }).role !== "editor") {
+    return { ok: false as const, message: "Choose an editor account." };
+  }
+
+  const { error } = await supabase
+    .from("orders")
+    .update({ editor_id: editorId, updated_at: new Date().toISOString() })
+    .eq("id", orderId);
+  if (error) return { ok: false as const, message: error.message };
+
+  return {
+    ok: true as const,
+    message: order.editor_id ? "Editor changed and told." : "Editor assigned and told.",
+    changed: true,
+  };
 }

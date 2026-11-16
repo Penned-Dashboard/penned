@@ -565,7 +565,9 @@ export async function notifyDraftSubmitted(orderId: string) {
   if (stage === "with_editor") {
     const writer = await getPerson(str(order.writer_id));
     const contentTypes = await getContentTypeNames([str(order.content_type_id)]);
-    const editors = await getPeopleByRole(["editor"]);
+    // The assigned editor only; every editor while nobody is assigned.
+    const assigned = str(order.editor_id) ? await getPerson(str(order.editor_id)) : null;
+    const editors = assigned ? [assigned] : await getPeopleByRole(["editor"]);
     await sendEmails(
       editors.map((editor) =>
         build(
@@ -863,6 +865,48 @@ export async function notifyBriefAccepted(orderId: string) {
         dueLabel: formatDate(order.client_due_at),
         orderUrl: urls.clientOrder(orderId),
         settingsUrl: urls.clientSettings(),
+      }),
+    ),
+  ]);
+}
+
+/** An account manager or admin assigned a writer. Always sent. */
+export async function notifyWriterAssigned(orderId: string) {
+  const order = await getOrderRow(orderId);
+  if (!order) return;
+  const writer = await getPerson(str(order.writer_id));
+  if (!writer) return;
+  const contentTypes = await getContentTypeNames([str(order.content_type_id)]);
+  await sendEmails([
+    build(
+      writer.email,
+      templates.writerAssigned({
+        firstName: writer.firstName,
+        order: summarise(order, contentTypes, "writer"),
+      }),
+    ),
+  ]);
+}
+
+/** An account manager or admin assigned an editor. Always sent. */
+export async function notifyEditorAssigned(orderId: string) {
+  const order = await getOrderRow(orderId);
+  if (!order) return;
+  const editor = await getPerson(str(order.editor_id));
+  if (!editor) return;
+  const stage = resolveWorkflowStatus({
+    dbStatus: str(order.status),
+    workflowStatus: str(order.workflow_status) || null,
+  });
+  await sendEmails([
+    build(
+      editor.email,
+      templates.editorAssigned({
+        firstName: editor.firstName,
+        orderTitle: str(order.title) || "Untitled order",
+        clientDueLabel: formatDate(order.client_due_at),
+        draftWaiting: stage === "with_editor",
+        queueUrl: urls.editorHome(),
       }),
     ),
   ]);

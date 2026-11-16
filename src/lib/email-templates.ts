@@ -971,3 +971,56 @@ export function teamMorningSummary(input: {
     button: input.button,
   };
 }
+
+/* ------------------------------------------------------------------ */
+/* Assignments                                                         */
+/* ------------------------------------------------------------------ */
+
+export function writerAssigned(input: {
+  firstName: string;
+  order: OrderSummary;
+}): EmailContent {
+  const { order } = input;
+  return {
+    subject: `You've been assigned: ${order.title}`,
+    greetingName: input.firstName,
+    blocks: [
+      { kind: "p", text: `Your account manager has assigned "${order.title}" to you.` },
+      {
+        kind: "list",
+        items: [specLine(order), order.dueLabel ? `Your deadline: ${order.dueLabel}` : ""].filter(Boolean),
+      },
+      {
+        kind: "p",
+        text: "Read the full brief before you start. If you can't take it on, reply to this email straight away so we can reassign it.",
+      },
+    ],
+    button: { label: "Open the brief", url: order.url },
+  };
+}
+
+export function editorAssigned(input: {
+  firstName: string;
+  orderTitle: string;
+  clientDueLabel: string;
+  draftWaiting: boolean;
+  queueUrl: string;
+}): EmailContent {
+  return {
+    subject: `You're editing: ${input.orderTitle}`,
+    greetingName: input.firstName,
+    blocks: [
+      { kind: "p", text: `You've been assigned to edit "${input.orderTitle}".` },
+      ...(input.clientDueLabel
+        ? [{ kind: "p" as const, text: `It's due to the client by ${input.clientDueLabel}.` }]
+        : []),
+      {
+        kind: "p",
+        text: input.draftWaiting
+          ? "The draft is already in your queue."
+          : "We'll email you when the writer's draft is ready to edit.",
+      },
+    ],
+    button: { label: "Open the queue", url: input.queueUrl },
+  };
+}
