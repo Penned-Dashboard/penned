@@ -114,7 +114,7 @@ export async function runNotificationTick(now: Date = new Date()): Promise<TickR
   const { data: orderData } = await supabase
     .from("orders")
     .select(
-      "id, title, client_id, writer_id, status, workflow_status, priority, created_at, updated_at, client_due_at, writer_due_at, intake_details",
+      "id, title, client_id, writer_id, editor_id, status, workflow_status, priority, created_at, updated_at, client_due_at, writer_due_at, intake_details",
     )
     .not("status", "in", "(accepted,cancelled)")
     .order("created_at", { ascending: true })
@@ -321,7 +321,10 @@ export async function runNotificationTick(now: Date = new Date()): Promise<TickR
         const waited = nowMs - since;
         if (waited >= 2 * HOUR) {
           await once(`editor_waiting:${id}:${str(sub.id)}`, async () =>
-            (await getEditors()).map((editor) =>
+            (str(order.editor_id)
+              ? [await getPerson(str(order.editor_id))].filter((p): p is Person => Boolean(p))
+              : await getEditors()
+            ).map((editor) =>
               build(
                 editor.email,
                 templates.editorDraftWaiting({

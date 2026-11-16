@@ -266,6 +266,27 @@ export function buildEmailSamples(): EmailSample[] {
         clientsUrl: `${APP}/admin/clients`,
       }),
     },
+    // Assignments (added 17 Nov)
+    {
+      audience: "Writer",
+      content: t.writerAssigned({
+        firstName: "Will",
+        order: order("How to plan a content calendar", {
+          dueLabel: "Thu 19 Nov, 10:00 UK time",
+          url: writerOrderUrl,
+        }),
+      }),
+    },
+    {
+      audience: "Editor",
+      content: t.editorAssigned({
+        firstName: "Edie",
+        orderTitle: "How to plan a content calendar",
+        clientDueLabel: "Thu 19 Nov, 16:00 UK time",
+        draftWaiting: false,
+        queueUrl: `${APP}/editor`,
+      }),
+    },
     // Deadline emails and summaries (added 16 Nov)
     {
       audience: "Client",

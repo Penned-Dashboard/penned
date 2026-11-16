@@ -37,6 +37,10 @@ Accepting a brief (`waiting_for_writer`) sets `client_due_at` (72 hours, 48 for 
 
 Actions now keep `workflow_status` in step: claim → `being_written`, submit → `in_review` (drafts go straight to the client until the editor step is connected), change request → `changes_requested`, approval → `completed`.
 
+## Assigning writers and editors
+
+Account managers (Orders page) and admins (order page) can assign or change the writer and editor (`src/app/assign-actions.ts`, `assignOrderWriter` / `assignOrderEditor` in `src/lib/team-data.ts`). A writer can only be assigned once the brief is accepted (so the deadline is running), must have the writer role and not be pending or paused. Assigning to an unclaimed order moves it to `being_written`; reassigning keeps the deadline. The editor is stored in `orders.editor_id`, and editor emails and queue reminders then go only to that editor. The client's "Preferred writer" from the order form is saved in `intake_details.preferred_writer` and shown next to the controls.
+
 ## Instant emails
 
 | Event | Where it is called | Emails |
@@ -46,7 +50,9 @@ Actions now keep `workflow_status` in step: claim → `being_written`, submit �
 | Order placed | `createOrder`, `createBulkOrders` | Receipt to the client (one per batch); "New order" to account managers |
 | Brief accepted | `acceptBriefAction` | "Brief accepted, due …" to the client (one per bulk batch) |
 | Writer claims | `claimOrder` | Confirmation with deadline to the writer |
-| Writer submits | `submitDraft` | Editors if the order is `with_editor`; otherwise "draft ready" to the client |
+| Writer assigned | `assignWriterAction` (account manager orders page, admin order page) | "You've been assigned: …" with deadline to the writer |
+| Editor assigned | `assignEditorAction` (same pages) | "You're editing: …" to the editor |
+| Writer submits | `submitDraft` | The assigned editor (all editors if none) if the order is `with_editor`; otherwise "draft ready" to the client |
 | Editor approves / sends back | `approveDraftAction`, `sendBackToWriterAction` | Client draft ready / writer with fix-by time |
 | Client asks for changes | `requestRevision` | Writer (note and fix-by time); account managers from the second round |
 | Client approves | `acceptSubmission` | Writer; client only when a whole bulk batch is done |

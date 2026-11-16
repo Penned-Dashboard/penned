@@ -10,7 +10,12 @@ import {
   orderSchema,
   type OrderFormValues,
 } from "@/lib/order-schema";
-import { clientStatusLabel, revisionFixBy } from "@/lib/order-workflow";
+import {
+  clientStatusLabel,
+  resolveWorkflowStatus,
+  revisionFixBy,
+  type WorkflowStatus,
+} from "@/lib/order-workflow";
 import {
   notifyComment,
   notifyDraftSubmitted,
@@ -352,6 +357,10 @@ export type AdminOrderDetail = {
   priority: string;
   client: string;
   writer: string;
+  writerId: string | null;
+  editorId: string | null;
+  workflowStatus: WorkflowStatus;
+  preferredWriter: string;
   contentType: string;
   latestSubmission: SubmissionVersion | null;
 };
@@ -2137,6 +2146,10 @@ export async function getAdminOrderDetail(orderId: string): Promise<AdminOrderDe
         title,
         client_label,
         status,
+        workflow_status,
+        writer_id,
+        editor_id,
+        intake_details,
         due_date,
         client_due_at,
         writer_due_at,
@@ -2175,6 +2188,12 @@ export async function getAdminOrderDetail(orderId: string): Promise<AdminOrderDe
       readSingleRelation(order.client)?.full_name ??
       "Client",
     writer: readSingleRelation(order.writer)?.full_name ?? "Unassigned",
+    writerId: order.writer_id ?? null,
+    editorId: order.editor_id ?? null,
+    workflowStatus: resolveWorkflowStatus({ dbStatus: order.status, workflowStatus: order.workflow_status }),
+    preferredWriter: String(
+      ((order.intake_details as Record<string, unknown> | null) ?? {}).preferred_writer ?? "",
+    ),
     contentType: readSingleRelation(order.content_types)?.name ?? "Content order",
     latestSubmission: await getLatestSubmission(order.id),
   };
@@ -2367,6 +2386,7 @@ export async function createOrder(values: OrderFormValues) {
     intake_details: {
       ...payload.serviceFields,
       ...(payload.industry ? { industry: payload.industry } : {}),
+      ...(payload.preferredWriter ? { preferred_writer: payload.preferredWriter } : {}),
       pricing_snapshot: {
         tier: writingTier,
         subtotal_cents: price.subtotalCents,

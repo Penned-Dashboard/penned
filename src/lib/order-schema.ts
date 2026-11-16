@@ -36,6 +36,7 @@ export const orderSchema = z.object({
     .max(5000, "Brief is too long.")
     .default(""),
   serviceFields: z.record(z.string(), z.string()).default({}),
+  preferredWriter: z.string().trim().max(80, "Preferred writer is too long.").optional().default(""),
 });
 
 export type OrderFormValues = z.infer<typeof orderSchema>;

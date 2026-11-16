@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { refundOrderAction } from "@/app/admin/actions";
+import { AssignOrderForm } from "@/components/assign-order-form";
 import { DashboardShell, SectionCard } from "@/components/dashboard-shell";
 import { getAdminOrderDetail } from "@/lib/orders";
 import { requireRole } from "@/lib/auth";
+import { getTeamEditors, getTeamWriters, WRITER_ASSIGNABLE } from "@/lib/team-data";
 
 type Params = Promise<{ orderId: string }>;
 
@@ -17,11 +19,16 @@ export default async function AdminOrderDetailPage({
   const user = await requireRole("admin");
   const { orderId } = await params;
   const notice = await searchParams;
-  const order = await getAdminOrderDetail(orderId);
+  const [order, writers, editors] = await Promise.all([
+    getAdminOrderDetail(orderId),
+    getTeamWriters(),
+    getTeamEditors(),
+  ]);
 
   if (!order) {
     notFound();
   }
+  const finished = order.workflowStatus === "completed" || order.workflowStatus === "cancelled";
 
   return (
     <DashboardShell
@@ -76,6 +83,29 @@ export default async function AdminOrderDetailPage({
           </Link>
         </SectionCard>
       </section>
+
+      <SectionCard
+        title="Writer and editor"
+        description="Assign a writer once the brief is accepted. They get an email straight away."
+      >
+        {order.preferredWriter ? (
+          <p className="mb-3 text-sm text-slate-600">Client prefers: {order.preferredWriter}</p>
+        ) : null}
+        {finished ? (
+          <p className="text-sm text-slate-500">This order is finished.</p>
+        ) : (
+          <AssignOrderForm
+            canAssignWriter={WRITER_ASSIGNABLE.includes(order.workflowStatus)}
+            currentEditorId={order.editorId}
+            currentWriterId={order.writerId}
+            editors={editors}
+            orderId={order.id}
+            returnTo={`/admin/orders/${order.id}`}
+            writerHint="Accept the brief first, so the delivery clock starts."
+            writers={writers}
+          />
+        )}
+      </SectionCard>
 
       <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <SectionCard title="Brief" description="Admin reference copy for disputes, reassignment, and QA review.">
