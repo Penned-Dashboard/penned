@@ -9,6 +9,7 @@ import {
   switchWorkspaceRole,
 } from "@/lib/auth";
 import { CLIENT_TERMS_VERSION } from "@/lib/client-terms";
+import { notifySignUp, queueNotification } from "@/lib/notifications";
 import { isRole, rolePath } from "@/lib/types";
 
 export async function signUpAction(formData: FormData) {
@@ -72,6 +73,11 @@ export async function signUpAction(formData: FormData) {
             ? "/sign-up?error=env"
             : "/sign-up?error=failed",
     );
+  }
+
+  if (user?.id) {
+    const newProfileId = String(user.id);
+    queueNotification(() => notifySignUp(newProfileId));
   }
 
   redirect(`/sign-up/welcome?name=${encodeURIComponent(firstName)}`);

@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { getCurrentAppUser } from "@/lib/auth";
+import { writeClientEmailPrefs } from "@/lib/email-prefs";
 import {
   acceptSubmission,
   addSubmissionComment,
@@ -16,6 +17,7 @@ import {
   initialOrderFormState,
   type OrderFormState,
 } from "@/lib/order-schema";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export async function submitOrderAction(
   _previousState: OrderFormState,
@@ -131,6 +133,43 @@ export async function updateClientBillingAction(formData: FormData) {
     result.ok
       ? "/client/settings?billing=saved"
       : `/client/settings?billing=error&message=${encodeURIComponent(result.message)}`,
+  );
+}
+
+export async function updateClientEmailPrefsAction(formData: FormData) {
+  const user = await getCurrentAppUser();
+  if (!user || user.role !== "client") {
+    redirect("/sign-in");
+  }
+
+  const supabase = createServerSupabaseClient();
+  if (!supabase) {
+    redirect("/client/settings?emails=error#email-notifications");
+  }
+
+  const { data, error: readError } = await supabase
+    .from("profiles")
+    .select("notification_prefs")
+    .eq("id", user.profileId)
+    .maybeSingle();
+
+  // "How often" is disabled (and so not submitted) while updates are off: keep the saved choice.
+  const frequencyValue = formData.get("emailFrequency");
+  const next = writeClientEmailPrefs(data?.notification_prefs, {
+    enabled: String(formData.get("emailEnabled") ?? "") === "on",
+    ...(frequencyValue === null
+      ? {}
+      : { frequency: String(frequencyValue) === "daily" ? ("daily" as const) : ("instant" as const) }),
+  });
+
+  const { error } = readError
+    ? { error: readError }
+    : await supabase.from("profiles").update({ notification_prefs: next }).eq("id", user.profileId);
+
+  redirect(
+    error
+      ? "/client/settings?emails=error#email-notifications"
+      : "/client/settings?emails=saved#email-notifications",
   );
 }
 

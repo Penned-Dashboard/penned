@@ -10,7 +10,19 @@ import {
   orderSchema,
   type OrderFormValues,
 } from "@/lib/order-schema";
-import { clientStatusLabel } from "@/lib/order-workflow";
+import { clientStatusLabel, revisionFixBy } from "@/lib/order-workflow";
+import {
+  notifyComment,
+  notifyDraftSubmitted,
+  notifyOrderApproved,
+  notifyOrderCancelled,
+  notifyOrderClaimed,
+  notifyOrdersPlaced,
+  notifyPayoutApproved,
+  notifyRevisionRequested,
+  notifyRoleChanged,
+  queueNotification,
+} from "@/lib/notifications";
 import { calculateOrderPrice, isUkCompanyBilling } from "@/lib/pricing";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Role } from "@/lib/types";
@@ -652,6 +664,8 @@ export async function getClientOrders(clientProfileId: string): Promise<Dashboar
         title,
         client_label,
         due_date,
+        client_due_at,
+        writer_due_at,
         status,
         content_types(name),
         writer:profiles!orders_writer_id_fkey(full_name)
@@ -671,7 +685,7 @@ export async function getClientOrders(clientProfileId: string): Promise<Dashboar
     contentType: readSingleRelation(order.content_types)?.name ?? "Unassigned type",
     writer: readSingleRelation(order.writer)?.full_name ?? "Unassigned",
     status: formatOrderStatus(order.status),
-    deadline: formatDeadline(order.due_date),
+    deadline: formatDeadline(order.client_due_at ?? order.due_date),
   }));
 }
 
@@ -732,6 +746,8 @@ export async function getClientOrderDetail(
         client_label,
         status,
         due_date,
+        client_due_at,
+        writer_due_at,
         brief,
         primary_cta,
         target_audience,
@@ -766,7 +782,7 @@ export async function getClientOrderDetail(
     title: order.title,
     clientLabel: order.client_label ?? "General client",
     status: formatOrderStatus(order.status),
-    deadline: formatDeadline(order.due_date),
+    deadline: formatDeadline(order.client_due_at ?? order.due_date),
     contentType: readSingleRelation(order.content_types)?.name ?? "Unassigned type",
     writer: writerFirstName(readSingleRelation(order.writer)?.full_name) || "Unassigned",
     serviceTier,
@@ -808,6 +824,8 @@ export async function getWriterMarketplace(
           title,
           brief,
           due_date,
+          client_due_at,
+          writer_due_at,
           budget_cents,
           word_count,
           status,
@@ -894,8 +912,8 @@ export async function getWriterMarketplace(
       wordCount: order.word_count ?? null,
       payCents,
       pay: payCents ? formatUsd(payCents) : "TBD",
-      dueDate: order.due_date ?? null,
-      turnaround: formatDeadline(order.due_date),
+      dueDate: order.writer_due_at ?? order.due_date ?? null,
+      turnaround: formatDeadline(order.writer_due_at ?? order.due_date),
       status: mapWriterStatus(order.status).label,
       createdAt: order.created_at,
       reservedByMe,
@@ -968,6 +986,8 @@ export async function getWriterJobs(writerProfileId: string): Promise<WriterJob[
           title,
           status,
           due_date,
+          client_due_at,
+          writer_due_at,
           word_count,
           budget_cents,
           updated_at,
@@ -993,8 +1013,8 @@ export async function getWriterJobs(writerProfileId: string): Promise<WriterJob[
       wordCount: order.word_count ?? null,
       payCents,
       pay: payCents ? formatUsd(payCents) : "TBD",
-      dueDate: order.due_date ?? null,
-      deadline: formatDeadline(order.due_date),
+      dueDate: order.writer_due_at ?? order.due_date ?? null,
+      deadline: formatDeadline(order.writer_due_at ?? order.due_date),
       status: mapWriterStatus(order.status, {
         started: isJobStarted(order.intake_details),
         paid: ledger.paidOrderIds.has(order.id),
@@ -1035,6 +1055,8 @@ export async function getWriterOrderDetail(
         client_label,
         status,
         due_date,
+        client_due_at,
+        writer_due_at,
         brief,
         primary_cta,
         tone_of_voice,
@@ -1068,6 +1090,8 @@ export async function getWriterOrderDetail(
           client_label,
           status,
           due_date,
+          client_due_at,
+          writer_due_at,
           brief,
           primary_cta,
           tone_of_voice,
@@ -1118,8 +1142,8 @@ export async function getWriterOrderDetail(
     status: writerStatus.label,
     writerStatus,
     dbStatus: order.status,
-    deadline: formatDeadline(order.due_date),
-    dueDate: order.due_date ?? null,
+    deadline: formatDeadline(order.writer_due_at ?? order.due_date),
+    dueDate: order.writer_due_at ?? order.due_date ?? null,
     brief: order.brief,
     toneOfVoice: order.tone_of_voice ?? "Not specified",
     targetKeywords: order.target_keywords ?? [],
@@ -1820,7 +1844,7 @@ export async function getWriterRankingBoard(
   if (tab === "reliable") {
     const { data: submissions } = await supabase
       .from("submissions")
-      .select("order_id, writer_id, submitted_at, order:orders!submissions_order_id_fkey(due_date)")
+      .select("order_id, writer_id, submitted_at, order:orders!submissions_order_id_fkey(due_date, writer_due_at)")
       .order("submitted_at", { ascending: true });
 
     // Only the first submission per order counts toward on-time delivery.
@@ -1830,7 +1854,7 @@ export async function getWriterRankingBoard(
       firstByOrder.set(item.order_id, {
         writerId: item.writer_id,
         submittedAt: item.submitted_at,
-        dueDate: readSingleRelation(item.order)?.due_date ?? null,
+        dueDate: readSingleRelation(item.order)?.writer_due_at ?? readSingleRelation(item.order)?.due_date ?? null,
       });
     }
 
@@ -1933,6 +1957,8 @@ export async function getAdminOrderQueue(): Promise<AdminQueueOrder[]> {
         client_label,
         status,
         due_date,
+        client_due_at,
+        writer_due_at,
         budget_cents,
         client:profiles!orders_client_id_fkey(company_name, full_name),
         writer:profiles!orders_writer_id_fkey(full_name),
@@ -1952,7 +1978,7 @@ export async function getAdminOrderQueue(): Promise<AdminQueueOrder[]> {
       contentType: readSingleRelation(order.content_types)?.name ?? "Content order",
       statusKey: order.status,
       state: formatOrderStatus(order.status),
-      deadline: formatDeadline(order.due_date),
+      deadline: formatDeadline(order.client_due_at ?? order.due_date),
       budgetCents: order.budget_cents ?? 0,
       budget: formatUsd(order.budget_cents ?? 0),
       writer: readSingleRelation(order.writer)?.full_name ?? "Unassigned",
@@ -2004,6 +2030,7 @@ export async function refundOrderToClientBudget(orderId: string) {
     return { ok: false as const, message: error.message };
   }
 
+  queueNotification(() => notifyOrderCancelled(orderId));
   revalidateApp();
   return {
     ok: true as const,
@@ -2062,6 +2089,12 @@ export async function updateAdminProfile(values: {
     return { ok: false as const, message: "Admin access is required." };
   }
 
+  const { data: previousProfile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", values.profileId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from("profiles")
     .update({
@@ -2078,6 +2111,11 @@ export async function updateAdminProfile(values: {
         ? "Run supabase/writer-tier-and-avatar.sql first, then retry."
         : error.message,
     };
+  }
+
+  if (previousProfile?.role) {
+    const previousRole = String(previousProfile.role);
+    queueNotification(() => notifyRoleChanged(values.profileId, previousRole, values.role));
   }
 
   revalidateApp();
@@ -2100,6 +2138,8 @@ export async function getAdminOrderDetail(orderId: string): Promise<AdminOrderDe
         client_label,
         status,
         due_date,
+        client_due_at,
+        writer_due_at,
         brief,
         primary_cta,
         target_audience,
@@ -2123,7 +2163,7 @@ export async function getAdminOrderDetail(orderId: string): Promise<AdminOrderDe
     id: order.id,
     title: order.title,
     status: formatOrderStatus(order.status),
-    deadline: formatDeadline(order.due_date),
+    deadline: formatDeadline(order.client_due_at ?? order.due_date),
     brief: order.brief,
     primaryCta: order.primary_cta ?? "Not specified",
     targetAudience: order.target_audience ?? "Not specified",
@@ -2306,7 +2346,7 @@ export async function createOrder(values: OrderFormValues) {
     : "";
   const clientLabel = payload.clientLabel.trim() || folderName || "Unnamed client";
 
-  const { error } = await supabase.from("orders").insert({
+  const { data: createdOrder, error } = await supabase.from("orders").insert({
     client_id: user.profileId,
     client_label: clientLabel,
     client_folder_id: payload.clientFolderId || null,
@@ -2339,7 +2379,7 @@ export async function createOrder(values: OrderFormValues) {
       },
     },
     status: "open",
-  });
+  }).select("id").maybeSingle();
 
   if (error) {
     return {
@@ -2347,6 +2387,11 @@ export async function createOrder(values: OrderFormValues) {
       message: error.message,
       errors: {},
     };
+  }
+
+  if (createdOrder?.id) {
+    const createdOrderId = String(createdOrder.id);
+    queueNotification(() => notifyOrdersPlaced([createdOrderId]));
   }
 
   revalidateApp();
@@ -2980,6 +3025,7 @@ export async function claimOrder(orderId: string) {
     .update({
       writer_id: user.profileId,
       status: "claimed",
+      workflow_status: "being_written",
       reserved_by: null,
       reserved_until: null,
       updated_at: nowIso,
@@ -3000,6 +3046,7 @@ export async function claimOrder(orderId: string) {
 
   await ensureWallet(user.profileId);
   await ensureRanking(user.profileId);
+  queueNotification(() => notifyOrderClaimed(orderId));
   revalidateApp();
   return { ok: true as const, message: "Job claimed. It is now in your assigned jobs." };
 }
@@ -3125,10 +3172,13 @@ export async function submitDraft(
     .from("orders")
     .update({
       status: "in_review",
+      // Drafts go straight to the client until the editor step is connected.
+      workflow_status: "in_review",
       updated_at: new Date().toISOString(),
     })
     .eq("id", orderId);
 
+  queueNotification(() => notifyDraftSubmitted(orderId));
   revalidateApp();
   return { ok: true as const, message: "Draft submitted for review." };
 }
@@ -3151,6 +3201,8 @@ export async function addSubmissionComment(submissionId: string, body: string) {
     return { ok: false as const, message: error.message };
   }
 
+  const commentAuthorId = user.profileId;
+  queueNotification(() => notifyComment(submissionId, commentAuthorId, body));
   revalidateApp();
   return { ok: true as const, message: "Comment added." };
 }
@@ -3180,14 +3232,23 @@ export async function requestRevision(
     .update({ status: "revision_requested" })
     .eq("id", submissionId);
 
+  const { data: revisionOrder } = await supabase
+    .from("orders")
+    .select("priority")
+    .eq("id", orderId)
+    .maybeSingle();
+
   await supabase
     .from("orders")
     .update({
       status: "revision_requested",
+      workflow_status: "changes_requested",
+      writer_due_at: revisionFixBy("client", new Date(), revisionOrder?.priority).toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq("id", orderId);
 
+  queueNotification(() => notifyRevisionRequested(orderId, feedback));
   revalidateApp();
   return { ok: true as const, message: "Revision requested." };
 }
@@ -3219,6 +3280,7 @@ export async function acceptSubmission(orderId: string, submissionId: string) {
     .from("orders")
     .update({
       status: "accepted",
+      workflow_status: "completed",
       updated_at: new Date().toISOString(),
     })
     .eq("id", orderId);
@@ -3259,6 +3321,7 @@ export async function acceptSubmission(orderId: string, submissionId: string) {
     })
     .eq("id", ranking.id);
 
+  queueNotification(() => notifyOrderApproved(orderId));
   revalidateApp();
   return { ok: true as const, message: "Submission accepted and writer credited." };
 }
@@ -3296,6 +3359,7 @@ export async function requestPayout(amountDollars: number) {
     return { ok: false as const, message: error.message };
   }
 
+  // Admin sees pending payout requests in the morning summary.
   revalidateApp();
   return { ok: true as const, message: "Payout request submitted for approval." };
 }
@@ -3351,6 +3415,9 @@ export async function approvePayout(payoutRequestId: string) {
     amount_cents: -request.amount_cents,
   });
 
+  const approvedWriterId = String(request.writer_id);
+  const approvedAmountCents = Number(request.amount_cents);
+  queueNotification(() => notifyPayoutApproved(approvedWriterId, approvedAmountCents));
   revalidateApp();
   return { ok: true as const, message: "Payout approved and balance updated." };
 }
@@ -3557,9 +3624,14 @@ export async function createBulkOrders(
     });
   }
 
-  const { error } = await supabase.from("orders").insert(payloads);
+  const { data: createdOrders, error } = await supabase.from("orders").insert(payloads).select("id");
   if (error) {
     return { ok: false as const, message: error.message };
+  }
+
+  const createdOrderIds = (createdOrders ?? []).map((order) => String(order.id));
+  if (createdOrderIds.length) {
+    queueNotification(() => notifyOrdersPlaced(createdOrderIds));
   }
 
   revalidateApp();
@@ -3604,7 +3676,27 @@ function formatDeadline(date: string | null) {
     return "No due date";
   }
 
-  return `Due ${formatDate(date)}`;
+  // Date-only values (the client's optional due date) have no time to show.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return `Due ${formatDate(date)}`;
+  }
+
+  return `Due ${formatDeadlineTime(date)}`;
+}
+
+/** "19 Nov, 14:00 UK time": deadlines are exact times, shown in UK time. */
+export function formatDeadlineTime(date: string) {
+  const value = new Date(date);
+  if (Number.isNaN(value.getTime())) return formatDate(date);
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Europe/London",
+  }).format(value);
+  return `${parts.replace(" at ", ", ")} UK time`;
 }
 
 function formatDate(date: string) {

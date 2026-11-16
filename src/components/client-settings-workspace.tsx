@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { updateClientBillingAction } from "@/app/client/actions";
+import { updateClientBillingAction, updateClientEmailPrefsAction } from "@/app/client/actions";
 import { SectionCard } from "@/components/dashboard-cards";
 
 const teamRoles = [
@@ -42,6 +42,9 @@ export function ClientSettingsWorkspace({
   billingCountry = "",
   vatNumber = "",
   billingNotice,
+  emailEnabled = true,
+  emailFrequency = "instant",
+  emailNotice,
 }: {
   fullName: string;
   email: string;
@@ -49,6 +52,9 @@ export function ClientSettingsWorkspace({
   billingCountry?: string;
   vatNumber?: string;
   billingNotice?: string | null;
+  emailEnabled?: boolean;
+  emailFrequency?: "instant" | "daily";
+  emailNotice?: string | null;
 }) {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("Content manager");
@@ -57,6 +63,7 @@ export function ClientSettingsWorkspace({
   const [walletThreshold, setWalletThreshold] = useState("500");
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [ukCompany, setUkCompany] = useState(isUkCompany);
+  const [orderEmails, setOrderEmails] = useState(emailEnabled);
   const [team, setTeam] = useState<TeamMember[]>([
     { id: "owner", name: fullName, email, role: "Owner", status: "active" },
   ]);
@@ -151,6 +158,58 @@ export function ClientSettingsWorkspace({
           </button>
         </form>
         {billingNotice ? <p className="mt-3 text-sm font-medium text-emerald-700">{billingNotice}</p> : null}
+      </SectionCard>
+
+      <SectionCard
+        description="Choose whether we email you when something happens on your orders."
+        title="Email notifications"
+      >
+        <form action={updateClientEmailPrefsAction} className="grid gap-4" id="email-notifications">
+          <label className="flex items-start gap-3">
+            <input
+              checked={orderEmails}
+              className="mt-1"
+              name="emailEnabled"
+              onChange={(event) => setOrderEmails(event.target.checked)}
+              type="checkbox"
+            />
+            <span className="text-sm text-slate-600">
+              Email me order updates, such as when a draft is ready to review.
+            </span>
+          </label>
+          <fieldset className="grid gap-2" disabled={!orderEmails}>
+            <legend className="dashboard-label">How often</legend>
+            <label className="flex items-start gap-3">
+              <input
+                className="mt-1"
+                defaultChecked={emailFrequency !== "daily"}
+                name="emailFrequency"
+                type="radio"
+                value="instant"
+              />
+              <span className="text-sm text-slate-600">As they happen</span>
+            </label>
+            <label className="flex items-start gap-3">
+              <input
+                className="mt-1"
+                defaultChecked={emailFrequency === "daily"}
+                name="emailFrequency"
+                type="radio"
+                value="daily"
+              />
+              <span className="text-sm text-slate-600">One summary a day</span>
+            </label>
+          </fieldset>
+          <p className="text-sm text-slate-500">
+            Bulk orders are always grouped: we email you when the first draft is ready, send one
+            summary a day while more arrive, and tell you when they are all done. We always email
+            you about payments and cancelled orders.
+          </p>
+          <button className="button-primary md:w-fit" type="submit">
+            Save email settings
+          </button>
+        </form>
+        {emailNotice ? <p className="mt-3 text-sm font-medium text-emerald-700">{emailNotice}</p> : null}
       </SectionCard>
 
       <section className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">

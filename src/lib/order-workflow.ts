@@ -144,3 +144,99 @@ export function deliveryHoursFor(priority?: string | null) {
 export function writerDeadlineFromClientDue(clientDueAt: Date) {
   return new Date(clientDueAt.getTime() - EDITING_WINDOW_HOURS * 60 * 60 * 1000);
 }
+
+/**
+ * Deadlines start when the brief is accepted (Penned client terms, delivery
+ * window): 72 hours, or 48 with rush. The writer is due 6 hours earlier so the
+ * editor has time.
+ */
+export function deadlinesFromAcceptance(acceptedAt: Date, priority?: string | null) {
+  const clientDue = new Date(acceptedAt.getTime() + deliveryHoursFor(priority) * 60 * 60 * 1000);
+  return { clientDue, writerDue: writerDeadlineFromClientDue(clientDue) };
+}
+
+/** Workflow stages where the client is holding the order up, so the clock stops. */
+/** Hours a writer has to fix a draft after the client asks for changes. */
+export function revisionHoursFor(priority?: string | null) {
+  return priority === "rush" ? 12 : 24;
+}
+
+/**
+ * The writer's fix-by time after a change request.
+ * - Client asks for changes: 24 hours (12 for rush).
+ * - Editor sends it back before delivery: aim for 2 hours before the client
+ *   deadline, never sooner than 1 hour from now and never later than the
+ *   client revision allowance.
+ */
+export function revisionFixBy(
+  kind: "client" | "editor",
+  now: Date,
+  priority?: string | null,
+  clientDueAt?: string | null,
+) {
+  const hour = 60 * 60 * 1000;
+  const allowance = now.getTime() + revisionHoursFor(priority) * hour;
+  if (kind === "client" || !clientDueAt) return new Date(allowance);
+  const target = new Date(clientDueAt).getTime() - 2 * hour;
+  return new Date(Math.max(now.getTime() + hour, Math.min(target, allowance)));
+}
+
+export const PAUSED_WORKFLOW_STATUSES: readonly WorkflowStatus[] = ["waiting_on_client"];
+
+/**
+ * Timing columns to write when an order moves to `next`:
+ * - brief accepted (moving to waiting_for_writer) with no deadline yet: start the clock;
+ * - entering a paused stage with a deadline: note when the pause began;
+ * - leaving a paused stage: push both deadlines back by the time paused.
+ */
+export function timingChangesForStatus(
+  order: {
+    priority?: string | null;
+    client_due_at?: string | null;
+    writer_due_at?: string | null;
+    pause_started_at?: string | null;
+    total_paused_minutes?: number | null;
+  },
+  next: WorkflowStatus,
+  now: Date = new Date(),
+): Record<string, string | number | null> {
+  const changes: Record<string, string | number | null> = {};
+  // Only accepting the brief starts the clock. Orders accepted before deadlines
+  // were recorded keep no deadline rather than getting a fresh one later.
+  const clockStarts = next === "waiting_for_writer";
+  const entersPause = PAUSED_WORKFLOW_STATUSES.includes(next);
+
+  if (order.pause_started_at && !entersPause) {
+    const pausedMs = Math.max(0, now.getTime() - new Date(order.pause_started_at).getTime());
+    const shift = (value?: string | null) =>
+      value ? new Date(new Date(value).getTime() + pausedMs).toISOString() : null;
+    if (order.client_due_at) changes.client_due_at = shift(order.client_due_at);
+    if (order.writer_due_at) changes.writer_due_at = shift(order.writer_due_at);
+    changes.pause_started_at = null;
+    changes.total_paused_minutes = (order.total_paused_minutes ?? 0) + Math.round(pausedMs / 60000);
+  }
+
+  if (!order.client_due_at && clockStarts) {
+    const { clientDue, writerDue } = deadlinesFromAcceptance(now, order.priority);
+    changes.client_due_at = clientDue.toISOString();
+    changes.writer_due_at = writerDue.toISOString();
+  }
+
+  // A change request gives the writer a new fix-by time.
+  if (next === "changes_requested") {
+    changes.writer_due_at = revisionFixBy("client", now, order.priority).toISOString();
+  } else if (next === "sent_back_by_editor") {
+    changes.writer_due_at = revisionFixBy(
+      "editor",
+      now,
+      order.priority,
+      (changes.client_due_at as string | undefined) ?? order.client_due_at,
+    ).toISOString();
+  }
+
+  if (entersPause && order.client_due_at && !order.pause_started_at) {
+    changes.pause_started_at = now.toISOString();
+  }
+
+  return changes;
+}

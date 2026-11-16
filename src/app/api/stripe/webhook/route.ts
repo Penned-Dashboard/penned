@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { notifyTopUp, queueNotification } from "@/lib/notifications";
 import { volumeDiscountCreditCents } from "@/lib/pricing";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getStripeServerClient } from "@/lib/stripe";
@@ -53,14 +54,16 @@ export async function POST(request: Request) {
           ? session.amount_total
           : Math.round(Number(session.metadata?.top_up_amount ?? 0) * 100);
       if (amountCents > 0) {
+        const bonusCents = volumeDiscountCreditCents(amountCents);
         await creditClientWallet({
           supabase,
           clientProfileId,
           amountCents,
-          bonusCents: volumeDiscountCreditCents(amountCents),
+          bonusCents,
           stripeEventId: event.id,
           note: `Top-up via Stripe checkout ${session.id}`,
         });
+        queueNotification(() => notifyTopUp(clientProfileId, amountCents, bonusCents));
       }
     } else if (clientProfileId) {
       const payload = {

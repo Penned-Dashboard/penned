@@ -28,12 +28,21 @@ export type TeamOrderRow = {
 
 function formatDue(date: string | null) {
   if (!date) return "Due within 72 hours of acceptance";
-  return new Intl.DateTimeFormat("en-GB", {
+  // Date-only values (the client's optional due date) have no time to show.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }).format(
+      new Date(date),
+    );
+  }
+  const text = new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
     month: "short",
-    hour: "numeric",
+    hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
+    timeZone: "Europe/London",
   }).format(new Date(date));
+  return `${text} UK time`;
 }
 
 export async function getTeamOrders(filters?: {
@@ -165,12 +174,26 @@ export async function setOrderWorkflowStatus(orderId: string, workflowStatus: Wo
   const supabase = createServerSupabaseClient();
   if (!supabase) return { ok: false as const, message: "Supabase is not configured." };
 
-  const { dbStatusForWorkflow } = await import("@/lib/order-workflow");
+  const { dbStatusForWorkflow, timingChangesForStatus } = await import("@/lib/order-workflow");
+
+  // Deadlines: start the clock when the brief is accepted, pause it while
+  // we wait on the client. Never breaks the status change if it fails.
+  let timing: Record<string, string | number | null> = {};
+  const { data: current } = await supabase
+    .from("orders")
+    .select("priority, client_due_at, writer_due_at, pause_started_at, total_paused_minutes")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (current) {
+    timing = timingChangesForStatus(current, workflowStatus);
+  }
+
   const { error } = await supabase
     .from("orders")
     .update({
       workflow_status: workflowStatus,
       status: dbStatusForWorkflow(workflowStatus),
+      ...timing,
       updated_at: new Date().toISOString(),
     })
     .eq("id", orderId);
