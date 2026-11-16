@@ -4,7 +4,8 @@ import { hasClerkEnv } from "@/lib/auth";
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
   "/client(.*)",
-  "/writer(.*)",
+  "/writer",
+  "/writer/(.*)",
   "/admin(.*)",
 ]);
 
@@ -25,7 +26,8 @@ export default function proxy(request: NextRequest, event: NextFetchEvent) {
   if (
     (pathname === "/dashboard" ||
       pathname.startsWith("/client") ||
-      pathname.startsWith("/writer") ||
+      pathname === "/writer" ||
+      pathname.startsWith("/writer/") ||
       pathname.startsWith("/admin")) &&
     !currentSession
   ) {
