@@ -1,13 +1,23 @@
-import Link from "next/link";
+import { AssignOrderForm } from "@/components/assign-order-form";
 import { DashboardShell, SectionCard } from "@/components/dashboard-shell";
 import { requireRole } from "@/lib/auth";
 import { formatUsdFromCents } from "@/lib/pricing";
-import { getTeamOrders } from "@/lib/team-data";
+import { getTeamEditors, getTeamOrders, getTeamWriters, WRITER_ASSIGNABLE } from "@/lib/team-data";
 import { rolePath } from "@/lib/types";
 
-export default async function AccountManagerOrdersPage() {
+export default async function AccountManagerOrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ notice?: string; noticeMessage?: string }>;
+}) {
   const user = await requireRole("account_manager");
-  const orders = await getTeamOrders({ limit: 100 });
+  const notice = await searchParams;
+  const [orders, writers, editors] = await Promise.all([
+    getTeamOrders({ limit: 100 }),
+    getTeamWriters(),
+    getTeamEditors(),
+  ]);
+  const returnTo = `${rolePath("account_manager")}/orders`;
 
   return (
     <DashboardShell
@@ -17,7 +27,21 @@ export default async function AccountManagerOrdersPage() {
       currentPath={`${rolePath("account_manager")}/orders`}
       userName={user.fullName}
     >
-      <SectionCard title="Your clients’ orders" description="">
+      {notice.noticeMessage ? (
+        <p
+          className={`rounded-[1rem] px-4 py-3 text-sm ${
+            notice.notice === "error"
+              ? "border border-rose-200 bg-rose-50 text-rose-700"
+              : "border border-emerald-200 bg-emerald-50 text-emerald-700"
+          }`}
+        >
+          {notice.noticeMessage}
+        </p>
+      ) : null}
+      <SectionCard
+        title="Your clients’ orders"
+        description="Assign a writer once the brief is accepted. Writers and editors get an email when you assign them."
+      >
         {orders.length === 0 ? (
           <p className="text-sm text-slate-500">No orders yet.</p>
         ) : (
@@ -31,16 +55,18 @@ export default async function AccountManagerOrdersPage() {
                   <th className="px-3 py-2 font-medium">Status</th>
                   <th className="px-3 py-2 font-medium">Due</th>
                   <th className="px-3 py-2 font-medium">Price</th>
+                  <th className="px-3 py-2 font-medium">Writer and editor</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.map((order) => (
                   <tr key={order.id} className="border-t border-slate-100">
                     <td className="px-3 py-3">
-                      <Link className="font-semibold text-[var(--penned-navy)] underline" href={`/admin/orders/${order.id}`}>
-                        {order.title}
-                      </Link>
+                      <p className="font-semibold text-[var(--penned-navy)]">{order.title}</p>
                       <p className="text-xs text-slate-500">{order.contentType}</p>
+                      {order.preferredWriter ? (
+                        <p className="text-xs text-slate-500">Client prefers: {order.preferredWriter}</p>
+                      ) : null}
                     </td>
                     <td className="px-3 py-3">{order.agencyName} · {order.clientLabel}</td>
                     <td className="px-3 py-3">{order.tier}</td>
@@ -51,6 +77,23 @@ export default async function AccountManagerOrdersPage() {
                     </td>
                     <td className="px-3 py-3">{order.dueLabel}</td>
                     <td className="px-3 py-3">{formatUsdFromCents(order.priceCents)}</td>
+                    <td className="px-3 py-3 align-top">
+                      {order.workflowStatus === "completed" || order.workflowStatus === "cancelled" ? (
+                        <span className="text-xs text-slate-500">Finished</span>
+                      ) : (
+                        <AssignOrderForm
+                          canAssignWriter={WRITER_ASSIGNABLE.includes(order.workflowStatus)}
+                          compact
+                          currentEditorId={order.editorId}
+                          currentWriterId={order.writerId}
+                          editors={editors}
+                          orderId={order.id}
+                          returnTo={returnTo}
+                          writerHint="Accept the brief first"
+                          writers={writers}
+                        />
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
