@@ -10,7 +10,7 @@ import {
   orderSchema,
   type OrderFormValues,
 } from "@/lib/order-schema";
-import { clientStatusLabel } from "@/lib/order-workflow";
+import { clientStatusLabel, revisionFixBy } from "@/lib/order-workflow";
 import {
   notifyComment,
   notifyDraftSubmitted,
@@ -19,7 +19,6 @@ import {
   notifyOrderClaimed,
   notifyOrdersPlaced,
   notifyPayoutApproved,
-  notifyPayoutRequested,
   notifyRevisionRequested,
   notifyRoleChanged,
   queueNotification,
@@ -3026,6 +3025,7 @@ export async function claimOrder(orderId: string) {
     .update({
       writer_id: user.profileId,
       status: "claimed",
+      workflow_status: "being_written",
       reserved_by: null,
       reserved_until: null,
       updated_at: nowIso,
@@ -3172,6 +3172,8 @@ export async function submitDraft(
     .from("orders")
     .update({
       status: "in_review",
+      // Drafts go straight to the client until the editor step is connected.
+      workflow_status: "in_review",
       updated_at: new Date().toISOString(),
     })
     .eq("id", orderId);
@@ -3230,10 +3232,18 @@ export async function requestRevision(
     .update({ status: "revision_requested" })
     .eq("id", submissionId);
 
+  const { data: revisionOrder } = await supabase
+    .from("orders")
+    .select("priority")
+    .eq("id", orderId)
+    .maybeSingle();
+
   await supabase
     .from("orders")
     .update({
       status: "revision_requested",
+      workflow_status: "changes_requested",
+      writer_due_at: revisionFixBy("client", new Date(), revisionOrder?.priority).toISOString(),
       updated_at: new Date().toISOString(),
     })
     .eq("id", orderId);
@@ -3270,6 +3280,7 @@ export async function acceptSubmission(orderId: string, submissionId: string) {
     .from("orders")
     .update({
       status: "accepted",
+      workflow_status: "completed",
       updated_at: new Date().toISOString(),
     })
     .eq("id", orderId);
@@ -3348,8 +3359,7 @@ export async function requestPayout(amountDollars: number) {
     return { ok: false as const, message: error.message };
   }
 
-  const payoutWriterId = user.profileId;
-  queueNotification(() => notifyPayoutRequested(payoutWriterId, amountCents));
+  // Admin sees pending payout requests in the morning summary.
   revalidateApp();
   return { ok: true as const, message: "Payout request submitted for approval." };
 }

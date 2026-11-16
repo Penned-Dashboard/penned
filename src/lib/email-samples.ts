@@ -79,16 +79,6 @@ export function buildEmailSamples(): EmailSample[] {
     },
     {
       audience: "Client",
-      content: t.clientOrderApproved({
-        firstName: "Cara",
-        orderTitle: "How to plan a content calendar",
-        orderUrl,
-        newOrderUrl,
-        settingsUrl,
-      }),
-    },
-    {
-      audience: "Client",
       content: t.clientOrderCancelled({
         firstName: "Cara",
         orderTitle: "How to plan a content calendar",
@@ -173,6 +163,7 @@ export function buildEmailSamples(): EmailSample[] {
         firstName: "Will",
         orderTitle: "How to plan a content calendar",
         orderUrl: writerOrderUrl,
+        fixByLabel: "Thu 19 Nov, 14:00 UK time",
       }),
     },
     {
@@ -182,6 +173,7 @@ export function buildEmailSamples(): EmailSample[] {
         orderTitle: "How to plan a content calendar",
         note: "Could the intro be shorter, and add one UK example in section 2?",
         orderUrl: writerOrderUrl,
+        fixByLabel: "Fri 20 Nov, 17:00 UK time",
       }),
     },
     {
@@ -274,22 +266,131 @@ export function buildEmailSamples(): EmailSample[] {
         clientsUrl: `${APP}/admin/clients`,
       }),
     },
+    // Deadline emails and summaries (added 16 Nov)
     {
-      audience: "Admin",
-      content: t.adminPayoutRequested({
-        writerName: "Will Writer",
-        amountLabel: "$120.00",
-        payoutsUrl: `${APP}/admin/payouts`,
+      audience: "Client",
+      content: t.clientBriefAccepted({
+        firstName: "Cara",
+        orderTitle: "How to plan a content calendar",
+        dueLabel: "Thu 19 Nov, 16:00 UK time",
+        orderUrl,
+        settingsUrl,
+      }),
+    },
+    {
+      audience: "Client (bulk)",
+      content: t.clientBatchAccepted({ firstName: "Cara", total: 4, ordersUrl, settingsUrl }),
+    },
+    {
+      audience: "Writer",
+      content: t.writerDeadlineReminder({
+        firstName: "Will",
+        orderTitle: "How to plan a content calendar",
+        dueLabel: "Thu 19 Nov, 10:00 UK time",
+        hoursLeft: 12,
+        isRevision: false,
+        orderUrl: writerOrderUrl,
+      }),
+    },
+    {
+      audience: "Writer",
+      content: t.writerDeadlineReminder({
+        firstName: "Will",
+        orderTitle: "How to plan a content calendar",
+        dueLabel: "Thu 19 Nov, 10:00 UK time",
+        hoursLeft: 2,
+        isRevision: false,
+        orderUrl: writerOrderUrl,
+      }),
+    },
+    {
+      audience: "Writer",
+      content: t.writerOverdue({
+        firstName: "Will",
+        orderTitle: "How to plan a content calendar",
+        dueLabel: "Thu 19 Nov, 10:00 UK time",
+        orderUrl: writerOrderUrl,
+      }),
+    },
+    {
+      audience: "Editor",
+      content: t.editorDraftWaiting({
+        firstName: "Edie",
+        orderTitle: "How to plan a content calendar",
+        waitingHours: 2,
+        clientDueLabel: "Thu 19 Nov, 16:00 UK time",
+        queueUrl: `${APP}/editor`,
+      }),
+    },
+    ...[
+      ["Brief waiting 4 hours: How to plan a content calendar", "\"How to plan a content calendar\" was ordered 4 hours ago and its brief hasn't been checked. The delivery clock only starts once it's accepted."],
+      ["No writer yet: How to plan a content calendar", "\"How to plan a content calendar\" was accepted 6 hours ago and no writer has claimed it."],
+      ["Writer missed their deadline: How to plan a content calendar", "Will Writer hasn't submitted \"How to plan a content calendar\", which was due by Thu 19 Nov, 10:00 UK time."],
+      ["At risk: How to plan a content calendar", "\"How to plan a content calendar\" is due to the client by Thu 19 Nov, 16:00 UK time and nothing has been delivered yet. If it may be late, tell the client now and give them a new delivery time (client terms 6.4)."],
+      ["Draft waiting 4 hours for an editor: How to plan a content calendar", "\"How to plan a content calendar\" has been in the editing queue for 4 hours. The editing window is closing."],
+    ].map(([subject, lead]) => ({
+      audience: "Account manager",
+      content: t.teamAlert({
+        subject,
+        lead,
+        details: ["Due to the client: Thu 19 Nov, 16:00 UK time"],
+        button: { label: "Open the order", url: `${APP}/account-manager/orders` },
+      }),
+    })),
+    {
+      audience: "Account managers and admin",
+      content: t.teamAlert({
+        subject: "Client deadline missed: How to plan a content calendar",
+        lead: "\"How to plan a content calendar\" was due to the client by Thu 19 Nov, 16:00 UK time and hasn't been delivered. A 25% credit is owed if it's late for a reason within our control (client terms 6.4).",
+        details: ["Due to the client: Thu 19 Nov, 16:00 UK time"],
+        button: { label: "Open the order", url: `${APP}/admin/orders` },
+      }),
+    },
+    {
+      audience: "Account manager",
+      content: t.teamMorningSummary({
+        audience: "account managers",
+        dateLabel: "Tue 17 Nov",
+        sections: [
+          {
+            heading: "Due to clients in the next 24 hours, not delivered yet",
+            items: [{ label: "How to plan a content calendar (Tue 17 Nov, 16:00 UK time)", url: `${APP}/account-manager/orders` }],
+          },
+          { heading: "Writers past their deadline", items: [] },
+          {
+            heading: "Accepted, no writer yet",
+            items: [{ label: "SEO for SaaS start-ups", url: `${APP}/account-manager/orders` }],
+          },
+          {
+            heading: "Briefs to check",
+            items: [
+              { label: "Digital PR checklist", url: `${APP}/account-manager/briefs` },
+              { label: "Writing for answer engines", url: `${APP}/account-manager/briefs` },
+            ],
+          },
+          {
+            heading: "New clients in the last 24 hours",
+            items: [{ label: "Cara Client, Acme Agency, cara@example.com", url: `${APP}/account-manager/clients` }],
+          },
+        ],
+        button: { label: "Open orders", url: `${APP}/account-manager/orders` },
       }),
     },
     {
       audience: "Admin",
-      content: t.adminTopUpReceived({
-        clientName: "Cara Client",
-        clientCompany: "Acme Agency",
-        amountLabel: "$500.00",
-        balanceLabel: "$525.00",
-        clientsUrl: `${APP}/admin/clients`,
+      content: t.teamMorningSummary({
+        audience: "admin",
+        dateLabel: "Tue 17 Nov",
+        sections: [
+          { heading: "Late to clients (credit may be owed)", items: [] },
+          { heading: "Payout requests waiting", items: [{ label: "Will Writer: $120.00", url: `${APP}/admin/payouts` }] },
+          { heading: "Top-ups in the last 24 hours", items: [{ label: "Acme Agency: $500.00", url: `${APP}/admin/clients` }] },
+          {
+            heading: "New clients in the last 24 hours",
+            items: [{ label: "Cara Client, Acme Agency, cara@example.com", url: `${APP}/admin/clients` }],
+          },
+        ],
+        button: { label: "Open admin", url: `${APP}/admin/orders` },
       }),
     },
   ];

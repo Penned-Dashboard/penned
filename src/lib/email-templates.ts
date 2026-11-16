@@ -319,29 +319,6 @@ export function clientRevisedDraftReady(input: {
   };
 }
 
-export function clientOrderApproved(input: {
-  firstName: string;
-  orderTitle: string;
-  orderUrl: string;
-  newOrderUrl: string;
-  settingsUrl: string;
-}): EmailContent {
-  return {
-    subject: `Approved: ${input.orderTitle}`,
-    greetingName: input.firstName,
-    blocks: [
-      { kind: "p", text: `You've approved "${input.orderTitle}". It's yours to publish.` },
-      { kind: "p", text: "You can open the final piece from your orders page at any time." },
-    ],
-    button: { label: "Open my order", url: input.orderUrl },
-    afterButton: [
-      { kind: "p", text: "Ready for the next one?" },
-      { kind: "link", label: "Send a new brief", url: input.newOrderUrl },
-    ],
-    settingsUrl: input.settingsUrl,
-  };
-}
-
 export function clientOrderCancelled(input: {
   firstName: string;
   orderTitle: string;
@@ -575,6 +552,7 @@ export function writerSentBackByEditor(input: {
   firstName: string;
   orderTitle: string;
   orderUrl: string;
+  fixByLabel?: string;
 }): EmailContent {
   return {
     subject: `Your editor has sent back: ${input.orderTitle}`,
@@ -588,6 +566,9 @@ export function writerSentBackByEditor(input: {
         kind: "p",
         text: "Please check the comments on the draft, revise it and resubmit as soon as you can, so the client still gets it on time.",
       },
+      ...(input.fixByLabel
+        ? [{ kind: "p" as const, text: `Please resubmit by ${input.fixByLabel}.` }]
+        : []),
     ],
     button: { label: "Open the order", url: input.orderUrl },
   };
@@ -598,6 +579,7 @@ export function writerRevisionRequested(input: {
   orderTitle: string;
   note: string;
   orderUrl: string;
+  fixByLabel?: string;
 }): EmailContent {
   return {
     subject: `The client asked for changes: ${input.orderTitle}`,
@@ -610,7 +592,12 @@ export function writerRevisionRequested(input: {
           : `The client has read "${input.orderTitle}" and asked for changes.`,
       },
       ...(input.note.trim() ? [{ kind: "quote" as const, text: input.note }] : []),
-      { kind: "p", text: "Please revise and resubmit from the order page." },
+      {
+        kind: "p",
+        text: input.fixByLabel
+          ? `Please revise and resubmit from the order page by ${input.fixByLabel}.`
+          : "Please revise and resubmit from the order page.",
+      },
     ],
     button: { label: "Open the order", url: input.orderUrl },
   };
@@ -830,38 +817,157 @@ export function teamRevisionRequested(input: {
   };
 }
 
-export function adminPayoutRequested(input: {
-  writerName: string;
-  amountLabel: string;
-  payoutsUrl: string;
+/* ------------------------------------------------------------------ */
+/* Deadlines, reminders and summaries                                  */
+/* ------------------------------------------------------------------ */
+
+export function clientBriefAccepted(input: {
+  firstName: string;
+  orderTitle: string;
+  dueLabel: string;
+  orderUrl: string;
+  settingsUrl: string;
 }): EmailContent {
   return {
-    subject: `Payout requested: ${input.writerName}, ${input.amountLabel}`,
-    blocks: [{ kind: "p", text: `${input.writerName} requested a payout of ${input.amountLabel}.` }],
-    button: { label: "Review payouts", url: input.payoutsUrl },
+    subject: `Your brief is accepted: ${input.orderTitle}`,
+    greetingName: input.firstName,
+    blocks: [
+      { kind: "p", text: `We've checked your brief for "${input.orderTitle}" and a writer can start now.` },
+      ...(input.dueLabel
+        ? [{ kind: "p" as const, text: `Your draft is due by ${input.dueLabel}.` }]
+        : []),
+      { kind: "p", text: "We'll email you when it's ready to review." },
+    ],
+    button: { label: "View my order", url: input.orderUrl },
+    settingsUrl: input.settingsUrl,
   };
 }
 
-export function adminTopUpReceived(input: {
-  clientName: string;
-  clientCompany: string;
-  amountLabel: string;
-  balanceLabel: string;
-  clientsUrl: string;
+export function clientBatchAccepted(input: {
+  firstName: string;
+  total: number;
+  ordersUrl: string;
+  settingsUrl: string;
 }): EmailContent {
-  const who = input.clientCompany
-    ? `${input.clientName} at ${input.clientCompany}`
-    : input.clientName;
   return {
-    subject: `Top-up: ${input.clientCompany || input.clientName}, ${input.amountLabel}`,
+    subject: `We've started on your ${input.total} orders`,
+    greetingName: input.firstName,
+    blocks: [
+      { kind: "p", text: `We've started checking the briefs in your bulk order of ${input.total}.` },
+      {
+        kind: "p",
+        text: "Each piece is due 72 hours after we accept its brief (48 hours for rush). You'll see the exact due time on each order in your dashboard.",
+      },
+    ],
+    button: { label: "View my orders", url: input.ordersUrl },
+    settingsUrl: input.settingsUrl,
+  };
+}
+
+export function writerDeadlineReminder(input: {
+  firstName: string;
+  orderTitle: string;
+  dueLabel: string;
+  hoursLeft: number;
+  isRevision: boolean;
+  orderUrl: string;
+}): EmailContent {
+  const what = input.isRevision ? "Your revision" : "Your draft";
+  const left = input.hoursLeft <= 1 ? "under an hour" : `${input.hoursLeft} hours`;
+  return {
+    subject: `Due in ${left}: ${input.orderTitle}`,
+    greetingName: input.firstName,
+    blocks: [
+      { kind: "p", text: `${what} of "${input.orderTitle}" is due by ${input.dueLabel}.` },
+      {
+        kind: "p",
+        text: "If you can't make it, tell us now from the order page so we can keep the client informed.",
+      },
+    ],
+    button: { label: "Open the order", url: input.orderUrl },
+  };
+}
+
+export function writerOverdue(input: {
+  firstName: string;
+  orderTitle: string;
+  dueLabel: string;
+  orderUrl: string;
+}): EmailContent {
+  return {
+    subject: `Overdue: ${input.orderTitle}`,
+    greetingName: input.firstName,
+    blocks: [
+      { kind: "p", text: `"${input.orderTitle}" was due by ${input.dueLabel} and we haven't received it yet.` },
+      {
+        kind: "p",
+        text: "Please submit it as soon as you can, or reply to this email to tell us when it will be ready. Your account manager has been told.",
+      },
+    ],
+    button: { label: "Open the order", url: input.orderUrl },
+  };
+}
+
+export function editorDraftWaiting(input: {
+  firstName: string;
+  orderTitle: string;
+  waitingHours: number;
+  clientDueLabel: string;
+  queueUrl: string;
+}): EmailContent {
+  return {
+    subject: `Waiting ${input.waitingHours} hours for an editor: ${input.orderTitle}`,
+    greetingName: input.firstName,
     blocks: [
       {
         kind: "p",
-        text: input.balanceLabel
-          ? `${who} topped up ${input.amountLabel}. Their balance is now ${input.balanceLabel}.`
-          : `${who} topped up ${input.amountLabel}.`,
+        text: `"${input.orderTitle}" has been in the editing queue for ${input.waitingHours} hours.`,
       },
+      ...(input.clientDueLabel
+        ? [{ kind: "p" as const, text: `It's due to the client by ${input.clientDueLabel}.` }]
+        : []),
     ],
-    button: { label: "View clients", url: input.clientsUrl },
+    button: { label: "Open the queue", url: input.queueUrl },
+  };
+}
+
+/** Short internal alert for account managers and admin. */
+export function teamAlert(input: {
+  subject: string;
+  lead: string;
+  details: string[];
+  button: EmailLink;
+}): EmailContent {
+  return {
+    subject: input.subject,
+    blocks: [
+      { kind: "p", text: input.lead },
+      ...(input.details.length ? [{ kind: "list" as const, items: input.details }] : []),
+    ],
+    button: input.button,
+  };
+}
+
+export type SummarySection = { heading: string; items: EmailLink[]; note?: string };
+
+/** The 08:00 UK summary for account managers or admin. Empty sections are left out. */
+export function teamMorningSummary(input: {
+  audience: "account managers" | "admin";
+  dateLabel: string;
+  sections: SummarySection[];
+  button: EmailLink;
+}): EmailContent {
+  const sections = input.sections.filter((section) => section.items.length || section.note);
+  const blocks: EmailBlock[] = [];
+  for (const section of sections) {
+    const count = section.items.length;
+    blocks.push({ kind: "p", text: count ? `${section.heading} (${count})` : section.heading });
+    if (section.note) blocks.push({ kind: "p", text: section.note });
+    if (count) blocks.push({ kind: "links", items: section.items.slice(0, 25) });
+  }
+  return {
+    subject: `Penned morning summary: ${input.dateLabel}`,
+    blocks: blocks.length ? blocks : [{ kind: "p", text: "Nothing needs attention today." }],
+    button: input.button,
   };
 }

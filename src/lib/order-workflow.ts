@@ -156,6 +156,31 @@ export function deadlinesFromAcceptance(acceptedAt: Date, priority?: string | nu
 }
 
 /** Workflow stages where the client is holding the order up, so the clock stops. */
+/** Hours a writer has to fix a draft after the client asks for changes. */
+export function revisionHoursFor(priority?: string | null) {
+  return priority === "rush" ? 12 : 24;
+}
+
+/**
+ * The writer's fix-by time after a change request.
+ * - Client asks for changes: 24 hours (12 for rush).
+ * - Editor sends it back before delivery: aim for 2 hours before the client
+ *   deadline, never sooner than 1 hour from now and never later than the
+ *   client revision allowance.
+ */
+export function revisionFixBy(
+  kind: "client" | "editor",
+  now: Date,
+  priority?: string | null,
+  clientDueAt?: string | null,
+) {
+  const hour = 60 * 60 * 1000;
+  const allowance = now.getTime() + revisionHoursFor(priority) * hour;
+  if (kind === "client" || !clientDueAt) return new Date(allowance);
+  const target = new Date(clientDueAt).getTime() - 2 * hour;
+  return new Date(Math.max(now.getTime() + hour, Math.min(target, allowance)));
+}
+
 export const PAUSED_WORKFLOW_STATUSES: readonly WorkflowStatus[] = ["waiting_on_client"];
 
 /**
@@ -195,6 +220,18 @@ export function timingChangesForStatus(
     const { clientDue, writerDue } = deadlinesFromAcceptance(now, order.priority);
     changes.client_due_at = clientDue.toISOString();
     changes.writer_due_at = writerDue.toISOString();
+  }
+
+  // A change request gives the writer a new fix-by time.
+  if (next === "changes_requested") {
+    changes.writer_due_at = revisionFixBy("client", now, order.priority).toISOString();
+  } else if (next === "sent_back_by_editor") {
+    changes.writer_due_at = revisionFixBy(
+      "editor",
+      now,
+      order.priority,
+      (changes.client_due_at as string | undefined) ?? order.client_due_at,
+    ).toISOString();
   }
 
   if (entersPause && order.client_due_at && !order.pause_started_at) {

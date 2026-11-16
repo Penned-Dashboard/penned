@@ -25,7 +25,7 @@ import { normalizeNotificationPrefs } from "@/lib/writer-status";
 
 type Row = Record<string, unknown>;
 
-type Person = {
+export type Person = {
   id: string;
   email: string;
   fullName: string;
@@ -71,7 +71,7 @@ function appUrl(path: string) {
   return `${base.replace(/\/$/, "")}${path}`;
 }
 
-const urls = {
+export const urls = {
   clientOrder: (orderId: string) => appUrl(`/client/orders/${orderId}`),
   clientOrders: () => appUrl("/client/orders"),
   clientNewOrder: () => appUrl("/client/new-order"),
@@ -113,7 +113,7 @@ function toPerson(row: Row): Person {
   };
 }
 
-async function getPerson(profileId: string): Promise<Person | null> {
+export async function getPerson(profileId: string): Promise<Person | null> {
   const supabase = createServerSupabaseClient();
   if (!supabase || !profileId) return null;
   const { data } = await supabase.from("profiles").select("*").eq("id", profileId).maybeSingle();
@@ -139,10 +139,55 @@ async function getPeopleByRole(roles: string[]): Promise<Person[]> {
   return [...people.values()];
 }
 
-/** Account managers, or admins when there are no account managers yet. */
-async function getOrderTeam() {
+/**
+ * Who gets admin emails: the addresses in ADMIN_NOTIFICATION_EMAILS (for
+ * example the support inbox), or every admin account when that isn't set.
+ */
+export async function getAdminRecipients(): Promise<Person[]> {
+  const configured = (process.env.ADMIN_NOTIFICATION_EMAILS ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => value.includes("@"));
+  if (configured.length) {
+    return configured.map((email) => ({
+      id: "",
+      email,
+      fullName: "Penned team",
+      firstName: "there",
+      company: "",
+      role: "admin",
+      notificationPrefs: null,
+      createdAt: "",
+      onboardingAnswers: null,
+    }));
+  }
+  return getPeopleByRole(["admin"]);
+}
+
+/** Account managers, or the admin recipients when there are no account managers yet. */
+export async function getOrderTeam(): Promise<Person[]> {
   const managers = await getPeopleByRole(["account_manager"]);
-  return managers.length ? managers : getPeopleByRole(["admin"]);
+  return managers.length ? managers : getAdminRecipients();
+}
+
+/** Everyone with this role (exported for the reminder job). */
+export async function getPeopleWithRole(role: string): Promise<Person[]> {
+  return getPeopleByRole([role]);
+}
+
+/**
+ * Record that a one-off email has been sent, so it is never sent twice.
+ * Returns false if the key was already used. Without the notification_log
+ * table it returns true, so nothing is blocked (but nothing is de-duplicated).
+ */
+export async function claimNotificationKey(key: string): Promise<boolean> {
+  const supabase = createServerSupabaseClient();
+  if (!supabase) return false;
+  const { error } = await supabase.from("notification_log").insert({ key });
+  if (!error) return true;
+  if (error.code === "23505") return false;
+  console.error("notification_log insert failed", error.message);
+  return false;
 }
 
 async function getOrderRow(orderId: string): Promise<Row | null> {
@@ -162,7 +207,7 @@ async function getContentTypeNames(ids: string[]) {
   return names;
 }
 
-function formatDate(value: unknown) {
+export function formatDate(value: unknown) {
   const raw = str(value);
   if (!raw) return "";
   const date = new Date(raw);
@@ -221,11 +266,11 @@ function batchIdOf(order: Row) {
   return str(asRecord(order.intake_details)._batchId);
 }
 
-function build(to: string, content: EmailContent): OutgoingEmail {
+export function build(to: string, content: EmailContent): OutgoingEmail {
   return { to, ...renderEmail(content) };
 }
 
-function writerWantsEmail(writer: Person, eventKey: string) {
+export function writerWantsEmail(writer: Person, eventKey: string) {
   const prefs = normalizeNotificationPrefs(writer.notificationPrefs);
   return prefs[eventKey]?.email !== false;
 }
@@ -366,7 +411,8 @@ export async function notifySignUp(profileId: string) {
     str(answers.contentSource) ? `Content comes from: ${str(answers.contentSource)}` : "",
   ].filter(Boolean);
 
-  for (const member of await getPeopleByRole(["admin", "account_manager"])) {
+  // Admin is told straight away; account managers see new clients in the morning summary.
+  for (const member of await getAdminRecipients()) {
     emails.push(
       build(
         member.email,
@@ -648,6 +694,7 @@ export async function notifyEditorSentBack(orderId: string) {
         firstName: writer.firstName,
         orderTitle: str(order.title) || "your order",
         orderUrl: urls.writerOrder(orderId),
+        fixByLabel: formatDate(order.writer_due_at),
       }),
     ),
   ]);
@@ -675,12 +722,24 @@ export async function notifyRevisionRequested(orderId: string, note: string) {
           // Writers never see client contact details (same rule as the order page).
           note: redactContactDetails(note),
           orderUrl: urls.writerOrder(orderId),
+          fixByLabel: formatDate(order.writer_due_at),
         }),
       ),
     );
   }
 
-  if (client) {
+  // Account managers are told straight away only from the second round of
+  // changes on the same order (a quality signal). First rounds go in the summary.
+  const supabase = createServerSupabaseClient();
+  const { count: rounds } = supabase
+    ? await supabase
+        .from("submissions")
+        .select("id", { count: "exact", head: true })
+        .eq("order_id", orderId)
+        .eq("status", "revision_requested")
+    : { count: 0 };
+
+  if (client && (rounds ?? 0) >= 2) {
     for (const member of await getOrderTeam()) {
       emails.push(
         build(
@@ -751,23 +810,62 @@ export async function notifyOrderApproved(orderId: string) {
           ),
         );
       }
-    } else if (prefs.enabled && prefs.frequency === "instant") {
-      emails.push(
-        build(
-          client.email,
-          templates.clientOrderApproved({
-            firstName: client.firstName,
-            orderTitle: title,
-            orderUrl: urls.clientOrder(orderId),
-            newOrderUrl: urls.clientNewOrder(),
-            settingsUrl,
-          }),
-        ),
-      );
     }
+    // Single orders: no email to the client. They just approved it themselves.
   }
 
   await sendEmails(emails);
+}
+
+/**
+ * An account manager accepted a brief, so the clock has started. Single
+ * orders: tell the client the due time. Bulk orders: one email per batch.
+ */
+export async function notifyBriefAccepted(orderId: string) {
+  const order = await getOrderRow(orderId);
+  if (!order) return;
+  const client = await getPerson(str(order.client_id));
+  if (!client) return;
+
+  const prefs = readClientEmailPrefs(client.notificationPrefs);
+  if (!prefs.enabled) return;
+
+  const batchId = batchIdOf(order);
+  if (batchId) {
+    const supabase = createServerSupabaseClient();
+    const { data } = supabase
+      ? await supabase.from("orders").select("id, intake_details").eq("client_id", client.id).limit(500)
+      : { data: [] };
+    const total = ((data ?? []) as Row[]).filter((row) => batchIdOf(row) === batchId).length;
+    if (total > 1) {
+      if (!(await claimNotificationKey(`batch_accepted:${batchId}`))) return;
+      await sendEmails([
+        build(
+          client.email,
+          templates.clientBatchAccepted({
+            firstName: client.firstName,
+            total,
+            ordersUrl: urls.clientOrders(),
+            settingsUrl: urls.clientSettings(),
+          }),
+        ),
+      ]);
+      return;
+    }
+  }
+
+  await sendEmails([
+    build(
+      client.email,
+      templates.clientBriefAccepted({
+        firstName: client.firstName,
+        orderTitle: str(order.title) || "your order",
+        dueLabel: formatDate(order.client_due_at),
+        orderUrl: urls.clientOrder(orderId),
+        settingsUrl: urls.clientSettings(),
+      }),
+    ),
+  ]);
 }
 
 /** An admin cancelled an order. Always sent: it concerns the client's money. */
@@ -829,7 +927,7 @@ export async function notifyComment(submissionId: string, authorId: string, body
 /* Money                                                               */
 /* ------------------------------------------------------------------ */
 
-/** A Stripe top-up was credited. Always sent to the client; admins are told too. */
+/** A Stripe top-up was credited. Always sent to the client. */
 export async function notifyTopUp(clientProfileId: string, amountCents: number, bonusCents: number) {
   const supabase = createServerSupabaseClient();
   const client = await getPerson(clientProfileId);
@@ -844,7 +942,8 @@ export async function notifyTopUp(clientProfileId: string, amountCents: number, 
   const balanceLabel = balanceCents > 0 ? formatUsdFromCents(balanceCents) : "";
   const amountLabel = formatUsdFromCents(amountCents);
 
-  const emails: OutgoingEmail[] = [
+  // Admin sees top-ups (and payout requests) in the morning summary.
+  await sendEmails([
     build(
       client.email,
       templates.clientTopUpReceived({
@@ -855,44 +954,7 @@ export async function notifyTopUp(clientProfileId: string, amountCents: number, 
         budgetUrl: urls.clientBudget(),
       }),
     ),
-  ];
-
-  for (const admin of await getPeopleByRole(["admin"])) {
-    emails.push(
-      build(
-        admin.email,
-        templates.adminTopUpReceived({
-          clientName: client.fullName,
-          clientCompany: client.company,
-          amountLabel,
-          balanceLabel,
-          clientsUrl: urls.teamClients("admin"),
-        }),
-      ),
-    );
-  }
-
-  await sendEmails(emails);
-}
-
-/** A writer asked for a payout: tell admins. */
-export async function notifyPayoutRequested(writerId: string, amountCents: number) {
-  const writer = await getPerson(writerId);
-  if (!writer) return;
-  const admins = await getPeopleByRole(["admin"]);
-
-  await sendEmails(
-    admins.map((admin) =>
-      build(
-        admin.email,
-        templates.adminPayoutRequested({
-          writerName: writer.fullName,
-          amountLabel: formatUsdFromCents(amountCents),
-          payoutsUrl: urls.adminPayouts(),
-        }),
-      ),
-    ),
-  );
+  ]);
 }
 
 /** An admin approved a payout: tell the writer. */
