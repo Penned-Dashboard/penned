@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
+import { notifyBriefAccepted, queueNotification } from "@/lib/notifications";
 import { setOrderWorkflowStatus } from "@/lib/team-data";
 import { rolePath } from "@/lib/types";
 
@@ -10,7 +11,8 @@ export async function acceptBriefAction(formData: FormData) {
   await requireRole("account_manager");
   const orderId = String(formData.get("orderId") ?? "");
   if (!orderId) redirect(`${rolePath("account_manager")}/briefs`);
-  await setOrderWorkflowStatus(orderId, "waiting_for_writer");
+  const accepted = await setOrderWorkflowStatus(orderId, "waiting_for_writer");
+  if (accepted.ok) queueNotification(() => notifyBriefAccepted(orderId));
   revalidatePath(rolePath("account_manager"));
   revalidatePath(`${rolePath("account_manager")}/briefs`);
   revalidatePath(`${rolePath("account_manager")}/orders`);
