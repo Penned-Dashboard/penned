@@ -60,8 +60,12 @@ export async function addInAppNotifications(items: NewInAppNotification[]) {
     }));
   if (!supabase || !rows.length) return;
 
-  const { error } = await supabase.from("notifications").insert(rows);
-  if (error) console.error("notifications insert failed", error.message);
+  try {
+    const { error } = await supabase.from("notifications").insert(rows);
+    if (error) console.error("notifications insert failed", error.message);
+  } catch (error) {
+    console.error("notifications insert failed", error instanceof Error ? error.message : error);
+  }
 }
 
 function toItem(row: Record<string, unknown>): InAppNotification {
@@ -143,10 +147,15 @@ export async function markAllInAppNotificationsRead(profileId: string) {
 export async function resolveInAppNotifications(profileId: string, href: string) {
   const supabase = createServerSupabaseClient();
   if (!supabase || !profileId || !href) return;
-  await supabase
-    .from("notifications")
-    .update({ read_at: new Date().toISOString() })
-    .eq("profile_id", profileId)
-    .eq("href", href)
-    .is("read_at", null);
+  try {
+    await supabase
+      .from("notifications")
+      .update({ read_at: new Date().toISOString() })
+      .eq("profile_id", profileId)
+      .eq("href", href)
+      .is("read_at", null);
+  } catch (error) {
+    // Never let the bell break the action (or the email) behind it.
+    console.error("notifications resolve failed", error instanceof Error ? error.message : error);
+  }
 }

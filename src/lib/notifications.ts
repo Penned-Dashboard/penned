@@ -109,9 +109,14 @@ function pathOf(url: string) {
  * not hide things that need attention inside the dashboard.
  */
 async function bell(people: (Person | null | undefined)[], item: Omit<NewInAppNotification, "profileId">) {
-  await addInAppNotifications(
-    people.filter((person): person is Person => Boolean(person?.id)).map((person) => ({ profileId: person.id, ...item })),
-  );
+  try {
+    await addInAppNotifications(
+      people.filter((person): person is Person => Boolean(person?.id)).map((person) => ({ profileId: person.id, ...item })),
+    );
+  } catch (error) {
+    // Never let the bell stop the email that follows it.
+    console.error("Bell notification failed", error instanceof Error ? error.message : error);
+  }
 }
 
 function clipText(value: string, max = 140) {

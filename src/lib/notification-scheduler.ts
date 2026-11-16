@@ -156,7 +156,14 @@ export async function runNotificationTick(now: Date = new Date()): Promise<TickR
     if (!emails.length && !bell) return;
     if (!(await claimNotificationKey(key))) return;
     outbox.push(...emails);
-    if (bell) await bell();
+    if (bell) {
+      try {
+        await bell();
+      } catch (error) {
+        // The key is already claimed: a bell failure must not lose the emails.
+        console.error("Bell notification failed", error instanceof Error ? error.message : error);
+      }
+    }
   }
 
   async function alertTeam(key: string, subject: string, lead: string, order: Row, details: string[], alsoAdmin = false) {
