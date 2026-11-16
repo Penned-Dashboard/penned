@@ -167,12 +167,25 @@ function formatDate(value: unknown) {
   if (!raw) return "";
   const date = new Date(raw);
   if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("en-GB", {
+  // Date-only values (the client's optional due date) have no time to show.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return new Intl.DateTimeFormat("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(date);
+  }
+  const text = new Intl.DateTimeFormat("en-GB", {
+    weekday: "short",
     day: "numeric",
     month: "short",
-    year: "numeric",
-    timeZone: "UTC",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Europe/London",
   }).format(date);
+  return `${text.replace(" at ", ", ")} UK time`;
 }
 
 function deliveryLabel(priority: unknown) {

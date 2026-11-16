@@ -665,6 +665,8 @@ export async function getClientOrders(clientProfileId: string): Promise<Dashboar
         title,
         client_label,
         due_date,
+        client_due_at,
+        writer_due_at,
         status,
         content_types(name),
         writer:profiles!orders_writer_id_fkey(full_name)
@@ -684,7 +686,7 @@ export async function getClientOrders(clientProfileId: string): Promise<Dashboar
     contentType: readSingleRelation(order.content_types)?.name ?? "Unassigned type",
     writer: readSingleRelation(order.writer)?.full_name ?? "Unassigned",
     status: formatOrderStatus(order.status),
-    deadline: formatDeadline(order.due_date),
+    deadline: formatDeadline(order.client_due_at ?? order.due_date),
   }));
 }
 
@@ -745,6 +747,8 @@ export async function getClientOrderDetail(
         client_label,
         status,
         due_date,
+        client_due_at,
+        writer_due_at,
         brief,
         primary_cta,
         target_audience,
@@ -779,7 +783,7 @@ export async function getClientOrderDetail(
     title: order.title,
     clientLabel: order.client_label ?? "General client",
     status: formatOrderStatus(order.status),
-    deadline: formatDeadline(order.due_date),
+    deadline: formatDeadline(order.client_due_at ?? order.due_date),
     contentType: readSingleRelation(order.content_types)?.name ?? "Unassigned type",
     writer: writerFirstName(readSingleRelation(order.writer)?.full_name) || "Unassigned",
     serviceTier,
@@ -821,6 +825,8 @@ export async function getWriterMarketplace(
           title,
           brief,
           due_date,
+          client_due_at,
+          writer_due_at,
           budget_cents,
           word_count,
           status,
@@ -907,8 +913,8 @@ export async function getWriterMarketplace(
       wordCount: order.word_count ?? null,
       payCents,
       pay: payCents ? formatUsd(payCents) : "TBD",
-      dueDate: order.due_date ?? null,
-      turnaround: formatDeadline(order.due_date),
+      dueDate: order.writer_due_at ?? order.due_date ?? null,
+      turnaround: formatDeadline(order.writer_due_at ?? order.due_date),
       status: mapWriterStatus(order.status).label,
       createdAt: order.created_at,
       reservedByMe,
@@ -981,6 +987,8 @@ export async function getWriterJobs(writerProfileId: string): Promise<WriterJob[
           title,
           status,
           due_date,
+          client_due_at,
+          writer_due_at,
           word_count,
           budget_cents,
           updated_at,
@@ -1006,8 +1014,8 @@ export async function getWriterJobs(writerProfileId: string): Promise<WriterJob[
       wordCount: order.word_count ?? null,
       payCents,
       pay: payCents ? formatUsd(payCents) : "TBD",
-      dueDate: order.due_date ?? null,
-      deadline: formatDeadline(order.due_date),
+      dueDate: order.writer_due_at ?? order.due_date ?? null,
+      deadline: formatDeadline(order.writer_due_at ?? order.due_date),
       status: mapWriterStatus(order.status, {
         started: isJobStarted(order.intake_details),
         paid: ledger.paidOrderIds.has(order.id),
@@ -1048,6 +1056,8 @@ export async function getWriterOrderDetail(
         client_label,
         status,
         due_date,
+        client_due_at,
+        writer_due_at,
         brief,
         primary_cta,
         tone_of_voice,
@@ -1081,6 +1091,8 @@ export async function getWriterOrderDetail(
           client_label,
           status,
           due_date,
+          client_due_at,
+          writer_due_at,
           brief,
           primary_cta,
           tone_of_voice,
@@ -1131,8 +1143,8 @@ export async function getWriterOrderDetail(
     status: writerStatus.label,
     writerStatus,
     dbStatus: order.status,
-    deadline: formatDeadline(order.due_date),
-    dueDate: order.due_date ?? null,
+    deadline: formatDeadline(order.writer_due_at ?? order.due_date),
+    dueDate: order.writer_due_at ?? order.due_date ?? null,
     brief: order.brief,
     toneOfVoice: order.tone_of_voice ?? "Not specified",
     targetKeywords: order.target_keywords ?? [],
@@ -1833,7 +1845,7 @@ export async function getWriterRankingBoard(
   if (tab === "reliable") {
     const { data: submissions } = await supabase
       .from("submissions")
-      .select("order_id, writer_id, submitted_at, order:orders!submissions_order_id_fkey(due_date)")
+      .select("order_id, writer_id, submitted_at, order:orders!submissions_order_id_fkey(due_date, writer_due_at)")
       .order("submitted_at", { ascending: true });
 
     // Only the first submission per order counts toward on-time delivery.
@@ -1843,7 +1855,7 @@ export async function getWriterRankingBoard(
       firstByOrder.set(item.order_id, {
         writerId: item.writer_id,
         submittedAt: item.submitted_at,
-        dueDate: readSingleRelation(item.order)?.due_date ?? null,
+        dueDate: readSingleRelation(item.order)?.writer_due_at ?? readSingleRelation(item.order)?.due_date ?? null,
       });
     }
 
@@ -1946,6 +1958,8 @@ export async function getAdminOrderQueue(): Promise<AdminQueueOrder[]> {
         client_label,
         status,
         due_date,
+        client_due_at,
+        writer_due_at,
         budget_cents,
         client:profiles!orders_client_id_fkey(company_name, full_name),
         writer:profiles!orders_writer_id_fkey(full_name),
@@ -1965,7 +1979,7 @@ export async function getAdminOrderQueue(): Promise<AdminQueueOrder[]> {
       contentType: readSingleRelation(order.content_types)?.name ?? "Content order",
       statusKey: order.status,
       state: formatOrderStatus(order.status),
-      deadline: formatDeadline(order.due_date),
+      deadline: formatDeadline(order.client_due_at ?? order.due_date),
       budgetCents: order.budget_cents ?? 0,
       budget: formatUsd(order.budget_cents ?? 0),
       writer: readSingleRelation(order.writer)?.full_name ?? "Unassigned",
@@ -2125,6 +2139,8 @@ export async function getAdminOrderDetail(orderId: string): Promise<AdminOrderDe
         client_label,
         status,
         due_date,
+        client_due_at,
+        writer_due_at,
         brief,
         primary_cta,
         target_audience,
@@ -2148,7 +2164,7 @@ export async function getAdminOrderDetail(orderId: string): Promise<AdminOrderDe
     id: order.id,
     title: order.title,
     status: formatOrderStatus(order.status),
-    deadline: formatDeadline(order.due_date),
+    deadline: formatDeadline(order.client_due_at ?? order.due_date),
     brief: order.brief,
     primaryCta: order.primary_cta ?? "Not specified",
     targetAudience: order.target_audience ?? "Not specified",
@@ -3650,7 +3666,27 @@ function formatDeadline(date: string | null) {
     return "No due date";
   }
 
-  return `Due ${formatDate(date)}`;
+  // Date-only values (the client's optional due date) have no time to show.
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return `Due ${formatDate(date)}`;
+  }
+
+  return `Due ${formatDeadlineTime(date)}`;
+}
+
+/** "19 Nov, 14:00 UK time": deadlines are exact times, shown in UK time. */
+export function formatDeadlineTime(date: string) {
+  const value = new Date(date);
+  if (Number.isNaN(value.getTime())) return formatDate(date);
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Europe/London",
+  }).format(value);
+  return `${parts.replace(" at ", ", ")} UK time`;
 }
 
 function formatDate(date: string) {
