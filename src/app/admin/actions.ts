@@ -32,7 +32,8 @@ export async function updateAdminProfileAction(formData: FormData) {
   const result = await updateAdminProfile({
     profileId,
     role: roleValue,
-    writerTier: writerTierValue === "specialist" ? "specialist" : "standard",
+    writerTier:
+      writerTierValue === "specialist" ? "specialist" : writerTierValue === "signature" ? "signature" : "standard",
     companyName,
   });
 
