@@ -29,7 +29,7 @@ export default async function EditorSettingsPage({
     >
       {params.noticeMessage ? (
         <div
-          className={`rounded-[1.25rem] border px-5 py-4 text-sm font-medium ${
+          className={`rounded-[14px] border px-5 py-4 text-sm font-medium ${
             params.notice === "error"
               ? "border-rose-200 bg-rose-50 text-rose-800"
               : "border-emerald-200 bg-emerald-50 text-emerald-800"
