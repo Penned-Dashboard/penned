@@ -1,25 +1,34 @@
 import Link from "next/link";
 import { markAllNotificationsReadAction } from "@/app/notifications/actions";
 import { DashboardShell, SectionCard } from "@/components/dashboard-shell";
+import { NotificationList } from "@/components/notification-list";
 import { requireAppUser } from "@/lib/auth";
 import { countUnreadInAppNotifications, listInAppNotifications } from "@/lib/in-app-notifications";
-import { relativeTime } from "@/lib/relative-time";
 
 export const dynamic = "force-dynamic";
 
-/** Everything the bell has shown this person: the latest 100, newest first. */
+const PAGE_SIZE = 50;
+const MAX_PAGES = 10;
+
+/** Everything the bell has shown this person, newest first, 50 at a time. */
 export default async function NotificationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ show?: string }>;
+  searchParams: Promise<{ show?: string; pages?: string }>;
 }) {
   const user = await requireAppUser();
   const params = await searchParams;
   const unreadOnly = params.show === "unread";
+  const pages = Math.min(Math.max(Number.parseInt(params.pages ?? "1", 10) || 1, 1), MAX_PAGES);
+  const limit = pages * PAGE_SIZE;
   const [items, unread] = await Promise.all([
-    listInAppNotifications(user.profileId, { limit: 100, unreadOnly }),
+    listInAppNotifications(user.profileId, { limit, unreadOnly }),
     countUnreadInAppNotifications(user.profileId),
   ]);
+  const olderHref =
+    items.length === limit && pages < MAX_PAGES
+      ? `/notifications?${unreadOnly ? "show=unread&" : ""}pages=${pages + 1}`
+      : null;
 
   return (
     <DashboardShell
@@ -41,7 +50,7 @@ export default async function NotificationsPage({
         title={unreadOnly ? "Unread" : "All notifications"}
       >
         {unread > 0 ? (
-          <form action={markAllNotificationsReadAction} className="mb-4">
+          <form action={markAllNotificationsReadAction} className="mb-5">
             <button className="button-secondary" type="submit">
               Mark all as read
             </button>
@@ -62,37 +71,16 @@ export default async function NotificationsPage({
             </p>
           </div>
         ) : (
-          <ul className="overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white">
-            {items.map((item) => (
-              <li className="border-b border-slate-100 last:border-b-0" key={item.id}>
-                <a
-                  className={`flex gap-3 px-4 py-3.5 transition hover:bg-slate-50 ${item.read ? "" : "bg-[#f4f7fb]"}`}
-                  href={`/api/notifications/open?id=${encodeURIComponent(item.id)}`}
-                >
-                  <span
-                    aria-hidden="true"
-                    className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                      item.read ? "bg-transparent" : "bg-[var(--penned-navy)]"
-                    }`}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span
-                      className={`block text-sm leading-5 text-[var(--penned-navy)] ${
-                        item.read ? "font-medium" : "font-semibold"
-                      }`}
-                    >
-                      {item.read ? null : <span className="sr-only">Unread: </span>}
-                      {item.title}
-                    </span>
-                    {item.body ? (
-                      <span className="mt-0.5 block text-sm leading-5 text-slate-600">{item.body}</span>
-                    ) : null}
-                  </span>
-                  <span className="shrink-0 text-xs text-slate-500">{relativeTime(item.createdAt)}</span>
-                </a>
-              </li>
-            ))}
-          </ul>
+          <>
+            <NotificationList items={items} unreadOnly={unreadOnly} />
+            {olderHref ? (
+              <div className="mt-5 text-center">
+                <Link className="button-secondary" href={olderHref} scroll={false}>
+                  Show older
+                </Link>
+              </div>
+            ) : null}
+          </>
         )}
       </SectionCard>
     </DashboardShell>
