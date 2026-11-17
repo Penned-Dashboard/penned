@@ -16,8 +16,8 @@ export default async function EditorDonePage() {
         ) : (
           <ul className="space-y-3">
             {done.map((job) => (
-              <li key={job.id} className="rounded-[1.15rem] border border-slate-200 px-4 py-3">
-                <p className="font-semibold text-slate-950">{job.title}</p>
+              <li key={job.id} className="rounded-[14px] border border-slate-200 px-4 py-3">
+                <p className="font-semibold text-[var(--penned-navy)]">{job.title}</p>
                 <p className="text-sm text-slate-500">{job.teamStatus} · Pay to be set</p>
               </li>
             ))}
