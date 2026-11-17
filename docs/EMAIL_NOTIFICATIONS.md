@@ -109,3 +109,12 @@ Orders that share `intake_details._batchId` are a bulk order and never send one 
 - "Draft ready" counts any submitted draft. Once drafts go to the editor queue first (`with_editor`), `getClientDraftStates` should count only drafts the client can see.
 - The "we have a question about your brief" email isn't built: the question text isn't stored yet.
 - Vercel Cron and the tick only reach Production; preview builds sit behind Vercel's login.
+
+### Bell display (17 Nov)
+
+Display-only helpers live in `src/lib/notification-display.ts`:
+
+- **Icons**: `notificationLook(kind)` picks the icon and colour (calm, good news, urgent). Unknown kinds get a plain bell. Add new kinds there.
+- **Folding**: in the bell's short list, three or more unread items of the same kind (a bulk order's drafts) become one line such as "12 drafts ready to review", which opens `/notifications?show=unread`. Deadline and overdue items are never folded. The full page always shows every item.
+- **Full page**: sections "Last 24 hours", "This week", "Older"; each item has "Mark as read" / "Mark as unread" (`setNotificationReadAction`, owner only); 50 at a time with "Show older".
+- **Bell**: rings briefly when the unread count rises while the page is open (off under reduced motion), shows the count in the browser tab title, and moves keyboard focus into the panel when opened.
