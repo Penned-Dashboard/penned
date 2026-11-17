@@ -114,9 +114,9 @@ export default async function ClientOrdersPage({
         </button>
       </form>
 
-      <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
+      <section className="rounded-[20px] border border-slate-200 bg-white p-6">
         {pageRows.length ? (
-          <div className="overflow-hidden rounded-[1.25rem] border border-slate-200">
+          <div className="overflow-hidden rounded-[14px] border border-slate-200">
             <div className="grid grid-cols-[1.8fr_1.2fr_1fr_1fr_1fr_0.8fr_48px] bg-slate-50 px-4 py-3 text-sm font-medium text-slate-500">
               <p>Order</p>
               <p>Client</p>
@@ -132,7 +132,7 @@ export default async function ClientOrdersPage({
                 className="grid grid-cols-[1.8fr_1.2fr_1fr_1fr_1fr_0.8fr_48px] items-center border-t border-slate-200 px-4 py-4 text-sm text-slate-700"
               >
                 <div>
-                  <Link className="font-semibold text-slate-950" href={`/client/orders/${order.id}`}>
+                  <Link className="font-semibold text-[var(--penned-navy)]" href={`/client/orders/${order.id}`}>
                     {order.name}
                   </Link>
                 </div>
@@ -150,8 +150,8 @@ export default async function ClientOrdersPage({
             ))}
           </div>
         ) : (
-          <div className="rounded-[1.25rem] border border-dashed border-slate-200 bg-white/70 p-6 text-sm leading-7 text-slate-500">
-            <p className="font-semibold text-slate-900">{emptyCopy.title}</p>
+          <div className="rounded-[14px] border border-dashed border-slate-200 bg-white/70 p-6 text-sm leading-7 text-slate-500">
+            <p className="font-semibold text-[var(--penned-navy)]">{emptyCopy.title}</p>
             <p className="mt-2">{emptyCopy.body}</p>
             <Link className="button-primary mt-5 inline-flex" href="/client/new-order">
               New order
