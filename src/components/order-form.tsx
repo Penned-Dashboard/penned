@@ -86,7 +86,7 @@ export function OrderForm({
     <form action={formAction} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="grid gap-5">
         {state.message && !state.success ? (
-          <div className="rounded-[1rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <div className="rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             {state.message}
           </div>
         ) : null}
@@ -143,7 +143,7 @@ export function OrderForm({
                 const selected = serviceTier === dbValue;
                 return (
                   <button
-                    className={`rounded-[1.15rem] border px-4 py-4 text-left transition ${
+                    className={`rounded-[14px] border px-4 py-4 text-left  ${
                       selected ? "border-[#91B9D2] bg-[#F3F8FB]" : "border-slate-200 bg-white hover:border-slate-300"
                     }`}
                     key={tier.value}
@@ -151,7 +151,7 @@ export function OrderForm({
                     type="button"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <p className="font-semibold text-slate-950">
+                      <p className="font-semibold text-[var(--penned-navy)]">
                         {tier.label} · {tier.rateLabel}
                       </p>
                       {selected ? (
@@ -190,7 +190,7 @@ export function OrderForm({
               <p className="mt-1 text-xs text-slate-500">We&apos;ll match a writer who knows it.</p>
               <FieldError message={state.errors.industry} />
             </label>
-            <label className="flex items-start gap-3 rounded-[1.15rem] border border-slate-200 bg-white px-4 py-4 text-sm text-slate-700">
+            <label className="flex items-start gap-3 rounded-[14px] border border-slate-200 bg-white px-4 py-4 text-sm text-slate-700">
               <input
                 checked={surferOptIn}
                 className="mt-1"
@@ -200,7 +200,7 @@ export function OrderForm({
                 value="yes"
               />
               <span>
-                <span className="font-semibold text-slate-950">Optimise with Surfer or Clearscope</span>
+                <span className="font-semibold text-[var(--penned-navy)]">Optimise with Surfer or Clearscope</span>
                 <span className="mt-1 block text-xs text-slate-500">Shown on Specialist only.</span>
               </span>
             </label>
@@ -319,7 +319,7 @@ export function OrderForm({
         </button>
 
         {showMoreDetail ? (
-          <div className="grid gap-5 rounded-[1.25rem] border border-slate-200 bg-slate-50/70 p-5 md:grid-cols-2">
+          <div className="grid gap-5 rounded-[14px] border border-slate-200 bg-slate-50/70 p-5 md:grid-cols-2">
             <Field
               label="Target reader"
               name="targetAudience"
@@ -372,8 +372,8 @@ export function OrderForm({
             </label>
 
             {selectedType && serviceFieldsWithoutCta.length ? (
-              <div className="md:col-span-2 rounded-[1.25rem] border border-slate-200 bg-white p-5">
-                <p className="text-sm font-semibold text-slate-900">
+              <div className="md:col-span-2 rounded-[14px] border border-slate-200 bg-white p-5">
+                <p className="text-sm font-semibold text-[var(--penned-navy)]">
                   For {selectedType.name.toLowerCase()}s
                 </p>
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -403,11 +403,11 @@ export function OrderForm({
       </div>
 
       <aside className="xl:sticky xl:top-6 xl:self-start">
-        <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-semibold text-slate-950">Order summary</p>
+        <div className="rounded-[20px] border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-sm font-semibold text-[var(--penned-navy)]">Order summary</p>
           <div className="mt-4 space-y-2 text-sm text-slate-600">
             <p>
-              <span className="font-medium text-slate-900">{selectedType?.name ?? "Content type"}</span>
+              <span className="font-medium text-[var(--penned-navy)]">{selectedType?.name ?? "Content type"}</span>
               {" · "}
               <Link className="underline" href="/client/new-order">
                 Change
@@ -433,10 +433,10 @@ export function OrderForm({
             {pricePreview.lines.map((line) => (
               <div className="flex items-center justify-between gap-3" key={line.label}>
                 <span className="text-slate-500">{line.label}</span>
-                <span className="font-medium text-slate-900">{formatUsdFromCents(line.amountCents)}</span>
+                <span className="font-medium text-[var(--penned-navy)]">{formatUsdFromCents(line.amountCents)}</span>
               </div>
             ))}
-            <div className="flex items-center justify-between gap-3 pt-2 text-base font-semibold text-slate-950">
+            <div className="flex items-center justify-between gap-3 pt-2 text-base font-semibold text-[var(--penned-navy)]">
               <span>Total</span>
               <span>{formatUsdFromCents(pricePreview.totalCents)}</span>
             </div>
@@ -539,7 +539,7 @@ function ServiceField({
 
   if (field.kind === "multiselect") {
     return (
-      <fieldset className="rounded-[1rem] border border-slate-200 bg-white px-4 py-4">
+      <fieldset className="rounded-[14px] border border-slate-200 bg-white px-4 py-4">
         <legend className="dashboard-label">{field.label}</legend>
         <div className="grid gap-2">
           {(field.options ?? []).map((option) => (

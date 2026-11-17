@@ -203,7 +203,7 @@ export function BulkOrderWorkspace({
         title="Batch table"
         description="Missing fields are flagged when you submit. Client folder is optional. Specialist rows need keywords."
       >
-        <div className="overflow-x-auto rounded-[1.25rem] border border-slate-200">
+        <div className="overflow-x-auto rounded-[14px] border border-slate-200">
           <table className="min-w-[1280px] w-full border-collapse text-sm">
             <thead className="bg-slate-50 text-left text-slate-500">
               <tr>
@@ -354,7 +354,7 @@ export function BulkOrderWorkspace({
         </div>
 
         {attemptedSubmit && issues.length ? (
-          <div className="mt-4 rounded-[1.15rem] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+          <div className="mt-4 rounded-[14px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
             <p className="font-semibold">Fix these before checkout</p>
             <ul className="mt-2 list-disc space-y-1 pl-5">
               {issues.map((issue) => (
@@ -377,7 +377,7 @@ export function BulkOrderWorkspace({
             ["split", "Split payment: remaining wallet, then card"],
             ["approval", "Request approval from account owner"],
           ].map(([value, label]) => (
-            <label key={value} className="flex items-center gap-3 rounded-[1rem] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+            <label key={value} className="flex items-center gap-3 rounded-[14px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
               <input
                 checked={paymentSource === value}
                 name="paymentSource"
@@ -503,9 +503,9 @@ function parseDelimited(text: string): Partial<BulkRow>[] {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1rem] border border-slate-200 bg-slate-50 p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className="mt-2 text-lg font-semibold text-slate-950">{value}</p>
+    <div className="rounded-[14px] border border-slate-200 bg-slate-50 p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
+      <p className="mt-2 text-lg font-semibold text-[var(--penned-navy)]">{value}</p>
     </div>
   );
 }

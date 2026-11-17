@@ -41,7 +41,7 @@ export function ClientFoldersWorkspace({
     <div className="grid gap-4">
       {message ? (
         <div
-          className={`rounded-[1.25rem] px-5 py-4 text-sm ${
+          className={`rounded-[14px] px-5 py-4 text-sm ${
             messageState === "success"
               ? "border border-emerald-200 bg-emerald-50 text-emerald-800"
               : "border border-rose-200 bg-rose-50 text-rose-700"
@@ -74,8 +74,8 @@ export function ClientFoldersWorkspace({
       </div>
 
       {showCreate ? (
-        <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
-          <h2 className="text-xl font-semibold text-slate-950">Add a client</h2>
+        <section className="rounded-[20px] border border-slate-200 bg-white p-6">
+          <h2 className="text-xl font-semibold text-[var(--penned-navy)]">Add a client</h2>
           <p className="mt-2 text-sm text-slate-500">
             Save their tone and defaults so every new order starts filled in.
           </p>
@@ -83,14 +83,14 @@ export function ClientFoldersWorkspace({
         </section>
       ) : null}
 
-      <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
+      <section className="rounded-[20px] border border-slate-200 bg-white p-6">
         {visibleFolders.length ? (
           <div className="space-y-2">
             {visibleFolders.map((folder) => {
               const active = folder.id === selectedFolder?.id;
               return (
                 <button
-                  className={`w-full rounded-[1.15rem] border px-4 py-4 text-left transition ${
+                  className={`w-full rounded-[14px] border px-4 py-4 text-left  ${
                     active ? "border-[#91B9D2] bg-[#F3F8FB]" : "border-slate-200 bg-white hover:border-slate-300"
                   }`}
                   key={folder.id}
@@ -99,7 +99,7 @@ export function ClientFoldersWorkspace({
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="font-semibold text-slate-950">{folder.name}</p>
+                      <p className="font-semibold text-[var(--penned-navy)]">{folder.name}</p>
                       <p className="mt-1 text-sm text-slate-500">
                         {folder.orderCount} order{folder.orderCount === 1 ? "" : "s"}
                         {folder.toneGuide ? ` · ${folder.toneGuide}` : ""}
@@ -129,8 +129,8 @@ export function ClientFoldersWorkspace({
             })}
           </div>
         ) : (
-          <div className="rounded-[1.25rem] border border-dashed border-slate-200 p-6 text-sm text-slate-500">
-            <p className="font-semibold text-slate-900">
+          <div className="rounded-[14px] border border-dashed border-slate-200 p-6 text-sm text-slate-500">
+            <p className="font-semibold text-[var(--penned-navy)]">
               {query ? "No clients match this search" : "No clients yet"}
             </p>
             <p className="mt-2">
@@ -172,14 +172,14 @@ function CreateFolderForm({ onCancel }: { onCancel: () => void }) {
       </button>
 
       {showMore ? (
-        <div className="grid gap-4 rounded-[1.25rem] border border-slate-200 bg-slate-50/80 p-5">
+        <div className="grid gap-4 rounded-[14px] border border-slate-200 bg-slate-50/80 p-5">
           <Field label="Brief template link" name="briefTemplateUrl" placeholder="https://docs.google.com/..." />
           <Field label="Preferred writer (optional)" name="preferredWriter" placeholder="First name only" />
           <Field label="Target audience" name="targetAudience" placeholder="Technical buyers in mid-market SaaS" />
           <Field label="Delivery preference" name="deliveryPreference" placeholder="Google Doc" />
           <label>
             <span className="dashboard-label">Preferred content types</span>
-            <div className="mt-2 grid gap-2 rounded-[1rem] border border-slate-200 bg-white p-4 md:grid-cols-2">
+            <div className="mt-2 grid gap-2 rounded-[14px] border border-slate-200 bg-white p-4 md:grid-cols-2">
               {preferredTypes.map((type) => (
                 <label key={type} className="flex items-start gap-3 text-sm text-slate-700">
                   <input className="mt-1" name="preferredContentTypes" type="checkbox" value={type} />
@@ -250,8 +250,8 @@ function Textarea({
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1rem] border border-slate-200 bg-white p-3">
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
+    <div className="rounded-[14px] border border-slate-200 bg-white p-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
       <p className="mt-2 text-sm leading-6 text-slate-700">{value}</p>
     </div>
   );
