@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentAppUser } from "@/lib/auth";
 import {
   countUnreadInAppNotifications,
-  listInAppNotifications,
+  listPanelNotifications,
   markAllInAppNotificationsRead,
 } from "@/lib/in-app-notifications";
 
@@ -14,7 +14,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ ok: false }, { status: 401 });
 
   const [items, unread] = await Promise.all([
-    listInAppNotifications(user.profileId, { limit: 8 }),
+    listPanelNotifications(user.profileId),
     countUnreadInAppNotifications(user.profileId),
   ]);
   return NextResponse.json({ ok: true, unread, items });
