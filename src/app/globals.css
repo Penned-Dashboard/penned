@@ -468,3 +468,10 @@ select.dashboard-input {
     text-align: left;
   }
 }
+
+/* Grid and flex children may shrink, so a wide table or a long button label
+   can never push the page sideways. */
+main .grid > *,
+main section {
+  min-width: 0;
+}
