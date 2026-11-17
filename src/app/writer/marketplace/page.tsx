@@ -157,7 +157,7 @@ export default async function WriterMarketplacePage({
                 <div key={job.id} className="dashboard-list-row flex-col items-stretch gap-4 lg:flex-row lg:items-center">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-slate-950">{job.title}</p>
+                      <p className="font-semibold text-[var(--penned-navy)]">{job.title}</p>
                       <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600">
                         {job.tierLabel}
                       </span>
@@ -176,17 +176,17 @@ export default async function WriterMarketplacePage({
                   </div>
                   <dl className="grid shrink-0 grid-cols-3 gap-4 text-sm lg:w-80">
                     <div>
-                      <dt className="text-xs uppercase tracking-[0.15em] text-slate-400">Words</dt>
+                      <dt className="text-xs uppercase tracking-[0.12em] text-slate-400">Words</dt>
                       <dd className="mt-1 font-medium text-slate-800">
                         {job.wordCount ? job.wordCount.toLocaleString("en-US") : "—"}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-xs uppercase tracking-[0.15em] text-slate-400">Pay</dt>
+                      <dt className="text-xs uppercase tracking-[0.12em] text-slate-400">Pay</dt>
                       <dd className="mt-1 font-medium text-slate-800">{job.pay}</dd>
                     </div>
                     <div>
-                      <dt className="text-xs uppercase tracking-[0.15em] text-slate-400">Est. / hr</dt>
+                      <dt className="text-xs uppercase tracking-[0.12em] text-slate-400">Est. / hr</dt>
                       <dd className="mt-1 font-medium text-slate-800">{formatPayPerHour(job.payPerHourCents)}</dd>
                     </div>
                   </dl>
