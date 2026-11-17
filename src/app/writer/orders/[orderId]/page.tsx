@@ -44,7 +44,7 @@ export default async function WriterOrderDetailPage({
     >
       <Notice notice={notice.notice} noticeMessage={notice.noticeMessage} />
       {isPreview ? (
-        <div className="rounded-[1.25rem] border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
+        <div className="rounded-[14px] border border-[var(--line)] bg-white px-5 py-4 text-sm text-blue-900">
           Preview only — this job is still open. Use Reserve or Claim from the marketplace when you are ready.
         </div>
       ) : null}
@@ -131,11 +131,11 @@ export default async function WriterOrderDetailPage({
           title="Brief"
           description="Use this as the working source of truth for the assignment."
         >
-          <div className="rounded-[1.25rem] bg-white p-5 text-sm leading-7 text-slate-700">
+          <div className="rounded-[14px] bg-white p-5 text-sm leading-7 text-slate-700">
             {order.brief}
           </div>
-          <div className="mt-4 rounded-[1.25rem] bg-white p-5">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+          <div className="mt-4 rounded-[14px] bg-white p-5">
+            <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
               Target keywords
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -167,8 +167,8 @@ export default async function WriterOrderDetailPage({
             )}
           </div>
 
-          <div className="mt-4 rounded-[1.25rem] bg-white p-5">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Attachments</p>
+          <div className="mt-4 rounded-[14px] bg-white p-5">
+            <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Attachments</p>
             {order.attachments.length ? (
               <ul className="mt-3 space-y-2">
                 {order.attachments.map((attachment) => (
@@ -188,8 +188,8 @@ export default async function WriterOrderDetailPage({
             )}
           </div>
 
-          <div className="mt-4 rounded-[1.25rem] bg-white p-5">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+          <div className="mt-4 rounded-[14px] bg-white p-5">
+            <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
               Style guide{order.styleGuide?.folderName ? ` · ${order.styleGuide.folderName}` : ""}
             </p>
             {order.styleGuide &&
@@ -202,7 +202,7 @@ export default async function WriterOrderDetailPage({
               <div className="mt-3 space-y-3 text-sm leading-7 text-slate-700">
                 {order.styleGuide.briefTemplateUrl ? (
                   <Link
-                    className="inline-flex font-semibold text-slate-900 underline decoration-slate-300 underline-offset-4"
+                    className="inline-flex font-semibold text-[var(--penned-navy)] underline decoration-slate-300 underline-offset-4"
                     href={order.styleGuide.briefTemplateUrl}
                     target="_blank"
                   >
@@ -227,8 +227,8 @@ export default async function WriterOrderDetailPage({
         >
           {order.latestSubmission ? (
             <div className="space-y-4">
-              <div className="rounded-[1.25rem] bg-white p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              <div className="rounded-[14px] bg-white p-4">
+                <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
                   Version {order.latestSubmission.version} · {order.latestSubmission.status}
                 </p>
                 <p className="mt-3 text-sm leading-7 text-slate-700">
@@ -236,7 +236,7 @@ export default async function WriterOrderDetailPage({
                 </p>
                 {order.latestSubmission.googleDocUrl ? (
                   <Link
-                    className="mt-4 inline-flex text-sm font-semibold text-slate-900 underline decoration-slate-300 underline-offset-4"
+                    className="mt-4 inline-flex text-sm font-semibold text-[var(--penned-navy)] underline decoration-slate-300 underline-offset-4"
                     href={order.latestSubmission.googleDocUrl}
                     target="_blank"
                   >
@@ -248,7 +248,7 @@ export default async function WriterOrderDetailPage({
                 {order.latestSubmission.comments.map((comment) => (
                   <div key={comment.id} className="dashboard-list-row flex-col items-start">
                     <div className="flex w-full items-center justify-between gap-3">
-                      <p className="font-semibold text-slate-950">{comment.author}</p>
+                      <p className="font-semibold text-[var(--penned-navy)]">{comment.author}</p>
                       <p className="text-xs text-slate-500">{comment.createdAt}</p>
                     </div>
                     <p className="text-sm leading-7 text-slate-700">{comment.body}</p>
@@ -285,9 +285,9 @@ export default async function WriterOrderDetailPage({
 
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1.25rem] bg-white p-4">
-      <dt className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</dt>
-      <dd className="mt-2 text-sm font-medium text-slate-900">{value}</dd>
+    <div className="rounded-[14px] bg-white p-4">
+      <dt className="text-xs uppercase tracking-[0.12em] text-slate-500">{label}</dt>
+      <dd className="mt-2 text-sm font-medium text-[var(--penned-navy)]">{value}</dd>
     </div>
   );
 }
@@ -297,7 +297,7 @@ function GuideLine({ label, value }: { label: string; value: string }) {
 
   return (
     <p>
-      <span className="font-semibold text-slate-900">{label}: </span>
+      <span className="font-semibold text-[var(--penned-navy)]">{label}: </span>
       {value}
     </p>
   );
