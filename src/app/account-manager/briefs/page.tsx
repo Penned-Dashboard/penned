@@ -25,7 +25,7 @@ export default async function AccountManagerBriefsPage({
       userName={user.fullName}
     >
       {params.asked ? (
-        <p className="rounded-[1rem] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        <p className="rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
           Question sent. The client deadline is paused until they reply.
         </p>
       ) : null}
@@ -35,15 +35,15 @@ export default async function AccountManagerBriefsPage({
         ) : (
           <div className="space-y-4">
             {briefs.map((brief) => (
-              <article key={brief.id} className="rounded-[1.25rem] border border-slate-200 p-4">
+              <article key={brief.id} className="rounded-[14px] border border-slate-200 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="text-lg font-semibold text-slate-950">{brief.title}</p>
+                    <p className="text-lg font-semibold text-[var(--penned-navy)]">{brief.title}</p>
                     <p className="mt-1 text-sm text-slate-500">
                       {brief.agencyName} · {brief.clientLabel} · {brief.contentType} · {brief.tier} ·{" "}
                       {brief.language} · {brief.words.toLocaleString()} words · {brief.delivery}
                     </p>
-                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
                       {brief.teamStatus}
                     </p>
                   </div>
