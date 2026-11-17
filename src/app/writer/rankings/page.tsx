@@ -76,14 +76,14 @@ export default async function WriterRankingsPage({
                     {entry.rank}
                   </span>
                   <div>
-                    <p className="font-semibold text-slate-950">
+                    <p className="font-semibold text-[var(--penned-navy)]">
                       {entry.name}
                       {entry.isYou ? <span className="ml-2 text-xs font-semibold text-blue-700">You</span> : null}
                     </p>
                     <p className="text-sm text-slate-500">{entry.secondary}</p>
                   </div>
                 </div>
-                <p className="text-right text-lg font-semibold text-slate-900">{entry.primary}</p>
+                <p className="text-right text-lg font-semibold text-[var(--penned-navy)]">{entry.primary}</p>
               </div>
             ))}
           </div>
