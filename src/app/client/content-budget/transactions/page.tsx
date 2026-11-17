@@ -39,7 +39,7 @@ export default async function ContentBudgetTransactionsPage({
       searchQuery={params.q}
       searchAction="/client/content-budget/transactions"
     >
-      <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
+      <section className="rounded-[20px] border border-slate-200 bg-white p-6">
         <form className="mb-5 flex flex-wrap gap-3" method="get">
           <input
             className="dashboard-input max-w-xs"
@@ -58,7 +58,7 @@ export default async function ContentBudgetTransactionsPage({
             {rows.map((item) => (
               <div key={`${item.label}-${item.note}-${item.value}`} className="dashboard-list-row">
                 <div>
-                  <p className="font-semibold text-slate-950">{item.label}</p>
+                  <p className="font-semibold text-[var(--penned-navy)]">{item.label}</p>
                   <p className="text-sm text-slate-500">{item.note}</p>
                 </div>
                 <p

@@ -29,7 +29,7 @@ export default async function AccountManagerOrdersPage({
     >
       {notice.noticeMessage ? (
         <p
-          className={`rounded-[1rem] px-4 py-3 text-sm ${
+          className={`rounded-[14px] px-4 py-3 text-sm ${
             notice.notice === "error"
               ? "border border-rose-200 bg-rose-50 text-rose-700"
               : "border border-emerald-200 bg-emerald-50 text-emerald-700"

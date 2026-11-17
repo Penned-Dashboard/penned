@@ -29,7 +29,7 @@ export default async function ClientInvoicesPage({
       currentPath="/client/billing"
       userName={user.fullName}
     >
-      <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
+      <section className="rounded-[20px] border border-slate-200 bg-white p-6">
         <form className="mb-5 flex flex-wrap gap-3" method="get">
           <input className="dashboard-input max-w-xs" defaultValue={params.month} name="month" type="month" />
           <button className="button-secondary" type="submit">
@@ -44,7 +44,7 @@ export default async function ClientInvoicesPage({
               return (
                 <div key={invoice.id} className="dashboard-list-row">
                   <div>
-                    <p className="font-semibold text-slate-950">{invoice.id}</p>
+                    <p className="font-semibold text-[var(--penned-navy)]">{invoice.id}</p>
                     <p className="text-sm text-slate-500">
                       {invoice.date} · {isReceipt ? "Receipt" : "Invoice"}
                     </p>

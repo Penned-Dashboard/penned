@@ -108,7 +108,7 @@ export default async function ClientHelpPage({
           {faqs.map((item) => (
             <details
               key={item.q}
-              className="rounded-[1.25rem] border border-slate-200 bg-white px-5 py-4"
+              className="rounded-[14px] border border-slate-200 bg-white px-5 py-4"
               open={params.topic === "priority" && item.q.includes("approvals") ? false : undefined}
             >
               <summary className="cursor-pointer list-none text-base font-semibold text-[var(--penned-navy)]">

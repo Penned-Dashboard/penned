@@ -218,7 +218,7 @@ export function ClientSettingsWorkspace({
             {team.map((member) => (
               <div key={member.id} className="dashboard-list-row">
                 <div>
-                  <p className="font-semibold text-slate-950">{member.name}</p>
+                  <p className="font-semibold text-[var(--penned-navy)]">{member.name}</p>
                   <p className="text-sm text-slate-500">
                     {member.email} · {member.role}
                   </p>
@@ -304,7 +304,7 @@ export function ClientSettingsWorkspace({
 
         <SectionCard title="Approval rules" description="Stop large or sensitive orders going out unchecked.">
           <div className="space-y-3">
-            <label className="flex items-start gap-3 rounded-[1rem] border border-slate-200 bg-white p-4">
+            <label className="flex items-start gap-3 rounded-[14px] border border-slate-200 bg-white p-4">
               <input
                 checked={Boolean(enabledRules.spend)}
                 className="mt-1"
@@ -315,13 +315,13 @@ export function ClientSettingsWorkspace({
                 type="checkbox"
               />
               <span>
-                <p className="font-semibold text-slate-950">Require approval over $250</p>
+                <p className="font-semibold text-[var(--penned-navy)]">Require approval over $250</p>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
                   Recommended for larger briefs or any order that crosses the spend threshold.
                 </p>
               </span>
             </label>
-            <label className="flex items-start gap-3 rounded-[1rem] border border-slate-200 bg-white p-4">
+            <label className="flex items-start gap-3 rounded-[14px] border border-slate-200 bg-white p-4">
               <input
                 checked={Boolean(enabledRules["new-folder"])}
                 className="mt-1"
@@ -332,12 +332,12 @@ export function ClientSettingsWorkspace({
                 type="checkbox"
               />
               <span>
-                <p className="font-semibold text-slate-950">
+                <p className="font-semibold text-[var(--penned-navy)]">
                   Require approval for the first order under a new client folder
                 </p>
               </span>
             </label>
-            <label className="flex items-start gap-3 rounded-[1rem] border border-slate-200 bg-white p-4">
+            <label className="flex items-start gap-3 rounded-[14px] border border-slate-200 bg-white p-4">
               <input
                 checked={Boolean(enabledRules.wallet)}
                 className="mt-1"
@@ -348,7 +348,7 @@ export function ClientSettingsWorkspace({
                 type="checkbox"
               />
               <span className="w-full">
-                <p className="font-semibold text-slate-950">Require approval if wallet falls below</p>
+                <p className="font-semibold text-[var(--penned-navy)]">Require approval if wallet falls below</p>
                 <input
                   className="dashboard-input mt-3 max-w-[10rem]"
                   onChange={(event) => {
@@ -359,7 +359,7 @@ export function ClientSettingsWorkspace({
                 />
               </span>
             </label>
-            <label className="flex items-start gap-3 rounded-[1rem] border border-slate-200 bg-white p-4">
+            <label className="flex items-start gap-3 rounded-[14px] border border-slate-200 bg-white p-4">
               <input
                 checked={Boolean(enabledRules.rush)}
                 className="mt-1"
@@ -370,7 +370,7 @@ export function ClientSettingsWorkspace({
                 type="checkbox"
               />
               <span>
-                <p className="font-semibold text-slate-950">Require approval for rush fees</p>
+                <p className="font-semibold text-[var(--penned-navy)]">Require approval for rush fees</p>
               </span>
             </label>
           </div>
@@ -383,9 +383,9 @@ export function ClientSettingsWorkspace({
 
 function InfoBlock({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 rounded-[1.15rem] bg-slate-50 p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className="mt-2 break-all text-lg font-semibold text-slate-950">{value}</p>
+    <div className="min-w-0 rounded-[14px] bg-slate-50 p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
+      <p className="mt-2 break-all text-lg font-semibold text-[var(--penned-navy)]">{value}</p>
     </div>
   );
 }

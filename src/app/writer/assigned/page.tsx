@@ -40,12 +40,12 @@ export default async function WriterAssignedJobsPage({
               <tr key={job.id}>
                 <Td className="font-medium text-slate-700">{job.client}</Td>
                 <Td>
-                  <Link className="font-semibold text-slate-950 hover:underline" href={`/writer/orders/${job.id}`}>
+                  <Link className="font-semibold text-[var(--penned-navy)] hover:underline" href={`/writer/orders/${job.id}`}>
                     {job.title}
                   </Link>
                 </Td>
                 <Td>{job.wordCount ? job.wordCount.toLocaleString("en-US") : "—"}</Td>
-                <Td className="font-medium text-slate-900">{job.pay}</Td>
+                <Td className="font-medium text-[var(--penned-navy)]">{job.pay}</Td>
                 <Td>
                   <div className="flex flex-col items-start gap-1">
                     <CountdownBadge dueDate={job.dueDate} />

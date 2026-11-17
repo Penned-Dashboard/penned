@@ -45,16 +45,16 @@ export default async function AdminSettingsPage() {
 
 function InfoBlock({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1.15rem] bg-slate-50 p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className="mt-2 text-lg font-semibold text-slate-950">{value}</p>
+    <div className="rounded-[14px] bg-slate-50 p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
+      <p className="mt-2 text-lg font-semibold text-[var(--penned-navy)]">{value}</p>
     </div>
   );
 }
 
 function PreferenceRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-[1rem] border border-slate-200 bg-white p-4">
+    <div className="flex items-center justify-between gap-4 rounded-[14px] border border-slate-200 bg-white p-4">
       <p className="font-medium text-slate-700">{label}</p>
       <p className="text-right text-slate-500">{value}</p>
     </div>

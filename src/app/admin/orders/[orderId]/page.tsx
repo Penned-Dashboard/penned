@@ -42,7 +42,7 @@ export default async function AdminOrderDetailPage({
     >
       {notice.noticeMessage ? (
         <p
-          className={`rounded-[1rem] px-4 py-3 text-sm ${
+          className={`rounded-[14px] px-4 py-3 text-sm ${
             notice.notice === "error"
               ? "border border-rose-200 bg-rose-50 text-rose-700"
               : "border border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -109,13 +109,13 @@ export default async function AdminOrderDetailPage({
 
       <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <SectionCard title="Brief" description="Admin reference copy for disputes, reassignment, and QA review.">
-          <div className="rounded-[1.25rem] bg-white p-5 text-sm leading-7 text-slate-700">{order.brief}</div>
+          <div className="rounded-[14px] bg-white p-5 text-sm leading-7 text-slate-700">{order.brief}</div>
         </SectionCard>
         <SectionCard title="Latest submission" description="Most recent submission state and notes.">
           {order.latestSubmission ? (
             <div className="space-y-3">
-              <div className="rounded-[1.25rem] bg-white p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              <div className="rounded-[14px] bg-white p-4">
+                <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
                   Version {order.latestSubmission.version} · {order.latestSubmission.status}
                 </p>
                 <p className="mt-3 text-sm leading-7 text-slate-700">{order.latestSubmission.notes}</p>
@@ -123,7 +123,7 @@ export default async function AdminOrderDetailPage({
               {order.latestSubmission.comments.map((comment) => (
                 <div key={comment.id} className="dashboard-list-row flex-col items-start">
                   <div className="flex w-full items-center justify-between gap-3">
-                    <p className="font-semibold text-slate-950">{comment.author}</p>
+                    <p className="font-semibold text-[var(--penned-navy)]">{comment.author}</p>
                     <p className="text-xs text-slate-500">{comment.createdAt}</p>
                   </div>
                   <p className="text-sm leading-7 text-slate-700">{comment.body}</p>
@@ -141,9 +141,9 @@ export default async function AdminOrderDetailPage({
 
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1.15rem] border border-slate-200 bg-white px-4 py-3">
-      <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <p className="mt-2 text-sm font-medium text-slate-900">{value}</p>
+    <div className="rounded-[14px] border border-slate-200 bg-white px-4 py-3">
+      <p className="text-xs uppercase tracking-[0.12em] text-slate-500">{label}</p>
+      <p className="mt-2 text-sm font-medium text-[var(--penned-navy)]">{value}</p>
     </div>
   );
 }

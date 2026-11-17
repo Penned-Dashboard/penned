@@ -10,14 +10,14 @@ export function StatCard({
   hint: string;
 }) {
   return (
-    <article className="rounded-[1.5rem] border border-[rgba(23,37,63,0.1)] bg-white p-5 shadow-[0_18px_40px_rgba(23,37,63,0.04)]">
-      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">
+    <article className="flex flex-col gap-1 rounded-[20px] border border-[var(--line)] bg-white px-6 py-5">
+      <p className="text-[14.5px] font-bold text-[var(--penned-navy)]">
         {label}
       </p>
-      <h2 className="mt-3 text-4xl font-semibold tracking-[-0.04em] text-[var(--penned-navy)]">
+      <h2 className="text-[40px] font-bold leading-[1.05] tracking-[-0.02em] tabular-nums text-[var(--penned-navy)]">
         {value}
       </h2>
-      <p className="mt-3 text-sm leading-6 text-slate-600">{hint}</p>
+      <p className="text-[14.5px] leading-6 text-[var(--ink-2)]">{hint}</p>
     </article>
   );
 }
@@ -36,14 +36,14 @@ export function SectionCard({
   return (
     <section
       id={id}
-      className="rounded-[1.75rem] border border-[rgba(23,37,63,0.1)] bg-white p-5 shadow-[0_18px_40px_rgba(23,37,63,0.04)] md:p-6"
+      className="rounded-[20px] border border-[var(--line)] bg-white p-[18px] md:p-6"
     >
-      <div className="mb-5">
-        <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--penned-navy)]">
+      <div className="mb-4">
+        <h2 className="text-[19px] font-bold tracking-[-0.015em] text-[var(--penned-navy)]">
           {title}
         </h2>
         {description.trim() ? (
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{description}</p>
+          <p className="mt-1 max-w-2xl text-[14.5px] leading-6 text-[var(--ink-2)]">{description}</p>
         ) : null}
       </div>
       {children}

@@ -14,8 +14,8 @@ export default async function AdminClientsPage() {
         ) : (
           <ul className="space-y-3">
             {clients.map((client) => (
-              <li key={client.id} className="rounded-[1.15rem] border border-slate-200 px-4 py-3">
-                <p className="font-semibold text-slate-950">{client.company_name || client.full_name}</p>
+              <li key={client.id} className="rounded-[14px] border border-slate-200 px-4 py-3">
+                <p className="font-semibold text-[var(--penned-navy)]">{client.company_name || client.full_name}</p>
                 <p className="text-sm text-slate-500">
                   {client.full_name} · {client.email}
                   {"is_uk_company" in client && client.is_uk_company ? " · UK VAT" : ""}

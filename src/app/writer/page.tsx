@@ -77,18 +77,18 @@ export default async function WriterDashboardPage({
       </section>
 
       <section
-        className={`rounded-[1.75rem] border p-6 ${
+        className={`rounded-[20px] border p-6 ${
           action.tone === "urgent"
             ? "border-amber-200 bg-amber-50"
             : action.tone === "normal"
-              ? "border-blue-200 bg-blue-50"
+              ? "border-[var(--line)] bg-white"
               : "border-slate-200 bg-white"
         }`}
       >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-500">Next action</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">{action.title}</h2>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Next action</p>
+            <h2 className="mt-2 text-[19px] font-bold tracking-[-0.015em] text-[var(--penned-navy)]">{action.title}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{action.description}</p>
           </div>
           <Link className="button-primary" href={action.href}>
@@ -139,7 +139,7 @@ export default async function WriterDashboardPage({
 
       {showSampleLoader ? (
         <section
-          className={`rounded-[1.5rem] border px-5 py-4 ${
+          className={`rounded-[20px] border px-5 py-4 ${
             sampleState === "error"
               ? "border-rose-200 bg-rose-50"
               : sampleState === "success"
@@ -149,8 +149,8 @@ export default async function WriterDashboardPage({
         >
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Demo only</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
+              <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">Demo only</p>
+              <h2 className="mt-2 text-[19px] font-bold tracking-[-0.015em] text-[var(--penned-navy)]">
                 Load sample jobs for stakeholder review
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">

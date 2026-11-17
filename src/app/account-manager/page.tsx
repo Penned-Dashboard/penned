@@ -46,7 +46,7 @@ export default async function AccountManagerTodayPage() {
                 {group.items.slice(0, 6).map((item) => (
                   <li key={item.id} className="flex items-center justify-between gap-3 text-sm">
                     <div>
-                      <p className="font-semibold text-slate-950">{item.title}</p>
+                      <p className="font-semibold text-[var(--penned-navy)]">{item.title}</p>
                       <p className="text-slate-500">
                         {item.agencyName} · {item.clientLabel} · {item.teamStatus}
                       </p>

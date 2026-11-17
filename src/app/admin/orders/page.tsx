@@ -100,7 +100,7 @@ export default async function AdminOrdersPage({
             filtered.map((order) => (
               <Link key={order.id} className="dashboard-list-row" href={`/admin/orders/${order.id}`}>
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-slate-950">{order.title}</p>
+                  <p className="font-semibold text-[var(--penned-navy)]">{order.title}</p>
                   <p className="text-sm text-slate-500">
                     {order.clientLabel} · {order.contentType} · {order.writer}
                   </p>
@@ -114,7 +114,7 @@ export default async function AdminOrdersPage({
               </Link>
             ))
           ) : (
-            <p className="rounded-[1.25rem] border border-dashed border-slate-200 px-5 py-6 text-sm text-slate-500">
+            <p className="rounded-[14px] border border-dashed border-slate-200 px-5 py-6 text-sm text-slate-500">
               No orders match these filters.
             </p>
           )}

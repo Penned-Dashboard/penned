@@ -17,9 +17,9 @@ export default async function EditorQueuePage() {
         ) : (
           <div className="space-y-3">
             {queue.map((job) => (
-              <article key={job.id} className="flex flex-wrap items-center justify-between gap-3 rounded-[1.15rem] border border-slate-200 p-4">
+              <article key={job.id} className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-slate-200 p-4">
                 <div>
-                  <p className="font-semibold text-slate-950">{job.title}</p>
+                  <p className="font-semibold text-[var(--penned-navy)]">{job.title}</p>
                   <p className="text-sm text-slate-500">
                     {job.clientLabel} · {job.tier} · {job.language} · {job.words.toLocaleString()} words · Edit by {job.dueLabel}
                   </p>

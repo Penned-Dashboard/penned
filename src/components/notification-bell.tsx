@@ -139,7 +139,7 @@ export function NotificationBell() {
         aria-controls="notification-panel"
         aria-expanded={open}
         aria-label={label}
-        className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(23,37,63,0.18)] bg-white text-[var(--penned-navy)] shadow-sm transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--penned-navy)]"
+        className="relative flex h-[46px] w-[46px] items-center justify-center rounded-full border border-[rgba(23,37,63,0.18)] bg-white text-[var(--penned-navy)] hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--penned-navy)]"
         onClick={toggle}
         ref={button}
         title="Notifications"

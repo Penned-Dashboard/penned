@@ -36,8 +36,8 @@ export function ContentBudgetTopUp({
 
   if (isPriorityActive) {
     return (
-      <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
-        <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">
+      <div className="rounded-[20px] border border-slate-200 bg-white p-6">
+        <h2 className="text-[19px] font-bold tracking-[-0.015em] text-[var(--penned-navy)]">
           Priority Account is active
         </h2>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600">
@@ -52,8 +52,8 @@ export function ContentBudgetTopUp({
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-      <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
-        <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">Top up</h2>
+      <section className="rounded-[20px] border border-slate-200 bg-white p-6">
+        <h2 className="text-[19px] font-bold tracking-[-0.015em] text-[var(--penned-navy)]">Top up</h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
           Add to your prepaid budget. From $5,000 we add extra credit automatically.
         </p>
@@ -63,15 +63,15 @@ export function ContentBudgetTopUp({
             const selected = tier.id === item.id && parsed > 0;
             return (
               <button
-                className={`rounded-[1.25rem] border p-5 text-left transition ${
+                className={`rounded-[14px] border p-5 text-left  ${
                   selected ? "border-[#91B9D2] bg-[#F3F8FB]" : "border-slate-200 bg-white"
                 }`}
                 key={item.id}
                 onClick={() => setAmount(String(item.min || 500))}
                 type="button"
               >
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{item.name}</p>
-                <h3 className="mt-2 text-xl font-semibold text-slate-950">{item.discountLabel}</h3>
+                <p className="text-xs uppercase tracking-[0.12em] text-slate-500">{item.name}</p>
+                <h3 className="mt-2 text-xl font-semibold text-[var(--penned-navy)]">{item.discountLabel}</h3>
                 <p className="mt-3 text-sm leading-6 text-slate-600">{item.copy}</p>
               </button>
             );
@@ -99,7 +99,7 @@ export function ContentBudgetTopUp({
         </p>
 
         {!isManaged ? (
-          <div className="mt-4 rounded-[1.15rem] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-600">
+          <div className="mt-4 rounded-[14px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-600">
             Prepay $5,000 or more to unlock extra credit on this top-up.
           </div>
         ) : null}
@@ -114,13 +114,13 @@ export function ContentBudgetTopUp({
       </section>
 
       <section className="grid gap-4">
-        <div className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
-          <h3 className="text-2xl font-semibold text-slate-950">Payment summary</h3>
+        <div className="rounded-[20px] border border-slate-200 bg-white p-6">
+          <h3 className="text-[19px] font-bold text-[var(--penned-navy)]">Payment summary</h3>
           <div className="mt-4 space-y-3">
             {summary.map((item) => (
               <div key={item.label} className="flex items-start justify-between gap-4 text-sm">
                 <p className="text-slate-500">{item.label}</p>
-                <p className="font-semibold text-slate-950">{item.value}</p>
+                <p className="font-semibold text-[var(--penned-navy)]">{item.value}</p>
               </div>
             ))}
           </div>

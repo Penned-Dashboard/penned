@@ -44,7 +44,7 @@ export default async function ClientBillingPage({
                 return (
                   <div key={invoice.id} className="dashboard-list-row">
                     <div className="min-w-0">
-                      <p className="font-semibold text-slate-950">{invoice.id}</p>
+                      <p className="font-semibold text-[var(--penned-navy)]">{invoice.id}</p>
                       <p className="text-sm text-slate-500">
                         {invoice.date} · {isReceipt ? "Receipt" : "Invoice"}
                       </p>
@@ -79,7 +79,7 @@ export default async function ClientBillingPage({
         <SectionCard title="Payment method" description="Card and billing contact for top-ups and invoices.">
           <div className="space-y-3">
             <PreferenceRow label="Card on file" value="Visa ending 4242" />
-            <label className="block rounded-[1rem] border border-slate-200 bg-white p-4">
+            <label className="block rounded-[14px] border border-slate-200 bg-white p-4">
               <span className="text-sm font-medium text-slate-700">Billing contact</span>
               <input className="dashboard-input mt-2" defaultValue={user.email} name="billingContact" />
             </label>
@@ -119,9 +119,9 @@ function PriorityAccountCard({
       : "You may be eligible for Priority Account status — order now and pay after delivery. Ask your account manager.";
 
   return (
-    <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-5">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Priority Account</p>
-      <h3 className="mt-2 text-2xl font-semibold text-slate-950">{state}</h3>
+    <div className="rounded-[14px] border border-slate-200 bg-slate-50 p-5">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Priority Account</p>
+      <h3 className="mt-2 text-[19px] font-bold text-[var(--penned-navy)]">{state}</h3>
       <p className="mt-3 text-sm leading-6 text-slate-600">{copy}</p>
     </div>
   );
@@ -129,7 +129,7 @@ function PriorityAccountCard({
 
 function PreferenceRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start justify-between gap-4 rounded-[1rem] border border-slate-200 bg-white p-4">
+    <div className="flex items-start justify-between gap-4 rounded-[14px] border border-slate-200 bg-white p-4">
       <p className="shrink-0 font-medium text-slate-700">{label}</p>
       <p className="min-w-0 break-all text-right text-slate-500">{value}</p>
     </div>
@@ -147,5 +147,5 @@ function Alert({
     tone === "warning"
       ? "border-amber-200 bg-amber-50 text-amber-900"
       : "border-emerald-200 bg-emerald-50 text-emerald-800";
-  return <div className={`rounded-[1.25rem] border px-5 py-4 text-sm ${styles}`}>{children}</div>;
+  return <div className={`rounded-[14px] border px-5 py-4 text-sm ${styles}`}>{children}</div>;
 }

@@ -35,7 +35,7 @@ export default async function WriterSettingsPage({
     >
       <Notice notice={params.notice} noticeMessage={params.noticeMessage} />
       {settings.schemaReady ? null : (
-        <div className="rounded-[1.25rem] border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-800">
+        <div className="rounded-[14px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-medium text-amber-800">
           Profile settings are not available yet. Run supabase/writer-p0-upgrade.sql in Supabase, then reload.
         </div>
       )}
@@ -100,8 +100,8 @@ export default async function WriterSettingsPage({
                   Paste a public image link for now. File upload can come later.
                 </span>
               </label>
-              <div className="rounded-[1rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                Writer tier: <span className="font-semibold text-slate-900 capitalize">{settings.writerTier}</span>
+              <div className="rounded-[14px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                Writer tier: <span className="font-semibold text-[var(--penned-navy)] capitalize">{settings.writerTier}</span>
                 <span className="mt-1 block text-xs text-slate-500">
                   Specialist access is set by the Penned team when your account is created.
                 </span>
@@ -131,7 +131,7 @@ export default async function WriterSettingsPage({
 
           <div className="grid gap-4 content-start">
             <SectionCard title="Availability" description="Let the team know whether you can take on more work.">
-              <label className="flex items-center justify-between gap-4 rounded-[1rem] border border-slate-200 bg-white p-4">
+              <label className="flex items-center justify-between gap-4 rounded-[14px] border border-slate-200 bg-white p-4">
                 <span>
                   <span className="block font-medium text-slate-800">Available for new jobs</span>
                   <span className="block text-sm text-slate-500">Turn off while you are at capacity.</span>
@@ -180,7 +180,7 @@ export default async function WriterSettingsPage({
           <div className="overflow-x-auto">
             <table className="w-full min-w-[480px] text-left text-sm">
               <thead>
-                <tr className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                <tr className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                   <th className="pb-3 pr-4">Event</th>
                   {NOTIFICATION_CHANNELS.map((channel) => (
                     <th key={channel.key} className="pb-3 px-4 text-center">

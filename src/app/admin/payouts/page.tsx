@@ -16,9 +16,9 @@ export default async function AdminPayoutsPage() {
         ) : (
           <ul className="space-y-3">
             {pending.map((payout) => (
-              <li key={payout.id} className="flex items-center justify-between gap-3 rounded-[1.15rem] border border-slate-200 px-4 py-3">
+              <li key={payout.id} className="flex items-center justify-between gap-3 rounded-[14px] border border-slate-200 px-4 py-3">
                 <div>
-                  <p className="font-semibold text-slate-950">{payout.writer}</p>
+                  <p className="font-semibold text-[var(--penned-navy)]">{payout.writer}</p>
                   <p className="text-sm text-slate-500">{payout.amount} · {payout.status}</p>
                 </div>
                 <form action={approvePayoutAction}>

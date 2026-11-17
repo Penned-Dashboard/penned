@@ -25,8 +25,8 @@ export async function RoleSwitcherPanel({ currentRole }: { currentRole: Role }) 
   }
 
   return (
-    <div className="mt-8 rounded-[1.25rem] border border-white/10 bg-white/5 p-3">
-      <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--penned-sky)]">
+    <div className="mt-8 rounded-[14px] border border-white/10 bg-white/5 p-3">
+      <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--penned-sky)]">
         Test as role
       </p>
       <form action={switchWorkspaceRoleAction} className="mt-3 space-y-2">
