@@ -14,8 +14,8 @@ export default async function AdminWritersPage() {
         ) : (
           <ul className="space-y-3">
             {writers.map((writer) => (
-              <li key={writer.id} className="rounded-[1.15rem] border border-slate-200 px-4 py-3">
-                <p className="font-semibold text-slate-950">{writer.full_name}</p>
+              <li key={writer.id} className="rounded-[14px] border border-slate-200 px-4 py-3">
+                <p className="font-semibold text-[var(--penned-navy)]">{writer.full_name}</p>
                 <p className="text-sm text-slate-500">{writer.email}</p>
               </li>
             ))}
