@@ -9,6 +9,7 @@
  */
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { groupForPanel, type PanelEntry } from "@/lib/notification-display";
 
 export type InAppNotification = {
   id: string;
@@ -96,6 +97,25 @@ export async function listInAppNotifications(
   const { data, error } = await query;
   if (error || !data) return [];
   return (data as Record<string, unknown>[]).map(toItem);
+}
+
+/**
+ * The bell's short list: the latest few, with a pile of similar unread items
+ * (a bulk order's drafts, say) folded into one line.
+ */
+export async function listPanelNotifications(profileId: string, max = 8): Promise<PanelEntry[]> {
+  return groupForPanel(await listInAppNotifications(profileId, { limit: 40 }), max);
+}
+
+/** Mark one notification read, or unread again to come back to it. Only the owner's row matches. */
+export async function setInAppNotificationRead(profileId: string, id: string, read: boolean) {
+  const supabase = createServerSupabaseClient();
+  if (!supabase || !profileId || !id) return;
+  await supabase
+    .from("notifications")
+    .update({ read_at: read ? new Date().toISOString() : null })
+    .eq("id", id)
+    .eq("profile_id", profileId);
 }
 
 export async function countUnreadInAppNotifications(profileId: string) {
