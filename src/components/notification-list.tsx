@@ -15,14 +15,14 @@ export function NotificationList({ items, unreadOnly }: { items: InAppNotificati
       {groupByDay(items).map((section) => (
         <section key={section.heading}>
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{section.heading}</h3>
-          <ul className="overflow-hidden rounded-[1.15rem] border border-slate-200 bg-white">
+          <ul className="overflow-hidden rounded-[14px] border border-slate-200 bg-white">
             {section.items.map((item) => (
               <li
                 className={`flex flex-col border-b sm:flex-row sm:items-stretch border-slate-100 last:border-b-0 ${item.read ? "" : "bg-[#f4f7fb]"}`}
                 key={item.id}
               >
                 <a
-                  className="flex min-w-0 flex-1 gap-3 px-4 py-3.5 transition hover:bg-slate-50"
+                  className="flex min-w-0 flex-1 gap-3 px-4 py-3.5 hover:bg-slate-50"
                   href={`/api/notifications/open?id=${encodeURIComponent(item.id)}`}
                 >
                   <NotificationIcon kind={item.kind} />
