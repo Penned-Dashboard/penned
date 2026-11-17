@@ -82,12 +82,26 @@ export default async function ClientDashboardPage({
     },
   ];
   const showSampleLoader = allowDemoTools() && Boolean(user.canSwitchRoles);
+  // One line under the welcome, from what is already loaded above.
+  const activeCount = liveOrders.length - liveOrders.filter((order) => ["Accepted", "Approved", "Completed"].includes(order.status)).length;
+  const questionCount = liveOrders.filter((order) => order.status === "We have a question").length;
+  const reviewCount = reviewQueue.length;
+  const summaryLine = !liveOrders.length
+    ? "Let's get your first piece written."
+    : questionCount
+      ? `We have a question on ${questionCount === 1 ? "one order" : `${questionCount} orders`}. Open it below to reply.`
+      : reviewCount
+        ? `${reviewCount} draft${reviewCount === 1 ? " is" : "s are"} ready for your review.`
+        : activeCount
+          ? `${activeCount} order${activeCount === 1 ? "" : "s"} in progress. Nothing needs you right now.`
+          : "Everything is approved. Nothing needs you right now.";
 
   return (
     <DashboardShell
       role="client"
       title={workspaceTitle}
-      description=""
+      titleStyle="welcome"
+      description={summaryLine}
       ctaLabel="New order"
       ctaHref="/client/new-order"
       currentPath="/client"
@@ -97,44 +111,40 @@ export default async function ClientDashboardPage({
     >
       <WorkspaceAutoRefresh />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 md:gap-6 xl:grid-cols-4">
         {metrics.map((metric, index) => (
           <Link
             key={metric.label}
             href={metric.href}
-            className={`rounded-[1.5rem] border p-5 transition hover:-translate-y-0.5 ${
-              index === 0
-                ? "border-blue-200 bg-blue-50"
-                : index === 1
-                  ? "border-orange-200 bg-orange-50"
-                  : index === 2
-                    ? "border-emerald-200 bg-emerald-50"
-                    : "border-slate-200 bg-white"
+            className={`flex flex-col gap-1 rounded-[20px] border px-4 py-4 hover:border-[var(--penned-navy)] md:px-6 md:py-5 ${
+              index === 1 && metric.value !== "0"
+                ? "border-[#cfe07a] bg-[var(--penned-lime-wash)]"
+                : "border-[var(--line)] bg-white"
             }`}
           >
-            <p className="text-sm font-medium text-slate-500">{metric.label}</p>
-            <h2 className="mt-4 text-5xl font-semibold tracking-[-0.05em] text-slate-950">
+            <p className="text-[14.5px] font-bold text-[var(--penned-navy)]">{metric.label}</p>
+            <h2 className="text-[30px] font-bold leading-[1.05] tracking-[-0.02em] tabular-nums text-[var(--penned-navy)] md:text-[40px]">
               {metric.value}
             </h2>
-            <p className="mt-3 text-sm text-slate-500">{metric.hint}</p>
+            <p className="text-[13px] leading-5 text-[var(--ink-2)] md:text-[14.5px] md:leading-6">{metric.hint}</p>
           </Link>
         ))}
       </section>
 
       {showSampleLoader ? (
-        <section className={`rounded-[1.5rem] border px-5 py-4 ${
+        <section className={`rounded-[20px] border px-6 py-5 ${
           sampleState === "error"
             ? "border-rose-200 bg-rose-50"
             : sampleState === "success"
               ? "border-emerald-200 bg-emerald-50"
-              : "border-slate-200 bg-white"
+              : "border-[var(--line)] bg-white"
         }`}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
+              <p className="text-[11.5px] font-bold uppercase tracking-[0.12em] text-[var(--ink-3)]">
                 Demo only
               </p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
+              <h2 className="mt-1 text-[19px] font-bold tracking-[-0.015em] text-[var(--penned-navy)]">
                 Load sample orders for stakeholder review
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
@@ -156,48 +166,57 @@ export default async function ClientDashboardPage({
       ) : null}
 
       {!allOrders.length ? (
-        <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
-          <h2 className="text-2xl font-semibold text-slate-950">Get set up</h2>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <Link className="rounded-[1.15rem] border border-slate-200 px-4 py-4 text-sm font-semibold text-[var(--penned-navy)]" href="/client/folders">
+        <section className="rounded-[20px] border border-[var(--line)] bg-white p-[18px] md:p-6">
+          <h2 className="text-[19px] font-bold tracking-[-0.015em] text-[var(--penned-navy)]">Get set up</h2>
+          <div className="setup-steps mt-4 grid gap-3 md:grid-cols-3">
+            <Link className="setup-step" href="/client/folders">
               Add your first client
             </Link>
-            <Link className="rounded-[1.15rem] border border-slate-200 px-4 py-4 text-sm font-semibold text-[var(--penned-navy)]" href="/client/new-order">
+            <Link className="setup-step" href="/client/new-order">
               Place your first order
             </Link>
-            <Link className="rounded-[1.15rem] border border-slate-200 px-4 py-4 text-sm font-semibold text-[var(--penned-navy)]" href="/client/help?topic=walkthrough">
+            <Link className="setup-step" href="/client/help?topic=walkthrough">
               Prefer a walkthrough? Book a call
             </Link>
           </div>
         </section>
       ) : null}
 
-      <section id="review-queue" className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">
-              Needs your review
-            </h2>
-            <p className="mt-2 text-sm text-slate-500">Updates every 30 seconds.</p>
-          </div>
+      <div className="grid gap-6 xl:grid-cols-2">
+      <section
+        id="review-queue"
+        className={`flex min-w-0 flex-col rounded-[20px] border p-[18px] md:p-6 ${
+          filteredReviewQueue.length
+            ? "border-[#cfe07a] bg-[linear-gradient(180deg,var(--penned-lime-wash)_0,#fff_96px)]"
+            : "border-[var(--line)] bg-white"
+        }`}
+      >
+        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          <h2 className="text-[19px] font-bold tracking-[-0.015em] text-[var(--penned-navy)]">
+            Needs your review
+          </h2>
+          <p className="text-[14.5px] text-[var(--ink-2)]">Updates every 30 seconds.</p>
         </div>
         {filteredReviewQueue.length ? (
-          <div className="space-y-3">
-            {filteredReviewQueue.map((item) => (
-              <div key={item.submissionId} className="dashboard-list-row">
-                <div>
-                  <Link className="font-semibold text-slate-950" href={`/client/orders/${item.orderId}`}>
-                    {item.title}
-                  </Link>
-                  <p className="text-sm text-slate-500">Client: {item.clientLabel}</p>
+          <>
+            <div className="home-rows">
+              {filteredReviewQueue.map((item) => (
+                <div key={item.submissionId} className="home-row">
+                  <div className="min-w-0 flex-1">
+                    <Link className="home-row-title" href={`/client/orders/${item.orderId}`}>
+                      {item.title}
+                    </Link>
+                    <p className="home-row-sub">Client: {item.clientLabel}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p><span className="dashboard-pill is-you">{item.status}</span></p>
+                    <p className="mt-1 text-[13.5px] text-[var(--ink-2)]">Updated {item.due}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-slate-700">{item.status}</p>
-                  <p className="text-xs text-slate-500">Updated {item.due}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            {filteredReviewQueue.length <= 3 ? <div aria-hidden="true" className="notepad-fill" /> : null}
+          </>
         ) : (
           <EmptyState
             title={query ? "No review items match this search" : "Nothing to review"}
@@ -210,45 +229,40 @@ export default async function ClientDashboardPage({
         )}
       </section>
 
-      <section id="orders" className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">
+      <section id="orders" className="flex min-w-0 flex-col rounded-[20px] border border-[var(--line)] bg-white p-[18px] md:p-6">
+        <div className="mb-2 flex items-baseline justify-between gap-3">
+          <h2 className="text-[19px] font-bold tracking-[-0.015em] text-[var(--penned-navy)]">
             Recent orders
           </h2>
-          <Link className="text-base font-medium text-slate-600" href="/client/orders">
+          <Link className="text-[14.5px] font-semibold text-[var(--penned-navy)] underline decoration-[var(--line-2)] underline-offset-4 hover:decoration-current" href="/client/orders">
             View all →
           </Link>
         </div>
         {recentOrders.length ? (
-          <div className="overflow-hidden rounded-[1.25rem] border border-slate-200">
-            <div className="grid grid-cols-[1.6fr_1.2fr_1fr_1fr_1fr_0.8fr_48px] bg-slate-50 px-4 py-3 text-sm font-medium text-slate-500">
-              <p>Order</p>
-              <p>Client</p>
-              <p>Type</p>
-              <p>Writer</p>
-              <p>Status</p>
-              <p>Date</p>
-              <p></p>
-            </div>
+          <div className="home-rows">
             {recentOrders.map((order) => (
-              <div
-                key={order.id}
-                className="grid grid-cols-[1.6fr_1.2fr_1fr_1fr_1fr_0.8fr_48px] items-center border-t border-slate-200 px-4 py-4 text-sm text-slate-700"
-              >
-                <div>
-                  <Link className="font-semibold text-slate-950" href={`/client/orders/${order.id}`}>
+              <div key={order.id} className="home-row">
+                <div className="min-w-0 flex-1">
+                  <Link className="home-row-title" href={`/client/orders/${order.id}`}>
                     {order.name}
                   </Link>
-                  <p className="text-xs text-slate-400">{order.id.slice(0, 8).toUpperCase()}</p>
+                  <p className="home-row-sub">
+                    <span className="font-mono text-[12px] text-[var(--ink-3)]">{order.id.slice(0, 8).toUpperCase()}</span>
+                    {" · "}
+                    {order.clientLabel}
+                    {" · "}
+                    {order.contentType}
+                    {" · "}
+                    {order.writer.split(" ")[0] || order.writer}
+                  </p>
                 </div>
-                <p>{order.clientLabel}</p>
-                <p>{order.contentType}</p>
-                <p>{order.writer.split(" ")[0] || order.writer}</p>
-                <p>
-                  <span className="dashboard-pill">{order.status}</span>
-                </p>
-                <p>{order.deadline}</p>
-                <Link className="text-right text-lg text-slate-400" href={`/client/orders/${order.id}`}>
+                <div className="shrink-0 text-right">
+                  <p>
+                    <span className="dashboard-pill">{order.status}</span>
+                  </p>
+                  <p className="mt-1 text-[13.5px] text-[var(--ink-2)]">{order.deadline}</p>
+                </div>
+                <Link aria-label={`Open ${order.name}`} className="shrink-0 text-lg text-[var(--ink-3)] hover:text-[var(--penned-navy)]" href={`/client/orders/${order.id}`}>
                   →
                 </Link>
               </div>
@@ -263,6 +277,7 @@ export default async function ClientDashboardPage({
           />
         )}
       </section>
+      </div>
     </DashboardShell>
   );
 }
@@ -287,11 +302,11 @@ function EmptyState({
   actionLabel?: string;
 }) {
   return (
-    <div className="rounded-[1.25rem] border border-dashed border-slate-200 bg-white/70 p-6 text-sm leading-7 text-slate-500">
-      <p className="font-semibold text-slate-900">{title}</p>
-      <p className="mt-2">{body}</p>
+    <div className="grid flex-1 place-content-center rounded-[14px] border border-dashed border-[var(--line-2)] bg-[#fbfcfe] px-5 py-8 text-center text-[14.5px] leading-6 text-[var(--ink-2)]">
+      <p className="text-base font-bold text-[var(--penned-navy)]">{title}</p>
+      <p className="mt-1">{body}</p>
       {actionHref && actionLabel ? (
-        <Link className="button-primary mt-4 inline-flex" href={actionHref}>
+        <Link className="button-primary mt-4 justify-self-center" href={actionHref}>
           {actionLabel}
         </Link>
       ) : null}
