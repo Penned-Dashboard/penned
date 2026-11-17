@@ -33,7 +33,7 @@ export default async function AdminPeoplePage({
     >
       {params.noticeMessage ? (
         <p
-          className={`rounded-[1rem] px-4 py-3 text-sm ${
+          className={`rounded-[14px] px-4 py-3 text-sm ${
             params.notice === "error" ? "border border-rose-200 bg-rose-50 text-rose-700" : "border border-emerald-200 bg-emerald-50 text-emerald-700"
           }`}
         >
@@ -58,13 +58,13 @@ export default async function AdminPeoplePage({
           {filtered.map((profile) => (
             <form
               action={updateAdminProfileAction}
-              className="rounded-[1.25rem] border border-slate-200 bg-white p-4"
+              className="rounded-[14px] border border-slate-200 bg-white p-4"
               key={profile.id}
             >
               <input name="profileId" type="hidden" value={profile.id} />
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-slate-950">{profile.fullName}</p>
+                  <p className="font-semibold text-[var(--penned-navy)]">{profile.fullName}</p>
                   <p className="text-sm text-slate-500">{profile.email}</p>
                 </div>
                 <label className="lg:w-40">
