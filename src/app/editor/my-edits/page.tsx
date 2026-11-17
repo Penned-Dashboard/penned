@@ -23,8 +23,8 @@ export default async function EditorMyEditsPage({
         ) : (
           <div className="space-y-4">
             {mine.map((job) => (
-              <article key={job.id} className="rounded-[1.25rem] border border-slate-200 p-4">
-                <p className="text-lg font-semibold text-slate-950">{job.title}</p>
+              <article key={job.id} className="rounded-[14px] border border-slate-200 p-4">
+                <p className="text-lg font-semibold text-[var(--penned-navy)]">{job.title}</p>
                 <p className="mt-1 text-sm text-slate-500">
                   {job.tier} · {job.language} · {job.words.toLocaleString()} words · {job.delivery} · Edit by {job.dueLabel}
                 </p>
