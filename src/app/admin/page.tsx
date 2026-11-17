@@ -86,21 +86,21 @@ export default async function AdminDashboardPage({
         {metrics.map((metric, index) => (
           <article
             key={metric.label}
-            className={`rounded-[1.5rem] border p-5 ${
+            className={`flex flex-col gap-1 rounded-[20px] border px-6 py-5 ${
               index === 0
-                ? "border-blue-200 bg-blue-50"
+                ? "border-[var(--line)] bg-white"
                 : index === 1
-                  ? "border-orange-200 bg-orange-50"
+                  ? "border-[var(--line)] bg-white"
                   : index === 2
-                    ? "border-emerald-200 bg-emerald-50"
-                    : "border-slate-200 bg-white"
+                    ? "border-[var(--line)] bg-white"
+                    : "border-[var(--line)] bg-white"
             }`}
           >
-            <p className="text-sm font-medium text-slate-500">{metric.label}</p>
-            <h2 className="mt-4 text-5xl font-semibold tracking-[-0.05em] text-slate-950">
+            <p className="text-[14.5px] font-bold text-[var(--penned-navy)]">{metric.label}</p>
+            <h2 className="text-[32px] font-bold leading-[1.1] tracking-[-0.02em] tabular-nums text-[var(--penned-navy)]">
               {metric.value}
             </h2>
-            <p className="mt-3 text-sm text-slate-500">{metric.hint}</p>
+            <p className="text-[14.5px] leading-6 text-[var(--ink-2)]">{metric.hint}</p>
           </article>
         ))}
       </section>
@@ -121,7 +121,7 @@ export default async function AdminDashboardPage({
               filteredOperations.slice(0, 8).map((item) => (
                 <Link key={item.id} className="dashboard-list-row" href={`/admin/orders/${item.id}`}>
                   <div>
-                    <p className="font-semibold text-slate-950">{item.title}</p>
+                    <p className="font-semibold text-[var(--penned-navy)]">{item.title}</p>
                     <p className="text-sm text-slate-500">{item.owner}</p>
                   </div>
                   <div className="text-right">
@@ -158,7 +158,7 @@ export default async function AdminDashboardPage({
               filteredContentTypes.map((type) => (
                 <div key={type.id} className="dashboard-list-row">
                   <div>
-                    <p className="font-semibold text-slate-950">{type.name}</p>
+                    <p className="font-semibold text-[var(--penned-navy)]">{type.name}</p>
                     <p className="text-sm text-slate-500">{type.turnaround}</p>
                   </div>
                   <div className="text-right">
@@ -192,7 +192,7 @@ export default async function AdminDashboardPage({
               filteredPayouts.map((payout) => (
                 <div key={payout.id} className="dashboard-list-row">
                   <div>
-                    <p className="font-semibold text-slate-950">{payout.writer}</p>
+                    <p className="font-semibold text-[var(--penned-navy)]">{payout.writer}</p>
                     <p className="text-sm text-slate-500">{payout.requestedAt}</p>
                   </div>
                   <div className="text-right">
@@ -226,12 +226,12 @@ export default async function AdminDashboardPage({
             {rankingRules.map((rule) => (
               <div
                 key={rule.label}
-                className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-4"
+                className="rounded-[14px] border border-slate-200 bg-slate-50 p-4"
               >
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
                   {rule.label}
                 </p>
-                <h3 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950">
+                <h3 className="mt-2 text-[19px] font-bold tracking-[-0.015em] text-[var(--penned-navy)]">
                   {rule.value}
                 </h3>
                 <p className="mt-2 text-sm text-slate-600">{rule.note}</p>
@@ -254,8 +254,8 @@ function filterByQuery<T>(items: T[], query: string, readText: (item: T) => stri
 
 function EmptyState({ title, body }: { title: string; body: string }) {
   return (
-    <div className="rounded-[1.25rem] border border-dashed border-slate-200 bg-white/70 p-6 text-sm leading-7 text-slate-500">
-      <p className="font-semibold text-slate-900">{title}</p>
+    <div className="rounded-[14px] border border-dashed border-slate-200 bg-white/70 p-6 text-sm leading-7 text-slate-500">
+      <p className="font-semibold text-[var(--penned-navy)]">{title}</p>
       <p className="mt-2">{body}</p>
     </div>
   );
