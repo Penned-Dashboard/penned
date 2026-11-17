@@ -98,14 +98,14 @@ export default async function ClientNewOrderPage({
     >
       <section id="new-order-flow" className="grid gap-6">
         {!selectedType ? (
-          <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
-            <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">
+          <section className="rounded-[20px] border border-slate-200 bg-white p-6">
+            <h2 className="text-[19px] font-bold tracking-[-0.015em] text-[var(--penned-navy)]">
               What do you need?
             </h2>
             <div className="mt-8 space-y-10">
               {groups.map((group) => (
                 <div key={group.title}>
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
                     {group.title}
                   </h3>
                   <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -123,18 +123,18 @@ export default async function ClientNewOrderPage({
                               Coming soon
                             </span>
                           ) : null}
-                          <h3 className="text-lg font-semibold text-slate-950">{type.name}</h3>
+                          <h3 className="text-lg font-semibold text-[var(--penned-navy)]">{type.name}</h3>
                           <p className="mt-3 text-sm leading-6 text-slate-600">
-                            <span className="font-semibold text-slate-900">What you&apos;ll get:</span>{" "}
+                            <span className="font-semibold text-[var(--penned-navy)]">What you&apos;ll get:</span>{" "}
                             {type.whatYouGet}
                           </p>
                           <p className="mt-3 text-sm leading-6 text-slate-600">
-                            <span className="font-semibold text-slate-900">Perfect for:</span>{" "}
+                            <span className="font-semibold text-[var(--penned-navy)]">Perfect for:</span>{" "}
                             {type.perfectFor}
                           </p>
                           <div className="mt-4 flex items-center justify-between text-sm">
                             <span className="text-slate-500">Price</span>
-                            <span className="font-semibold text-slate-900">{type.priceLabel}</span>
+                            <span className="font-semibold text-[var(--penned-navy)]">{type.priceLabel}</span>
                           </div>
                         </>
                       );
@@ -155,9 +155,9 @@ export default async function ClientNewOrderPage({
             </div>
           </section>
         ) : selectedType.isOrderable ? (
-          <section className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
+          <section className="rounded-[20px] border border-slate-200 bg-white p-6">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">
+              <h2 className="text-[19px] font-bold tracking-[-0.015em] text-[var(--penned-navy)]">
                 Your brief: {selectedType.name}
               </h2>
               <Link className="text-sm font-semibold text-slate-600 underline" href="/client/new-order">
@@ -174,8 +174,8 @@ export default async function ClientNewOrderPage({
             />
           </section>
         ) : (
-          <section className="rounded-[1.75rem] border border-orange-200 bg-orange-50 p-6">
-            <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">
+          <section className="rounded-[20px] border border-[var(--line)] bg-white p-6">
+            <h2 className="text-[19px] font-bold tracking-[-0.015em] text-[var(--penned-navy)]">
               {selectedType.name} is coming soon
             </h2>
             <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-700">
