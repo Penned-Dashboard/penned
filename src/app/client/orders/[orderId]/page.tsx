@@ -32,7 +32,7 @@ export default async function ClientOrderDetailPage({
         currentPath="/client/orders"
         userName={user.fullName}
       >
-        <section className="rounded-[1.75rem] border border-slate-200 bg-white p-8 text-sm leading-7 text-slate-600">
+        <section className="rounded-[20px] border border-slate-200 bg-white p-8 text-sm leading-7 text-slate-600">
           <p>You don’t have access to this order, or it no longer exists.</p>
           <Link className="button-primary mt-6 inline-flex" href="/client/orders">
             Back to Orders
@@ -95,7 +95,7 @@ export default async function ClientOrderDetailPage({
         <span>{deliveryLabel}</span>
       </div>
 
-      <section className="rounded-[1.5rem] border border-slate-200 bg-white p-5">
+      <section className="rounded-[20px] border border-slate-200 bg-white p-5">
         {inReview && order.latestSubmission ? (
           <div className="flex flex-wrap items-center justify-between gap-4">
             <p className="text-sm font-medium text-slate-700">
@@ -152,9 +152,9 @@ export default async function ClientOrderDetailPage({
       <SectionCard title="Conversation" description="Drafts, comments and change requests in one place.">
         {order.latestSubmission ? (
           <div className="space-y-4">
-            <div className="rounded-[1.25rem] border border-slate-200 bg-slate-50 p-5">
+            <div className="rounded-[14px] border border-slate-200 bg-slate-50 p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
                   Version {order.latestSubmission.version} · {order.latestSubmission.status}
                 </p>
                 <p className="text-xs text-slate-500">{order.latestSubmission.submittedAt}</p>
@@ -173,7 +173,7 @@ export default async function ClientOrderDetailPage({
               ) : null}
               {/signature|specialist|rank/i.test(String(order.serviceTier ?? "")) ? (
                 <p className="mt-3 text-sm">
-                  <span className="font-semibold text-slate-900">Download AI-detection report</span>
+                  <span className="font-semibold text-[var(--penned-navy)]">Download AI-detection report</span>
                   <span className="text-slate-500"> · included on Signature and Specialist</span>
                 </p>
               ) : null}
@@ -183,7 +183,7 @@ export default async function ClientOrderDetailPage({
               {order.latestSubmission.comments.map((comment) => (
                 <div key={comment.id} className="dashboard-list-row flex-col items-start">
                   <div className="flex w-full items-center justify-between gap-3">
-                    <p className="font-semibold text-slate-950">{firstNameOnly(comment.author)}</p>
+                    <p className="font-semibold text-[var(--penned-navy)]">{firstNameOnly(comment.author)}</p>
                     <p className="text-xs text-slate-500">{comment.createdAt}</p>
                   </div>
                   <p className="text-sm leading-7 text-slate-700">
@@ -233,7 +233,7 @@ export default async function ClientOrderDetailPage({
             {versions.map((version) => (
               <div key={version.id} className="dashboard-list-row">
                 <div>
-                  <p className="font-semibold text-slate-950">
+                  <p className="font-semibold text-[var(--penned-navy)]">
                     {version.label} · {version.status}
                   </p>
                   <p className="text-sm text-slate-500">{version.date}</p>
@@ -251,8 +251,8 @@ export default async function ClientOrderDetailPage({
         )}
       </SectionCard>
 
-      <details className="rounded-[1.75rem] border border-slate-200 bg-white p-6">
-        <summary className="cursor-pointer list-none text-lg font-semibold text-slate-950">
+      <details className="rounded-[20px] border border-slate-200 bg-white p-6">
+        <summary className="cursor-pointer list-none text-lg font-semibold text-[var(--penned-navy)]">
           Show full brief
         </summary>
         <dl className="mt-5 grid gap-4 md:grid-cols-2">
@@ -261,11 +261,11 @@ export default async function ClientOrderDetailPage({
           <DetailItem label="Target audience" value={order.targetAudience} />
           <DetailItem label="Primary CTA" value={order.primaryCta} />
         </dl>
-        <div className="mt-4 rounded-[1.25rem] bg-slate-50 p-5 text-sm leading-7 text-slate-700">
+        <div className="mt-4 rounded-[14px] bg-slate-50 p-5 text-sm leading-7 text-slate-700">
           {order.brief || "No long-form brief notes."}
         </div>
         <div className="mt-4">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Target keywords</p>
+          <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Target keywords</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {order.targetKeywords.length ? (
               order.targetKeywords.map((keyword) => (
@@ -279,7 +279,7 @@ export default async function ClientOrderDetailPage({
           </div>
         </div>
         <div className="mt-4">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">References</p>
+          <p className="text-xs uppercase tracking-[0.12em] text-slate-500">References</p>
           <div className="mt-3 space-y-2">
             {order.referenceLinks.length ? (
               order.referenceLinks.map((link) => (
@@ -310,9 +310,9 @@ function formatTier(value: string) {
 
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[1.25rem] bg-slate-50 p-4">
-      <dt className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</dt>
-      <dd className="mt-2 text-sm font-medium text-slate-900">{value || "Not set"}</dd>
+    <div className="rounded-[14px] bg-slate-50 p-4">
+      <dt className="text-xs uppercase tracking-[0.12em] text-slate-500">{label}</dt>
+      <dd className="mt-2 text-sm font-medium text-[var(--penned-navy)]">{value || "Not set"}</dd>
     </div>
   );
 }
