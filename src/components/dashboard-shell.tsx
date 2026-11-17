@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { signOutAction } from "@/app/(auth)/actions";
 import { DashboardMobileNav } from "@/components/dashboard-mobile-nav";
+import { NotificationBell } from "@/components/notification-bell";
 import { PennedLogo } from "@/components/penned-logo";
 import { RoleSwitcherPanel } from "@/components/role-switcher-panel";
 import { roleMeta } from "@/lib/navigation";
@@ -157,6 +158,7 @@ export function DashboardShell({
                     Search
                   </button>
                 </form>
+                <NotificationBell />
                 <Link
                   className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[var(--penned-navy)] text-sm font-semibold text-white transition hover:scale-[1.02]"
                   href={settingsHref}

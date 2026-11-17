@@ -15,6 +15,11 @@
 import { after } from "next/server";
 import { emailConfigured, sendEmails, type OutgoingEmail } from "@/lib/email";
 import { readClientEmailPrefs, writeClientEmailPrefs } from "@/lib/email-prefs";
+import {
+  addInAppNotifications,
+  resolveInAppNotifications,
+  type NewInAppNotification,
+} from "@/lib/in-app-notifications";
 import * as templates from "@/lib/email-templates";
 import { renderEmail, type EmailContent, type EmailLink, type OrderSummary } from "@/lib/email-templates";
 import { resolveWorkflowStatus } from "@/lib/order-workflow";
@@ -46,7 +51,6 @@ export type Person = {
  * down or breaks the action that triggered it.
  */
 export function queueNotification(task: () => Promise<unknown>) {
-  if (!emailConfigured()) return;
 
   const safe = async () => {
     try {
@@ -90,6 +94,46 @@ export const urls = {
     appUrl(role === "admin" ? "/admin/clients" : "/account-manager/clients"),
   adminPayouts: () => appUrl("/admin/payouts"),
 };
+
+/** Dashboard path of one of the absolute `urls` above (in-app notifications link inside the app). */
+function pathOf(url: string) {
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return "/notifications";
+  }
+}
+
+/**
+ * Bell notifications. Separate from email on purpose: turning emails off does
+ * not hide things that need attention inside the dashboard.
+ */
+async function bell(people: (Person | null | undefined)[], item: Omit<NewInAppNotification, "profileId">) {
+  try {
+    await addInAppNotifications(
+      people.filter((person): person is Person => Boolean(person?.id)).map((person) => ({ profileId: person.id, ...item })),
+    );
+  } catch (error) {
+    // Never let the bell stop the email that follows it.
+    console.error("Bell notification failed", error instanceof Error ? error.message : error);
+  }
+}
+
+function clipText(value: string, max = 140) {
+  const single = value.replace(/\s+/g, " ").trim();
+  return single.length > max ? `${single.slice(0, max - 1)}…` : single;
+}
+
+/** Accounts that see team notifications in the bell: account managers and admins. */
+export async function getTeamProfiles(): Promise<Person[]> {
+  return getPeopleByRole(["account_manager", "admin"]);
+}
+
+function teamPath(person: Person, kind: "briefs" | "orders" | "clients") {
+  if (kind === "briefs") return pathOf(urls.teamBriefs(person.role));
+  if (kind === "clients") return pathOf(urls.teamClients(person.role));
+  return pathOf(urls.teamOrders(person.role));
+}
 
 function str(value: unknown) {
   return typeof value === "string" ? value : value == null ? "" : String(value);
@@ -271,6 +315,11 @@ export function build(to: string, content: EmailContent): OutgoingEmail {
   return { to, ...renderEmail(content) };
 }
 
+export function writerWantsInApp(writer: Person, eventKey: string) {
+  const prefs = normalizeNotificationPrefs(writer.notificationPrefs);
+  return prefs[eventKey]?.inApp !== false;
+}
+
 export function writerWantsEmail(writer: Person, eventKey: string) {
   const prefs = normalizeNotificationPrefs(writer.notificationPrefs);
   return prefs[eventKey]?.email !== false;
@@ -428,6 +477,15 @@ export async function notifySignUp(profileId: string) {
     );
   }
 
+  for (const admin of await getPeopleByRole(["admin"])) {
+    await bell([admin], {
+      title: `New client: ${person.fullName}`,
+      body: [person.company, person.email].filter(Boolean).join(" · "),
+      href: teamPath(admin, "clients"),
+      kind: "new_client",
+    });
+  }
+
   await sendEmails(emails);
 }
 
@@ -530,6 +588,19 @@ export async function notifyOrdersPlaced(orderIds: string[]) {
     );
   }
 
+  const who = client.company ? `${client.fullName}, ${client.company}` : client.fullName;
+  for (const member of await getTeamProfiles()) {
+    await bell([member], {
+      title:
+        orders.length === 1
+          ? `New order to check: ${str(orders[0].title) || "Untitled order"}`
+          : `New bulk order to check: ${orders.length} pieces`,
+      body: who,
+      href: teamPath(member, "briefs"),
+      kind: "new_order",
+    });
+  }
+
   await sendEmails(emails);
 }
 
@@ -561,6 +632,9 @@ export async function notifyDraftSubmitted(orderId: string) {
   const order = await getOrderRow(orderId);
   if (!supabase || !order) return;
 
+  // The writer has delivered: clear their reminders for this order.
+  await resolveInAppNotifications(str(order.writer_id), pathOf(urls.writerOrder(orderId)));
+
   const { count } = await supabase
     .from("submissions")
     .select("id", { count: "exact", head: true })
@@ -578,6 +652,12 @@ export async function notifyDraftSubmitted(orderId: string) {
     // The assigned editor only; every editor while nobody is assigned.
     const assigned = str(order.editor_id) ? await getPerson(str(order.editor_id)) : null;
     const editors = assigned ? [assigned] : await getPeopleByRole(["editor"]);
+    await bell(editors, {
+      title: `${resubmitted ? "Resubmitted" : "Ready to edit"}: ${str(order.title) || "Untitled order"}`,
+      body: formatDate(order.client_due_at) ? `Due to the client by ${formatDate(order.client_due_at)}.` : "",
+      href: pathOf(urls.editorHome()),
+      kind: "edit_ready",
+    });
     await sendEmails(
       editors.map((editor) =>
         build(
@@ -614,6 +694,14 @@ export async function notifyEditorApproved(orderId: string) {
 async function notifyClientDraftReady(order: Row, revised: boolean) {
   const client = await getPerson(str(order.client_id));
   if (!client) return;
+
+  // The bell always shows a draft to review, whatever the email settings.
+  await bell([client], {
+    title: `${revised ? "Revised draft ready" : "Draft ready to review"}: ${str(order.title) || "Untitled order"}`,
+    body: revised ? "Your writer has made the changes you asked for." : "Approve it or ask for changes.",
+    href: pathOf(urls.clientOrder(str(order.id))),
+    kind: "draft_ready",
+  });
 
   const prefs = readClientEmailPrefs(client.notificationPrefs);
   if (!prefs.enabled) return;
@@ -699,6 +787,13 @@ export async function notifyEditorSentBack(orderId: string) {
   const writer = await getPerson(str(order.writer_id));
   if (!writer) return;
 
+  await bell([writer], {
+    title: `Editor sent back: ${str(order.title) || "your order"}`,
+    body: formatDate(order.writer_due_at) ? `Resubmit by ${formatDate(order.writer_due_at)}.` : "It needs some changes.",
+    href: pathOf(urls.writerOrder(orderId)),
+    kind: "sent_back",
+  });
+
   await sendEmails([
     build(
       writer.email,
@@ -723,6 +818,25 @@ export async function notifyRevisionRequested(orderId: string, note: string) {
   ]);
   const title = str(order.title) || "Untitled order";
   const emails: OutgoingEmail[] = [];
+
+  // The client has responded: clear their "draft ready" for this order.
+  if (client) await resolveInAppNotifications(client.id, pathOf(urls.clientOrder(orderId)));
+  if (writer && writerWantsInApp(writer, "revision_requested")) {
+    await bell([writer], {
+      title: `Client asked for changes: ${title}`,
+      body: clipText(redactContactDetails(note)) || "See the order for details.",
+      href: pathOf(urls.writerOrder(orderId)),
+      kind: "changes_requested",
+    });
+  }
+  for (const member of await getTeamProfiles()) {
+    await bell([member], {
+      title: `Changes requested: ${title}`,
+      body: client ? `${client.fullName} asked for changes.` : "",
+      href: teamPath(member, "orders"),
+      kind: "changes_requested_team",
+    });
+  }
 
   if (writer && writerWantsEmail(writer, "revision_requested")) {
     emails.push(
@@ -784,6 +898,16 @@ export async function notifyOrderApproved(orderId: string) {
   const title = str(order.title) || "Untitled order";
   const emails: OutgoingEmail[] = [];
 
+  if (client) await resolveInAppNotifications(client.id, pathOf(urls.clientOrder(orderId)));
+  if (writer && writerWantsInApp(writer, "submission_approved")) {
+    await bell([writer], {
+      title: `Approved: ${title}`,
+      body: "Your earnings have been updated.",
+      href: pathOf(urls.writerEarnings()),
+      kind: "approved",
+    });
+  }
+
   if (writer && writerWantsEmail(writer, "submission_approved")) {
     emails.push(
       build(
@@ -839,6 +963,15 @@ export async function notifyBriefAccepted(orderId: string) {
   const client = await getPerson(str(order.client_id));
   if (!client) return;
 
+  if (!batchIdOf(order)) {
+    await bell([client], {
+      title: `Brief accepted: ${str(order.title) || "your order"}`,
+      body: formatDate(order.client_due_at) ? `Your draft is due by ${formatDate(order.client_due_at)}.` : "A writer can start now.",
+      href: pathOf(urls.clientOrder(orderId)),
+      kind: "brief_accepted",
+    });
+  }
+
   const prefs = readClientEmailPrefs(client.notificationPrefs);
   if (!prefs.enabled) return;
 
@@ -886,6 +1019,13 @@ export async function notifyWriterAssigned(orderId: string) {
   if (!order) return;
   const writer = await getPerson(str(order.writer_id));
   if (!writer) return;
+
+  await bell([writer], {
+    title: `You've been assigned: ${str(order.title) || "an order"}`,
+    body: formatDate(order.writer_due_at) ? `Your deadline is ${formatDate(order.writer_due_at)}.` : "Read the brief before you start.",
+    href: pathOf(urls.writerOrder(orderId)),
+    kind: "assigned",
+  });
   const contentTypes = await getContentTypeNames([str(order.content_type_id)]);
   await sendEmails([
     build(
@@ -904,6 +1044,13 @@ export async function notifyEditorAssigned(orderId: string) {
   if (!order) return;
   const editor = await getPerson(str(order.editor_id));
   if (!editor) return;
+
+  await bell([editor], {
+    title: `You're editing: ${str(order.title) || "an order"}`,
+    body: formatDate(order.client_due_at) ? `Due to the client by ${formatDate(order.client_due_at)}.` : "",
+    href: pathOf(urls.editorHome()),
+    kind: "assigned",
+  });
   const stage = resolveWorkflowStatus({
     dbStatus: str(order.status),
     workflowStatus: str(order.workflow_status) || null,
@@ -928,6 +1075,27 @@ export async function notifyOrderCancelled(orderId: string) {
   if (!order) return;
   const client = await getPerson(str(order.client_id));
   if (!client) return;
+
+  const cancelledTitle = str(order.title) || "Untitled order";
+  await bell([client], {
+    title: `Order cancelled: ${cancelledTitle}`,
+    body:
+      Number(order.budget_cents ?? 0) > 0
+        ? `${formatUsdFromCents(Number(order.budget_cents))} will be returned to your content budget.`
+        : "",
+    href: pathOf(urls.clientOrder(orderId)),
+    kind: "cancelled",
+  });
+  const cancelledWriter = await getPerson(str(order.writer_id));
+  if (cancelledWriter) {
+    await resolveInAppNotifications(cancelledWriter.id, pathOf(urls.writerOrder(orderId)));
+    await bell([cancelledWriter], {
+      title: `Order cancelled: ${cancelledTitle}`,
+      body: "You don't need to do any more work on it.",
+      href: pathOf(urls.writerHome()),
+      kind: "cancelled",
+    });
+  }
 
   const cents = Number(order.budget_cents ?? 0);
   await sendEmails([
@@ -962,6 +1130,13 @@ export async function notifyComment(submissionId: string, authorId: string, body
     getOrderRow(str(submission.order_id)),
   ]);
   if (!writer || !order) return;
+
+  await bell([writer], {
+    title: `New comment on ${str(order.title) || "your order"}`,
+    body: clipText(redactContactDetails(body)),
+    href: pathOf(urls.writerOrder(str(order.id))),
+    kind: "comment",
+  });
 
   await sendEmails([
     build(
@@ -1011,9 +1186,29 @@ export async function notifyTopUp(clientProfileId: string, amountCents: number, 
   ]);
 }
 
+/** A writer asked for a payout: admins see it in the bell (and in the morning summary email). */
+export async function notifyPayoutRequested(writerId: string, amountCents: number) {
+  const writer = await getPerson(writerId);
+  if (!writer) return;
+  await bell(await getPeopleByRole(["admin"]), {
+    title: `Payout requested: ${writer.fullName}`,
+    body: formatUsdFromCents(amountCents),
+    href: pathOf(urls.adminPayouts()),
+    kind: "payout_requested",
+  });
+}
+
 /** An admin approved a payout: tell the writer. */
 export async function notifyPayoutApproved(writerId: string, amountCents: number) {
   const writer = await getPerson(writerId);
+  if (writer && writerWantsInApp(writer, "payout_update")) {
+    await bell([writer], {
+      title: `Payout approved: ${formatUsdFromCents(amountCents)}`,
+      body: "",
+      href: pathOf(urls.writerEarnings()),
+      kind: "payout",
+    });
+  }
   if (!writer || !writerWantsEmail(writer, "payout_update")) return;
 
   await sendEmails([
