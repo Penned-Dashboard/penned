@@ -53,9 +53,9 @@ export default async function ContentBudgetPage({
       ) : null}
 
       <SectionCard title="Balance" description="Orders are paid from this balance.">
-        <div className="rounded-[1.5rem] border border-slate-200 bg-white p-6">
-          <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Balance</p>
-          <h2 className="mt-3 text-5xl font-semibold tracking-[-0.05em] text-slate-950">
+        <div className="rounded-[20px] border border-slate-200 bg-white p-6">
+          <p className="text-sm uppercase tracking-[0.12em] text-slate-500">Balance</p>
+          <h2 className="mt-3 text-[40px] font-bold tracking-[-0.02em] text-[var(--penned-navy)]">
             {snapshot.remainingLabel}
           </h2>
         </div>
@@ -103,7 +103,7 @@ export default async function ContentBudgetPage({
               return (
                 <div key={`${item.label}-${item.note}-${item.value}`} className="dashboard-list-row">
                   <div>
-                    <p className="font-semibold text-slate-950">{item.label}</p>
+                    <p className="font-semibold text-[var(--penned-navy)]">{item.label}</p>
                     <p className="text-sm text-slate-500">{item.note || "Recent"}</p>
                   </div>
                   <p
@@ -145,7 +145,7 @@ function Alert({
         ? "border-emerald-200 bg-emerald-50 text-emerald-800"
         : "border-slate-200 bg-slate-50 text-slate-700";
 
-  return <div className={`rounded-[1.25rem] border px-5 py-4 text-sm ${styles}`}>{children}</div>;
+  return <div className={`rounded-[14px] border px-5 py-4 text-sm ${styles}`}>{children}</div>;
 }
 
 function Metric({
@@ -158,9 +158,9 @@ function Metric({
   hint: string;
 }) {
   return (
-    <div className="rounded-[1rem] border border-slate-200 bg-white p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
-      <p className="mt-2 text-lg font-semibold text-slate-950">{value}</p>
+    <div className="rounded-[14px] border border-slate-200 bg-white p-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
+      <p className="mt-2 text-lg font-semibold text-[var(--penned-navy)]">{value}</p>
       <p className="mt-2 text-sm leading-6 text-slate-500">{hint}</p>
     </div>
   );
