@@ -73,7 +73,7 @@ export default async function WriterEarningsPage({
             {earnings.rows.map((row) => (
               <tr key={row.id}>
                 <Td className="whitespace-nowrap text-slate-600">{dateFormat.format(new Date(row.createdAt))}</Td>
-                <Td className="font-medium text-slate-900">{row.description}</Td>
+                <Td className="font-medium text-[var(--penned-navy)]">{row.description}</Td>
                 <Td>{row.jobTitle}</Td>
                 <Td>{row.client}</Td>
                 <Td className={`whitespace-nowrap font-semibold ${row.amountCents < 0 ? "text-slate-700" : "text-emerald-600"}`}>
