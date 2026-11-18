@@ -108,8 +108,8 @@ export type MarketplaceOrder = {
   category: string;
   brief: string;
   /** DB service_tier: on-demand = Standard, rank = Specialist. */
-  serviceTier: "on-demand" | "rank";
-  tierLabel: "Standard" | "Specialist";
+  serviceTier: "on-demand" | "signature" | "rank";
+  tierLabel: "Standard" | "Signature" | "Specialist";
   wordCount: number | null;
   payCents: number;
   pay: string;
@@ -896,10 +896,18 @@ export async function getWriterMarketplace(
     return new Date(order.reserved_until).getTime() <= now;
   });
 
+  const writerTierRaw = String(writerProfile?.writer_tier ?? "standard").toLowerCase();
+  const writerIsSignature =
+    writerIsSpecialist || writerTierRaw === "signature" || writerTierRaw === "rank";
+
   const all: MarketplaceOrder[] = visible
     .filter((order) => {
-      // Specialist jobs (service_tier = rank) are only visible to specialist writers.
-      if (order.service_tier === "rank" && !writerIsSpecialist) {
+      // Specialist / Rank jobs → specialist writers only.
+      if ((order.service_tier === "rank" || order.service_tier === "specialist") && !writerIsSpecialist) {
+        return false;
+      }
+      // Signature jobs → Signature or Specialist writers only.
+      if (order.service_tier === "signature" && !writerIsSignature) {
         return false;
       }
       return true;
@@ -908,7 +916,12 @@ export async function getWriterMarketplace(
     const client = readSingleRelation(order.client);
     const reservedByMe = order.reserved_by === writerProfileId && new Date(order.reserved_until ?? 0).getTime() > now;
     const payCents = order.budget_cents ?? 0;
-    const serviceTier = order.service_tier === "rank" ? "rank" : "on-demand";
+    const serviceTier =
+      order.service_tier === "rank" || order.service_tier === "specialist"
+        ? "rank"
+        : order.service_tier === "signature"
+          ? "signature"
+          : "on-demand";
 
     return {
       id: order.id,
@@ -918,7 +931,8 @@ export async function getWriterMarketplace(
       category: readSingleRelation(order.content_types)?.name ?? "Uncategorized",
       brief: order.brief ?? "",
       serviceTier,
-      tierLabel: serviceTier === "rank" ? "Specialist" : "Standard",
+      tierLabel:
+        serviceTier === "rank" ? "Specialist" : serviceTier === "signature" ? "Signature" : "Standard",
       wordCount: order.word_count ?? null,
       payCents,
       pay: payCents ? formatUsd(payCents) : "TBD",

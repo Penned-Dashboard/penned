@@ -50,6 +50,7 @@ export const roleMeta: Record<
       { label: "Flags", href: "/admin/flags" },
       { label: "Clients", href: "/admin/clients" },
       { label: "Writers", href: "/admin/writers" },
+      { label: "People", href: "/admin/people" },
       { label: "Payouts", href: "/admin/payouts" },
       { label: "Pricing & services", href: "/admin/pricing" },
       { label: "Settings", href: "/admin/settings" },

@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { AppAuthBar } from "@/components/app-auth-bar";
+import { LegalPageShell } from "@/components/legal-page-shell";
 import { CLIENT_TERMS_UPDATED, CLIENT_TERMS_VERSION } from "@/lib/client-terms";
 import clientTermsBody from "@/content/penned-client-terms.txt";
 
 export default function TermsPage() {
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#f7f9fd] text-slate-900">
-      <AppAuthBar />
+    <LegalPageShell>
       <div className="mx-auto max-w-4xl px-6 pb-24 pt-16 lg:px-10">
         <p className="text-sm font-semibold uppercase tracking-[0.28em] text-teal-600">Client terms</p>
         <h1 className="mt-4 text-4xl font-semibold tracking-[-0.04em] text-slate-950 md:text-5xl">
@@ -26,6 +25,6 @@ export default function TermsPage() {
           {clientTermsBody}
         </article>
       </div>
-    </main>
+    </LegalPageShell>
   );
 }

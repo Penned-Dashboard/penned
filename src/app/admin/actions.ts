@@ -1,8 +1,10 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isRole } from "@/lib/types";
 import { approvePayout, refundOrderToClientBudget, updateAdminProfile } from "@/lib/orders";
+import { assignOrderToWriter } from "@/lib/team-data";
 
 export async function approvePayoutAction(formData: FormData) {
   const payoutRequestId = String(formData.get("payoutRequestId") ?? "");
@@ -12,6 +14,20 @@ export async function approvePayoutAction(formData: FormData) {
 export async function refundOrderAction(formData: FormData) {
   const orderId = String(formData.get("orderId") ?? "");
   const result = await refundOrderToClientBudget(orderId);
+  const params = new URLSearchParams({
+    notice: result.ok ? "success" : "error",
+    noticeMessage: result.message,
+  });
+  redirect(`/admin/orders/${orderId}?${params.toString()}`);
+}
+
+export async function assignWriterAction(formData: FormData) {
+  const orderId = String(formData.get("orderId") ?? "");
+  const writerId = String(formData.get("writerId") ?? "");
+  const result = await assignOrderToWriter(orderId, writerId);
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath("/account-manager/orders");
   const params = new URLSearchParams({
     notice: result.ok ? "success" : "error",
     noticeMessage: result.message,

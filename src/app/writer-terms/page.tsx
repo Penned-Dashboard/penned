@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AppAuthBar } from "@/components/app-auth-bar";
+import { LegalPageShell } from "@/components/legal-page-shell";
 import {
   WRITER_EDITOR_TERMS_UPDATED,
   WRITER_EDITOR_TERMS_VERSION,
@@ -8,8 +8,7 @@ import writerEditorTermsBody from "@/content/penned-writer-editor-terms.txt";
 
 export default function WriterEditorTermsPage() {
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#f7f9fd] text-slate-900">
-      <AppAuthBar />
+    <LegalPageShell>
       <div className="mx-auto max-w-4xl px-6 pb-24 pt-16 lg:px-10">
         <p className="text-sm font-semibold uppercase tracking-[0.28em] text-teal-600">
           Writer & editor terms
@@ -35,6 +34,6 @@ export default function WriterEditorTermsPage() {
           {writerEditorTermsBody}
         </article>
       </div>
-    </main>
+    </LegalPageShell>
   );
 }

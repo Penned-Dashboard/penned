@@ -253,7 +253,7 @@ export async function assignOrderWriter(orderId: string, writerId: string) {
 
   const { data: order } = await supabase
     .from("orders")
-    .select("id, status, workflow_status, writer_id")
+    .select("id, status, workflow_status, writer_id, service_tier")
     .eq("id", orderId)
     .maybeSingle();
   if (!order) return { ok: false as const, message: "Order not found." };
@@ -274,15 +274,30 @@ export async function assignOrderWriter(orderId: string, writerId: string) {
 
   const { data: writer } = await supabase
     .from("profiles")
-    .select("id, role, approval_status")
+    .select("id, role, approval_status, writer_tier")
     .eq("id", writerId)
     .maybeSingle();
-  const writerRow = writer as { role?: string; approval_status?: string | null } | null;
+  const writerRow = writer as {
+    role?: string;
+    approval_status?: string | null;
+    writer_tier?: string | null;
+  } | null;
   if (!writerRow || writerRow.role !== "writer") {
     return { ok: false as const, message: "Choose a writer account." };
   }
   if (["pending", "paused"].includes(String(writerRow.approval_status ?? "approved").toLowerCase())) {
     return { ok: false as const, message: "That writer isn't approved yet." };
+  }
+
+  const serviceTier = String((order as { service_tier?: string | null }).service_tier ?? "on-demand");
+  const writerTier = String(writerRow.writer_tier ?? "standard").toLowerCase();
+  const writerIsSpecialist = writerTier === "specialist" || writerTier === "rank";
+  const writerIsSignature = writerIsSpecialist || writerTier === "signature";
+  if ((serviceTier === "rank" || serviceTier === "specialist") && !writerIsSpecialist) {
+    return { ok: false as const, message: "Specialist jobs need a Specialist writer." };
+  }
+  if (serviceTier === "signature" && !writerIsSignature) {
+    return { ok: false as const, message: "Signature jobs need a Signature or Specialist writer." };
   }
 
   const fresh = stage === "waiting_for_writer";

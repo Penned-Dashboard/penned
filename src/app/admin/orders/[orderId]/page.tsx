@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { refundOrderAction } from "@/app/admin/actions";
 import { AssignOrderForm } from "@/components/assign-order-form";
 import { DashboardShell, SectionCard } from "@/components/dashboard-shell";
 import { getAdminOrderDetail } from "@/lib/orders";
-import { requireRole } from "@/lib/auth";
+import { getCurrentAppUser } from "@/lib/auth";
 import { getTeamEditors, getTeamWriters, WRITER_ASSIGNABLE } from "@/lib/team-data";
+import { rolePath } from "@/lib/types";
 
 type Params = Promise<{ orderId: string }>;
 
@@ -16,7 +17,10 @@ export default async function AdminOrderDetailPage({
   params: Params;
   searchParams: Promise<{ notice?: string; noticeMessage?: string }>;
 }) {
-  const user = await requireRole("admin");
+  const user = await getCurrentAppUser();
+  if (!user || (user.role !== "admin" && user.role !== "account_manager")) {
+    redirect("/sign-in");
+  }
   const { orderId } = await params;
   const notice = await searchParams;
   const [order, writers, editors] = await Promise.all([
@@ -29,15 +33,17 @@ export default async function AdminOrderDetailPage({
     notFound();
   }
   const finished = order.workflowStatus === "completed" || order.workflowStatus === "cancelled";
+  const isAdmin = user.role === "admin";
+  const ordersHref = isAdmin ? "/admin/orders" : `${rolePath("account_manager")}/orders`;
 
   return (
     <DashboardShell
-      role="admin"
+      role={user.role}
       title={order.title}
-      description="Admin view of order ownership, lifecycle state, and latest review activity."
+      description="Order ownership, writer assignment, and latest review activity."
       ctaLabel="View all orders"
-      ctaHref="/admin/orders"
-      currentPath="/admin/orders"
+      ctaHref={ordersHref}
+      currentPath={ordersHref}
       userName={user.fullName}
     >
       {notice.noticeMessage ? (
@@ -67,21 +73,29 @@ export default async function AdminOrderDetailPage({
             <DetailItem label="Primary CTA" value={order.primaryCta} />
           </dl>
         </SectionCard>
-        <SectionCard title="Refund / cancel" description="Cancel the order and mark it for client credit.">
-          <p className="text-sm leading-6 text-slate-600">
-            This cancels the order and records a refund note. Full automated wallet credit can come next; for now treat
-            the amount as credit owed to the client.
-          </p>
-          <form action={refundOrderAction} className="mt-4">
-            <input name="orderId" type="hidden" value={order.id} />
-            <button className="button-secondary" type="submit">
-              Cancel & mark refund
-            </button>
-          </form>
-          <Link className="mt-4 inline-block text-sm font-semibold text-[var(--penned-navy)] underline" href="/admin/people">
-            Manage client accounts →
-          </Link>
-        </SectionCard>
+        {isAdmin ? (
+          <SectionCard title="Refund / cancel" description="Cancel the order and mark it for client credit.">
+            <p className="text-sm leading-6 text-slate-600">
+              This cancels the order and records a refund note. Full automated wallet credit can come next; for now treat
+              the amount as credit owed to the client.
+            </p>
+            <form action={refundOrderAction} className="mt-4">
+              <input name="orderId" type="hidden" value={order.id} />
+              <button className="button-secondary" type="submit">
+                Cancel & mark refund
+              </button>
+            </form>
+            <Link className="mt-4 inline-block text-sm font-semibold text-[var(--penned-navy)] underline" href="/admin/people">
+              Manage client accounts →
+            </Link>
+          </SectionCard>
+        ) : (
+          <SectionCard title="Account manager" description="">
+            <p className="text-sm text-slate-600">
+              Assign the writer below once the brief is accepted. Use Briefs to check to accept new briefs first.
+            </p>
+          </SectionCard>
+        )}
       </section>
 
       <SectionCard
